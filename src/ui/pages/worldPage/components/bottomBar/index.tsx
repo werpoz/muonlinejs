@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { SkillBar } from '../skillBar';
+import { WINDOW_HEIGHT } from '../../../../components/muWindow';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
 import {
@@ -129,6 +130,15 @@ function useFrameScale() {
       document.documentElement.style.setProperty(
         '--main-frame-height',
         `${FRAME_HEIGHT * s}px`
+      );
+      // windows (190x429 in the original client) fit above the frame
+      const windowScale = Math.min(
+        s,
+        (window.innerHeight - FRAME_HEIGHT * s) / WINDOW_HEIGHT
+      );
+      document.documentElement.style.setProperty(
+        '--window-scale',
+        `${windowScale}`
       );
     };
     update();

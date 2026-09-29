@@ -18,7 +18,7 @@
 - [x] Habilidades de área: `AreaSkill` + el cliente declara los golpes con `AreaSkillHit` (probado con Flame)
 - [ ] Efectos visuales de las demás habilidades de área (solo Flame tiene efecto)
 - [x] Barra inferior con los gráficos originales (Season 6): pociones, globos de vida/maná, SD/AG, habilidades 1-5 con sus iconos, botones y experiencia
-- [ ] Resto de ventanas (inventario, personaje, tienda) con los gráficos originales
+- [x] Ventanas de inventario, personaje y tienda con los gráficos originales
 - [x] Recoger objetos del suelo (clic o Espacio)
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
@@ -28,7 +28,7 @@
 - [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
 - [x] Repartir puntos de nivel (panel C)
 - [x] Muerte y reaparición en el pueblo
-- [ ] Daño/defensa del panel C (valores fijos de ejemplo)
+- [ ] Daño/defensa/velocidad en el panel C (se quitaron los valores fijos de ejemplo)
 - [ ] Modelos para monstruos de otros mapas
 - [x] Tiendas de NPC: hablar (clic), comprar (clic en la tienda), vender (coger objeto + clic en la tienda)
 - [ ] Trade y almacén (Baz)

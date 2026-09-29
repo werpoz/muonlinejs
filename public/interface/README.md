@@ -13,3 +13,11 @@ They are Webzen's assets, like the models and item icons of this repo.
 | ag_bar.png / sd_bar.png | newui_menu_AG / newui_menu_SD |
 | exp_bar.png | newui_Exbar |
 | skill_icons.png | newui_skill (20x24 icons, 8 per row, skill number order) |
+| window_back.png | newui_msgbox_back |
+| window_top.png / window_top2.png | newui_item_back01 / newui_item_back04 |
+| window_left.png / window_right.png / window_bottom.png | newui_item_back02-L / -R / newui_item_back03 |
+| item_box.png | newui_item_box (20x20 inventory cell) |
+| equip_*.png | newui_item_cap / wing / fairy / weapon(L) / weapon(R) / upper / lower / gloves / boots / necklace / ring |
+| money_box.png | newui_item_money |
+| exit_button.png | newui_exit_00 (2 states of 36x29) |
+| textbox.png / level_button.png | newui_cha_textbox02 / newui_chainfo_btn_level (2 states of 16x15) |

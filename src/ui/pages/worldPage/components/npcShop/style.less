@@ -1,39 +1,20 @@
-.npc-shop {
-  pointer-events: auto;
-  background-color: #333;
-  border: 2px solid #000;
-  color: #fff;
-  font-size: 14px;
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-
-  .shop-items {
-    position: relative;
-    background-color: #222;
-    border: 2px solid #d1d1d1;
-    background-image: linear-gradient(#444 1px, transparent 1px),
-      linear-gradient(90deg, #444 1px, transparent 1px);
-    background-size: 33px 33px;
+.mu-window-slot.npc-shop .mu-window {
+  .shop-grid {
+    background: url('/interface/item_box.png');
   }
 
   .shop-item {
-    position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #00000060;
+    padding: 1px;
+    box-sizing: border-box;
+    background-color: #1a3c7a60;
     cursor: pointer;
 
     &:hover {
       outline: 1px solid #ffd24a;
-    }
-
-    .item-icon {
-      pointer-events: none;
-      transform: scale(1.4);
+      outline-offset: -1px;
     }
   }
 }

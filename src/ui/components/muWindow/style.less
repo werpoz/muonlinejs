@@ -1,0 +1,102 @@
+@w: 190px;
+@h: 429px;
+
+// the slot takes the scaled size in the layout, the window inside is scaled
+.mu-window-slot {
+  flex: none;
+  width: calc(@w * var(--window-scale, 1));
+  height: calc(@h * var(--window-scale, 1));
+  pointer-events: auto;
+}
+
+.mu-window {
+  position: relative;
+  width: @w;
+  height: @h;
+  transform: scale(var(--window-scale, 1));
+  transform-origin: top left;
+  background: #000 url('/interface/window_back.png') no-repeat;
+  color: #fff;
+  font-size: 9px;
+  image-rendering: pixelated;
+  user-select: none;
+
+  > * {
+    position: absolute;
+  }
+
+  .frame-top {
+    left: 0;
+    top: 0;
+    width: @w;
+    height: 64px;
+    background: url('/interface/window_top.png');
+    pointer-events: none;
+  }
+  .frame-left,
+  .frame-right {
+    top: 64px;
+    width: 21px;
+    height: 320px;
+    pointer-events: none;
+  }
+  .frame-left {
+    left: 0;
+    background: url('/interface/window_left.png');
+  }
+  .frame-right {
+    right: 0;
+    background: url('/interface/window_right.png');
+  }
+  .frame-bottom {
+    left: 0;
+    bottom: 0;
+    width: @w;
+    height: 45px;
+    background: url('/interface/window_bottom.png');
+    pointer-events: none;
+  }
+
+  .title {
+    left: 0;
+    right: 0;
+    top: 11px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    color: #f0e0b0;
+  }
+  .subtitle {
+    left: 0;
+    right: 0;
+    top: 25px;
+    text-align: center;
+    color: #c8c8c8;
+  }
+
+  // 2 states of 36x29
+  .exit-button {
+    left: 13px;
+    top: 391px;
+    width: 36px;
+    height: 29px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: url('/interface/exit_button.png') no-repeat 0 0;
+
+    &:hover {
+      background-position: 0 -29px;
+    }
+  }
+
+  // the item images only use ~30% of their canvas (the item is centered with
+  // a wide margin), scale them to fill their slot like in the original client
+  .item-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform: scale(2.6);
+    pointer-events: none;
+  }
+}
