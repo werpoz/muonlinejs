@@ -20,6 +20,8 @@ import {
   ItemMoveRequestPacket,
   DropItemRequestPacket,
   TargetedSkillPacket,
+  EnterGateRequestPacket,
+  WarpCommandRequestPacket,
   StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -685,6 +687,23 @@ export const Store = new (class _Store {
     const packet = TargetedSkillPacket.createPacket();
     packet.SkillId = skill;
     packet.TargetId = targetId;
+
+    this.sendToGS(packet.buffer);
+  }
+
+  enterGate(gateNumber: number): void {
+    const packet = EnterGateRequestPacket.createPacket();
+    packet.GateNumber = gateNumber;
+
+    console.log(`EnterGateRequest: ${gateNumber}`);
+    this.sendToGS(packet.buffer);
+  }
+
+  // warpIndex is the index of the warp list in the server configuration
+  warp(warpIndex: number): void {
+    const packet = WarpCommandRequestPacket.createPacket();
+    packet.CommandKey = 0;
+    packet.WarpInfoIndex = warpIndex;
 
     this.sendToGS(packet.buffer);
   }

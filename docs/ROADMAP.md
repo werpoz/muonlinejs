@@ -28,5 +28,6 @@
 - [ ] Daño/defensa del panel C (valores fijos de ejemplo)
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén
-- [ ] Más mapas
+- [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
+- [ ] Modelos de monstruos/NPCs de mapas distintos de Lorencia
 - [ ] Tests de paquetes y cifrado en CI

@@ -22,6 +22,7 @@ import { WalkSfxSystem } from './systems/walkSfxSystem';
 import { AttackSystem } from './systems/attackSystem';
 import { PickupSystem } from './systems/pickupSystem';
 import { DropItemSystem } from './systems/dropItemSystem';
+import { GateSystem } from './systems/gateSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
@@ -37,6 +38,7 @@ const factories: ISystemFactory[] = [
   CalculateScreenPositionSystem,
   NetworkSystem,
   MoveAlongPathSystem,
+  GateSystem,
   HighlightSystem,
   AnimationSystem,
   AppearanceSystem,
