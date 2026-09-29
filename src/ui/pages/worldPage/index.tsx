@@ -9,12 +9,14 @@ import { CharacterInfo } from './components/characterInfo';
 import { Inventory } from './components/inventory';
 import { Skills } from './components/skills';
 import { Chat } from './components/chat';
+import { NpcShop } from './components/npcShop';
 
 const HUD = observer(() => {
   return (
     <div className="hud">
       <BottomBar />
       <div className="panels-stack">
+        <NpcShop />
         <Inventory />
         <CharacterInfo />
       </div>

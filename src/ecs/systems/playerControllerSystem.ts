@@ -6,6 +6,7 @@ import {
 import type { ISystemFactory } from '../world';
 import { isAttackable } from './attackSystem';
 import { isPickable } from './pickupSystem';
+import { isTalkable } from './npcTalkSystem';
 
 const MOVE_DELAY = 0.25;
 
@@ -82,7 +83,8 @@ export const PlayerControllerSystem: ISystemFactory = world => {
         world.pointerConsumed ||
         world.attackTarget ||
         isAttackable(hovered) ||
-        isPickable(hovered);
+        isPickable(hovered) ||
+        isTalkable(hovered);
 
       if (world.pointerPressed && world.pointerButton === 0 && !busy) {
         if (delay <= 0) {

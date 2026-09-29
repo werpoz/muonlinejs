@@ -23,6 +23,7 @@ import { AttackSystem } from './systems/attackSystem';
 import { PickupSystem } from './systems/pickupSystem';
 import { DropItemSystem } from './systems/dropItemSystem';
 import { GateSystem } from './systems/gateSystem';
+import { NpcTalkSystem } from './systems/npcTalkSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
@@ -32,6 +33,7 @@ const factories: ISystemFactory[] = [
   DropItemSystem,
   AttackSystem,
   PickupSystem,
+  NpcTalkSystem,
   PlayerControllerSystem,
   PathfindingSystem,
   CalculateVisibilitySystem,

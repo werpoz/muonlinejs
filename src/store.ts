@@ -23,6 +23,10 @@ import {
   EnterGateRequestPacket,
   WarpCommandRequestPacket,
   ClientReadyAfterMapChangePacket,
+  TalkToNpcRequestPacket,
+  CloseNpcRequestPacket,
+  BuyItemFromNpcRequestPacket,
+  SellItemToNpcRequestPacket,
   StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -336,6 +340,10 @@ export const Store = new (class _Store {
   // learned skills and the one used with the right mouse button
   skills: { index: number; number: number; level: number }[] = [];
   currentSkill: number | null = null;
+
+  // open NPC shop: items by store slot (8 columns)
+  npcShop: { npcId: number; items: { slot: number; item: Item }[] } | null =
+    null;
   // move sent to the server, ItemMoved only tells the target slot
   pendingItemMove: { from: number; to: number } | null = null;
 
@@ -377,6 +385,7 @@ export const Store = new (class _Store {
       heldItemSlot: observable,
       skills: observable,
       currentSkill: observable,
+      npcShop: observable,
     });
     this.loadConfig();
   }
@@ -699,6 +708,46 @@ export const Store = new (class _Store {
     console.log(`EnterGateRequest: ${gateNumber}`);
     this.sendToGS(packet.buffer);
   }
+
+  talkingToNpc: number | null = null;
+
+  talkToNpc(npcId: number): void {
+    const packet = TalkToNpcRequestPacket.createPacket();
+    packet.NpcId = npcId;
+
+    this.talkingToNpc = npcId;
+    this.sendToGS(packet.buffer);
+  }
+
+  sendCloseNpcRequest(): void {
+    this.talkingToNpc = null;
+    this.sendToGS(CloseNpcRequestPacket.createPacket().buffer);
+  }
+
+  closeNpc(): void {
+    if (!this.npcShop) return;
+    runInAction(() => {
+      this.npcShop = null;
+    });
+    this.sendCloseNpcRequest();
+  }
+
+  buyItem(storeSlot: number): void {
+    const packet = BuyItemFromNpcRequestPacket.createPacket();
+    packet.ItemSlot = storeSlot;
+    this.sendToGS(packet.buffer);
+  }
+
+  sellItem(inventorySlot: number): void {
+    const packet = SellItemToNpcRequestPacket.createPacket();
+    packet.ItemSlot = inventorySlot;
+
+    this.pendingSellSlot = inventorySlot;
+    this.sendToGS(packet.buffer);
+  }
+
+  // NpcItemSellResult doesn't tell which item was sold
+  pendingSellSlot: number | null = null;
 
   // After a map change the server waits for this before adding the
   // character to the new map (NPCs, monsters and players in scope).

@@ -27,7 +27,8 @@
 - [x] Muerte y reaparición en el pueblo
 - [ ] Daño/defensa del panel C (valores fijos de ejemplo)
 - [ ] Modelos para monstruos de otros mapas
-- [ ] Tiendas, trade y almacén
+- [x] Tiendas de NPC: hablar (clic), comprar (clic en la tienda), vender (coger objeto + clic en la tienda)
+- [ ] Trade y almacén (Baz)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
 - [x] Haces de luz de Noria (se veían como placas negras enormes)

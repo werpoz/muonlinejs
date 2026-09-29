@@ -148,7 +148,10 @@ export const BottomBar = observer(() => {
             className="inventory-btn"
             onClick={() => {
               Store.inventoryEnabled = !Store.inventoryEnabled;
-              if (!Store.inventoryEnabled) Store.cancelHeldItem();
+              if (!Store.inventoryEnabled) {
+                Store.cancelHeldItem();
+                Store.closeNpc();
+              }
             }}
           >
             Inv

@@ -29,6 +29,10 @@ import {
   MapChangedPacket,
   RespawnAfterDeathPacket,
   SkillAddedPacket,
+  NpcWindowResponsePacket,
+  NpcWindowResponseNpcWindowEnum,
+  ItemBoughtPacket,
+  NpcItemSellResultPacket,
   SkillAnimationPacket,
   SkillListUpdatePacket,
   CharacterLevelUpdatePacket,
@@ -58,7 +62,7 @@ import {
 } from './common/packets/ServerToClientPackets';
 import { ServerToClientActionMap } from './common/playerActionMapper';
 import { PlayerObject } from './common/playerObject';
-import { Entity, World } from './ecs/world';
+import { Entity, Item, World } from './ecs/world';
 import { createAttributeSystem } from './libs/attributeSystem';
 import { Vector3 } from './libs/babylon/exports';
 import { EventBus } from './libs/eventBus';
@@ -1043,5 +1047,90 @@ EventBus.on('SkillAnimation', packet => {
     from.addInPlaceFromFloats(0.5, 1.25, 0.5);
     to.addInPlaceFromFloats(0.5, 1, 0.5);
     playEnergyBall(world.scene, from, to);
+  }
+});
+
+// NPC shops
+
+const MERCHANT_WINDOWS = [
+  NpcWindowResponseNpcWindowEnum.Merchant,
+  NpcWindowResponseNpcWindowEnum.Merchant1,
+];
+
+EventBus.on('NpcWindowResponse', packet => {
+  const p = new NpcWindowResponsePacket(packet);
+  console.log(`NpcWindowResponse: ${NpcWindowResponseNpcWindowEnum[p.Window]}`);
+
+  if (!MERCHANT_WINDOWS.includes(p.Window)) {
+    Store.addNotification('This NPC is not supported yet', 'error');
+    // the server keeps the dialog open until it is closed
+    Store.sendCloseNpcRequest();
+    return;
+  }
+
+  runInAction(() => {
+    Store.npcShop = { npcId: Store.talkingToNpc ?? 0, items: [] };
+    Store.inventoryEnabled = true;
+  });
+});
+
+// Store items: [slot, 12 bytes of item data] after the count at byte 5.
+// (the generated getItems() doesn't know the item data size)
+const STORE_ITEMS_OFFSET = 6;
+const STORE_ITEM_SIZE = 13;
+
+EventBus.on('StoreItemList', packet => {
+  const count = packet.getUint8(5);
+  const bytes = new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength);
+  const items: { slot: number; item: Item }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const offset = STORE_ITEMS_OFFSET + i * STORE_ITEM_SIZE;
+    if (offset + STORE_ITEM_SIZE > bytes.length) break;
+    items.push({
+      slot: bytes[offset],
+      item: ItemSerializer.DeserializeItem(
+        bytes.slice(offset + 1, offset + STORE_ITEM_SIZE)
+      ),
+    });
+  }
+  console.log(`StoreItemList: ${items.length} items`);
+
+  runInAction(() => {
+    if (Store.npcShop) Store.npcShop.items = items;
+  });
+});
+
+EventBus.on('ItemBought', packet => {
+  const p = new ItemBoughtPacket(packet);
+  const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+  console.log(`ItemBought: slot ${p.InventorySlot}`, item);
+
+  runInAction(() => {
+    Store.playerData.items[p.InventorySlot] = item;
+  });
+});
+
+EventBus.on('NpcItemBuyFailed', () => {
+  Store.addNotification('Cannot buy the item', 'error');
+});
+
+EventBus.on('NpcItemSellResult', packet => {
+  const p = new NpcItemSellResultPacket(packet);
+  const slot = Store.pendingSellSlot;
+  Store.pendingSellSlot = null;
+  console.log(`NpcItemSellResult: ${p.Success}, money ${p.Money}, slot ${slot}`);
+
+  if (!p.Success) {
+    Store.addNotification('Cannot sell the item', 'error');
+    return;
+  }
+
+  runInAction(() => {
+    Store.playerData.money = p.Money;
+    if (slot !== null) Store.playerData.items[slot] = null as any;
+  });
+  if (slot !== null && slot <= InventoryConstants.LastEquippableItemSlotIndex) {
+    Store.syncPlayerAppearance();
   }
 });

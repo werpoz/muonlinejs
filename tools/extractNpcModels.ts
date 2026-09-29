@@ -19,6 +19,9 @@ type ClassInfo = {
   base: string;
   scale?: number;
   model?: string;
+  // NPC models that are only a skeleton get body part models
+  // (head, upper, lower, gloves, boots) of a numbered variant
+  bodyParts?: { parts: string[]; index: number };
   kind: 'monster' | 'npc';
 };
 
@@ -40,6 +43,9 @@ for (const file of walk(join(root, 'Client.Main/Objects'))) {
   const info = src.match(/\[NpcInfo\((\d+),\s*"([^"]*)"\)\]/);
   const scale = src.match(/\bScale\s*=\s*([\d.]+)f?\s*;/);
   const model = src.match(/\bModel\s*=\s*await\s+BMDLoader\.Instance\.Prepare\(\$?"([^"{}]+)"\)/);
+  const parts = src.match(
+    /SetBodyPartsAsync\(\s*\$?"[^"]*",\s*"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*(\d+)/
+  );
 
   classes.set(cls[1], {
     number: info ? +info[1] : undefined,
@@ -47,6 +53,9 @@ for (const file of walk(join(root, 'Client.Main/Objects'))) {
     base: cls[2],
     scale: scale ? +scale[1] : undefined,
     model: model?.[1],
+    bodyParts: parts
+      ? { parts: parts.slice(1, 6), index: +parts[6] }
+      : undefined,
     kind: relative(root, file).includes('/Monsters/') ? 'monster' : 'npc',
   });
 }
@@ -67,7 +76,25 @@ for (const dir of readdirSync(ASSETS_DIR)) {
   }
 }
 
-const table: Record<number, { name: string; model: string; scale: number; kind: string }> = {};
+// body part file name as in game-assets ('' when there is no such model)
+function bodyPart(prefix: string, index: number) {
+  if (!prefix) return '';
+  const suffix = index.toString().padStart(2, '0');
+  for (const name of [prefix, `${prefix}s`]) {
+    const file = assets.get(`npc/${name}${suffix}.glb`.toLowerCase());
+    if (file) return file.slice('NPC/'.length, -`${suffix}.glb`.length);
+  }
+  return '';
+}
+
+type Entry = {
+  name: string;
+  model: string;
+  scale: number;
+  kind: string;
+  bodyParts?: { parts: string[]; index: number };
+};
+const table: Record<number, Entry> = {};
 const missing: string[] = [];
 
 for (const [className, c] of classes) {
@@ -91,6 +118,14 @@ for (const [className, c] of classes) {
     scale: (resolve(className, 'scale') as number | undefined) ?? 1,
     kind: c.kind,
   };
+
+  if (c.bodyParts) {
+    const { parts, index } = c.bodyParts;
+    table[c.number].bodyParts = {
+      parts: parts.map(p => bodyPart(p, index)),
+      index,
+    };
+  }
 }
 
 const sorted = Object.keys(table)

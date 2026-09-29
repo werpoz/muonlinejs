@@ -2,6 +2,7 @@ import type { World } from '../ecs/world';
 import { loadGLTF } from './modelLoader';
 import { ModelObject } from './modelObject';
 import { MonsterObject } from './monsterObject';
+import { PlayerObject } from './playerObject';
 import npcModels from './npcModels.json';
 
 type NpcModel = {
@@ -9,6 +10,9 @@ type NpcModel = {
   model: string;
   scale: number;
   kind: 'monster' | 'npc';
+  // the model is only a skeleton: body part models (head, upper, lower,
+  // gloves, boots) of a numbered variant are added on it
+  bodyParts?: { parts: string[]; index: number };
 };
 
 const models = npcModels as Record<string, NpcModel>;
@@ -30,14 +34,33 @@ export function getGenericModelFactory(
   // player based NPCs need their equipment set up by a PlayerObject
   if (!info || info.model.startsWith('Player/')) return undefined;
 
-  const Base = info.kind === 'monster' ? MonsterObject : ModelObject;
-  const factory = class extends Base {
-    async init(world: World) {
-      this.load(await loadGLTF(info.model, world));
-    }
-  };
+  const factory = info.bodyParts
+    ? createBodyPartsFactory(info.model, info.bodyParts)
+    : createSimpleFactory(info);
   factory.OverrideScale = info.scale;
 
   cache.set(type, factory);
   return factory;
+}
+
+function createSimpleFactory(info: NpcModel): typeof ModelObject {
+  const Base = info.kind === 'monster' ? MonsterObject : ModelObject;
+  return class extends Base {
+    async init(world: World) {
+      this.load(await loadGLTF(info.model, world));
+    }
+  };
+}
+
+function createBodyPartsFactory(
+  model: string,
+  { parts, index }: NonNullable<NpcModel['bodyParts']>
+): typeof ModelObject {
+  const [head, upper, lower, gloves, boots] = parts;
+  return class extends PlayerObject {
+    async init(world: World) {
+      this.load(await loadGLTF(model, world));
+      this.setBodyPartsAsync('NPC/', head, upper, lower, gloves, boots, index);
+    }
+  };
 }
