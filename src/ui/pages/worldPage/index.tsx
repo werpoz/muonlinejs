@@ -9,6 +9,7 @@ import { CharacterInfo } from './components/characterInfo';
 import { Inventory } from './components/inventory';
 import { Chat } from './components/chat';
 import { NpcShop } from './components/npcShop';
+import { Vault } from './components/vault';
 
 const HUD = observer(() => {
   return (
@@ -16,6 +17,7 @@ const HUD = observer(() => {
       <BottomBar />
       <div className="panels-stack">
         <NpcShop />
+        <Vault />
         <Inventory />
         <CharacterInfo />
       </div>

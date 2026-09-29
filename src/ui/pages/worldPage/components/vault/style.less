@@ -1,0 +1,67 @@
+.mu-window-slot.vault .mu-window {
+  .vault-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 20px);
+    grid-template-rows: repeat(15, 20px);
+  }
+
+  .vault-cell {
+    background: url('/interface/item_box.png');
+    cursor: pointer;
+  }
+
+  .vault-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    box-sizing: border-box;
+    background-color: #1a3c7a60;
+    cursor: pointer;
+
+    &:hover {
+      outline: 1px solid #ffd24a;
+      outline-offset: -1px;
+    }
+
+    &.held {
+      outline: 1px solid #ffd24a;
+      opacity: 0.5;
+    }
+  }
+
+  .vault-money {
+    left: 15px;
+    top: 356px;
+    width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    .zen {
+      flex: 1;
+      color: #ffd24a;
+      white-space: nowrap;
+    }
+
+    input {
+      width: 44px;
+      height: 12px;
+      padding: 0 2px;
+      font-size: 8px;
+      color: #fff;
+      background: #000;
+      border: 1px solid #666;
+    }
+
+    button {
+      height: 14px;
+      padding: 0 3px;
+      font-size: 8px;
+      color: #f0e0b0;
+      background: #2a2a2a;
+      border: 1px solid #777;
+      cursor: pointer;
+    }
+  }
+}

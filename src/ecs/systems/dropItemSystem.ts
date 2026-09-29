@@ -21,7 +21,7 @@ export const DropItemSystem: ISystemFactory = world => {
       if (!pressed) world.pointerConsumed = false;
       if (!newClick) return;
 
-      const slot = Store.heldItemSlot;
+      const slot = Store.heldInventorySlot;
       if (slot === null || world.pointerButton !== 0) return;
 
       // the click belongs to the drop, not to walking/attacking/picking up

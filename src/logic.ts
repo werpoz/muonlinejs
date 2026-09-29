@@ -4,6 +4,7 @@ import { deserializeAppearance } from './common/deserializeAppearance';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
 import { InventoryConstants } from './common/inventoryConstants';
+import { ItemStorageKind } from './common/itemStorageKind';
 import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
 import { playEnergyBall } from './effects/energyBall';
 import { playFlame } from './effects/flame';
@@ -34,6 +35,7 @@ import {
   NpcWindowResponseNpcWindowEnum,
   ItemBoughtPacket,
   NpcItemSellResultPacket,
+  VaultMoneyUpdatePacket,
   SkillAnimationPacket,
   AreaSkillAnimationPacket,
   SkillListUpdatePacket,
@@ -939,16 +941,18 @@ EventBus.on('ItemMoved', packet => {
   if (!move) return;
 
   const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+  // TargetStorageType: 0 inventory, 1 vault
+  const targetStorage = p.TargetStorageType as ItemStorageKind;
   runInAction(() => {
-    const items = Store.playerData.items;
-    items[move.from] = null as any;
-    items[p.TargetSlot] = item;
+    Store.itemsOf(move.fromStorage)[move.from] = null;
+    Store.itemsOf(targetStorage)[p.TargetSlot] = item;
   });
 
   const last = InventoryConstants.LastEquippableItemSlotIndex;
-  if (move.from <= last || p.TargetSlot <= last) {
-    Store.syncPlayerAppearance();
-  }
+  const touchesEquipment =
+    (move.fromStorage === ItemStorageKind.Inventory && move.from <= last) ||
+    (targetStorage === ItemStorageKind.Inventory && p.TargetSlot <= last);
+  if (touchesEquipment) Store.syncPlayerAppearance();
 });
 
 EventBus.on('ItemMoveRequestFailed', () => {
@@ -1054,6 +1058,9 @@ EventBus.on('SkillAnimation', packet => {
 
 // NPC shops
 
+// vault of the original client: 8 columns x 15 rows
+const VAULT_SIZE = 120;
+
 const MERCHANT_WINDOWS = [
   NpcWindowResponseNpcWindowEnum.Merchant,
   NpcWindowResponseNpcWindowEnum.Merchant1,
@@ -1062,6 +1069,14 @@ const MERCHANT_WINDOWS = [
 EventBus.on('NpcWindowResponse', packet => {
   const p = new NpcWindowResponsePacket(packet);
   console.log(`NpcWindowResponse: ${NpcWindowResponseNpcWindowEnum[p.Window]}`);
+
+  if (p.Window === NpcWindowResponseNpcWindowEnum.VaultStorage) {
+    runInAction(() => {
+      Store.vault = { items: new Array(VAULT_SIZE).fill(null), money: 0 };
+      Store.inventoryEnabled = true;
+    });
+    return;
+  }
 
   if (!MERCHANT_WINDOWS.includes(p.Window)) {
     Store.addNotification('This NPC is not supported yet', 'error');
@@ -1099,7 +1114,13 @@ EventBus.on('StoreItemList', packet => {
   console.log(`StoreItemList: ${items.length} items`);
 
   runInAction(() => {
-    if (Store.npcShop) Store.npcShop.items = items;
+    if (Store.vault) {
+      const vaultItems = new Array(VAULT_SIZE).fill(null);
+      items.forEach(({ slot, item }) => (vaultItems[slot] = item));
+      Store.vault.items = vaultItems;
+    } else if (Store.npcShop) {
+      Store.npcShop.items = items;
+    }
   });
 });
 
@@ -1166,4 +1187,17 @@ EventBus.on('AreaSkillAnimation', packet => {
     const flame = playFlame(world.scene, pos);
     setTimeout(() => flame.stop(), FLAME_EFFECT_TIME_MS);
   }
+});
+
+EventBus.on('VaultMoneyUpdate', packet => {
+  const p = new VaultMoneyUpdatePacket(packet);
+  console.log(
+    `VaultMoneyUpdate: ${p.Success}, vault ${p.VaultMoney}, inventory ${p.InventoryMoney}`
+  );
+  if (!p.Success) Store.addNotification('Cannot move the money', 'error');
+
+  runInAction(() => {
+    if (Store.vault) Store.vault.money = p.VaultMoney;
+    Store.playerData.money = p.InventoryMoney;
+  });
 });

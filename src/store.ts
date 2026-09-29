@@ -29,7 +29,9 @@ import {
   CloseNpcRequestPacket,
   BuyItemFromNpcRequestPacket,
   SellItemToNpcRequestPacket,
-  StorageTypeEnum,
+  VaultClosedPacket,
+  VaultMoveMoneyRequestPacket,
+  VaultMoveMoneyRequestVaultMoneyMoveDirectionEnum,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -63,6 +65,7 @@ import { Scalar } from './libs/babylon/exports';
 import { InventoryConstants } from './common/inventoryConstants';
 import { ItemGroups } from './common/objects/enum';
 import { ItemsDatabase } from './common/itemsDatabase';
+import { ItemStorageKind } from './common/itemStorageKind';
 import { spawnPlayer } from './logic';
 
 const CONFIG_KEY = '_mu_key';
@@ -338,6 +341,11 @@ export const Store = new (class _Store {
 
   // inventory slot of the item picked up with the mouse
   heldItemSlot: number | null = null;
+  // storage of the held item: inventory or vault
+  heldItemStorage: ItemStorageKind = ItemStorageKind.Inventory;
+
+  // open vault (Baz): 120 slots (8x15) and its money
+  vault: { items: (Item | null)[]; money: number } | null = null;
 
   // learned skills and the one used with the right mouse button
   skills: { index: number; number: number; level: number }[] = [];
@@ -347,7 +355,12 @@ export const Store = new (class _Store {
   npcShop: { npcId: number; items: { slot: number; item: Item }[] } | null =
     null;
   // move sent to the server, ItemMoved only tells the target slot
-  pendingItemMove: { from: number; to: number } | null = null;
+  pendingItemMove: {
+    from: number;
+    to: number;
+    fromStorage: ItemStorageKind;
+    toStorage: ItemStorageKind;
+  } | null = null;
 
   config: ConfigType = {
     csIp: CS_HOST,
@@ -385,6 +398,8 @@ export const Store = new (class _Store {
       characterInfoEnabled: observable,
       inventoryEnabled: observable,
       heldItemSlot: observable,
+      heldItemStorage: observable,
+      vault: observable,
       skills: observable,
       currentSkill: observable,
       npcShop: observable,
@@ -682,16 +697,38 @@ export const Store = new (class _Store {
 
   // Click on an inventory or equipment slot: pick the item up, or put the
   // held item there.
-  onItemSlotClick(slot: number): void {
+  itemsOf(storage: ItemStorageKind): (Item | null)[] {
+    return storage === ItemStorageKind.Vault
+      ? (this.vault?.items ?? [])
+      : this.playerData.items;
+  }
+
+  // the held item, only when it comes from the inventory (drop, sell)
+  get heldInventorySlot(): number | null {
+    return this.heldItemStorage === ItemStorageKind.Inventory
+      ? this.heldItemSlot
+      : null;
+  }
+
+  onItemSlotClick(
+    slot: number,
+    storage: ItemStorageKind = ItemStorageKind.Inventory
+  ): void {
     runInAction(() => {
       const held = this.heldItemSlot;
       if (held === null) {
-        if (this.playerData.items[slot]) this.heldItemSlot = slot;
+        if (this.itemsOf(storage)[slot]) {
+          this.heldItemSlot = slot;
+          this.heldItemStorage = storage;
+        }
         return;
       }
 
+      const heldStorage = this.heldItemStorage;
       this.heldItemSlot = null;
-      if (held !== slot) this.moveItem(held, slot);
+      if (held !== slot || heldStorage !== storage) {
+        this.moveItem(held, slot, heldStorage, storage);
+      }
     });
   }
 
@@ -726,7 +763,28 @@ export const Store = new (class _Store {
     this.sendToGS(CloseNpcRequestPacket.createPacket().buffer);
   }
 
+  moveVaultMoney(toVault: boolean, amount: number): void {
+    const packet = VaultMoveMoneyRequestPacket.createPacket();
+    packet.Direction = toVault
+      ? VaultMoveMoneyRequestVaultMoneyMoveDirectionEnum.InventoryToVault
+      : VaultMoveMoneyRequestVaultMoneyMoveDirectionEnum.VaultToInventory;
+    packet.Amount = amount;
+    this.sendToGS(packet.buffer);
+  }
+
   closeNpc(): void {
+    if (this.vault) {
+      runInAction(() => {
+        this.vault = null;
+        if (this.heldItemStorage === ItemStorageKind.Vault) {
+          this.heldItemSlot = null;
+        }
+      });
+      this.talkingToNpc = null;
+      this.sendToGS(VaultClosedPacket.createPacket().buffer);
+      return;
+    }
+
     if (!this.npcShop) return;
     runInAction(() => {
       this.npcShop = null;
@@ -846,18 +904,23 @@ export const Store = new (class _Store {
     this.sendToGS(packet.buffer);
   }
 
-  moveItem(from: number, to: number): void {
-    const item = this.playerData.items[from];
+  moveItem(
+    from: number,
+    to: number,
+    fromStorage: ItemStorageKind = ItemStorageKind.Inventory,
+    toStorage: ItemStorageKind = ItemStorageKind.Inventory
+  ): void {
+    const item = this.itemsOf(fromStorage)[from];
     if (!item?.raw || this.pendingItemMove) return;
 
     const packet = ItemMoveRequestPacket.createPacket();
-    packet.FromStorage = StorageTypeEnum.Inventory;
+    packet.FromStorage = fromStorage;
     packet.FromSlot = from;
     packet.setItemData(item.raw, item.raw.length);
-    packet.ToStorage = StorageTypeEnum.Inventory;
+    packet.ToStorage = toStorage;
     packet.ToSlot = to;
 
-    this.pendingItemMove = { from, to };
+    this.pendingItemMove = { from, to, fromStorage, toStorage };
     this.sendToGS(packet.buffer);
   }
 

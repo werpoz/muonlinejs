@@ -8,6 +8,7 @@ import { Item } from '../../../../../ecs/world';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
 import { isUsableFromInventory } from '../../../../../common/consumables';
+import { ItemStorageKind } from '../../../../../common/itemStorageKind';
 
 const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
 const COLUMNS = InventoryConstants.RowSize;
@@ -34,7 +35,10 @@ const EQUIPMENT: [number, string, number, number, number, number][] = [
 ];
 
 const heldClass = (slot: number) =>
-  Store.heldItemSlot === slot ? ' held' : '';
+  Store.heldItemSlot === slot &&
+  Store.heldItemStorage === ItemStorageKind.Inventory
+    ? ' held'
+    : '';
 
 const itemName = (item: Item) => {
   const config = ItemsDatabase.getItem(item.group, item.num);

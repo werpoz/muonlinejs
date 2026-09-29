@@ -8,7 +8,8 @@ import { ItemIcon } from '../itemIcon';
 export const HeldItem = observer(() => {
   const ref = useRef<HTMLDivElement>(null);
   const slot = Store.heldItemSlot;
-  const item = slot === null ? null : Store.playerData.items[slot];
+  const item =
+    slot === null ? null : Store.itemsOf(Store.heldItemStorage)[slot];
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {

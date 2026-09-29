@@ -24,7 +24,7 @@ export const NpcShop = observer(() => {
   if (!shop) return null;
 
   const sellHeldItem = () => {
-    const held = Store.heldItemSlot;
+    const held = Store.heldInventorySlot;
     if (held === null) return;
     Store.cancelHeldItem();
     Store.sellItem(held);
