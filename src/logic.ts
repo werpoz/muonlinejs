@@ -29,6 +29,8 @@ import {
   ItemConsumptionFailedPacket,
   ItemDurabilityChangedPacket,
   ItemRemovedPacket,
+  ItemMovedPacket,
+  ItemMoveRequestFailedPacket,
   ItemAddedToInventoryPacket,
   ItemPickUpRequestFailedPacket,
   ItemPickUpRequestFailedItemPickUpFailReasonEnum,
@@ -898,4 +900,29 @@ EventBus.on('CharacterStatIncreaseResponse', packet => {
         break;
     }
   });
+});
+
+EventBus.on('ItemMoved', packet => {
+  const p = new ItemMovedPacket(packet);
+  const move = Store.pendingItemMove;
+  Store.pendingItemMove = null;
+  console.log(`ItemMoved: to slot ${p.TargetSlot}`, move);
+  if (!move) return;
+
+  const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+  runInAction(() => {
+    const items = Store.playerData.items;
+    items[move.from] = null as any;
+    items[p.TargetSlot] = item;
+  });
+
+  const last = InventoryConstants.LastEquippableItemSlotIndex;
+  if (move.from <= last || p.TargetSlot <= last) {
+    Store.syncPlayerAppearance();
+  }
+});
+
+EventBus.on('ItemMoveRequestFailed', () => {
+  Store.pendingItemMove = null;
+  Store.addNotification('Cannot move the item there', 'error');
 });

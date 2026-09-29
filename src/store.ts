@@ -17,6 +17,8 @@ import {
   PublicChatMessagePacket,
   ConsumeItemRequestPacket,
   IncreaseCharacterStatPointPacket,
+  ItemMoveRequestPacket,
+  StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -323,6 +325,11 @@ export const Store = new (class _Store {
   characterInfoEnabled = false;
   inventoryEnabled = false;
 
+  // inventory slot of the item picked up with the mouse
+  heldItemSlot: number | null = null;
+  // move sent to the server, ItemMoved only tells the target slot
+  pendingItemMove: { from: number; to: number } | null = null;
+
   config: ConfigType = {
     csIp: CS_HOST,
     csPort: CS_PORT,
@@ -358,6 +365,7 @@ export const Store = new (class _Store {
       world: observable,
       characterInfoEnabled: observable,
       inventoryEnabled: observable,
+      heldItemSlot: observable,
     });
     this.loadConfig();
   }
@@ -647,6 +655,36 @@ export const Store = new (class _Store {
     const packet = IncreaseCharacterStatPointPacket.createPacket();
     packet.StatType = stat;
 
+    this.sendToGS(packet.buffer);
+  }
+
+  // Click on an inventory or equipment slot: pick the item up, or put the
+  // held item there.
+  onItemSlotClick(slot: number): void {
+    runInAction(() => {
+      const held = this.heldItemSlot;
+      if (held === null) {
+        if (this.playerData.items[slot]) this.heldItemSlot = slot;
+        return;
+      }
+
+      this.heldItemSlot = null;
+      if (held !== slot) this.moveItem(held, slot);
+    });
+  }
+
+  moveItem(from: number, to: number): void {
+    const item = this.playerData.items[from];
+    if (!item?.raw || this.pendingItemMove) return;
+
+    const packet = ItemMoveRequestPacket.createPacket();
+    packet.FromStorage = StorageTypeEnum.Inventory;
+    packet.FromSlot = from;
+    packet.setItemData(item.raw, item.raw.length);
+    packet.ToStorage = StorageTypeEnum.Inventory;
+    packet.ToSlot = to;
+
+    this.pendingItemMove = { from, to };
     this.sendToGS(packet.buffer);
   }
 

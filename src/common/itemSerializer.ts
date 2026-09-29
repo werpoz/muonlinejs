@@ -17,6 +17,9 @@ function IsTrainablePet(item: Item) {
 /// At the moment, each item is serialized into a 12-byte long part of an array:
 /// Byte Order: ItemCode Options Dura Exe Ancient Kind/380Opt HarmonyOpt Socket1 Socket2 Socket3 Socket4 Socket5.
 /// </summary>
+// size of the item data in season 6 packets
+const ItemDataSize = 12;
+
 export class ItemSerializer {
   static readonly NeededSpace = 12;
 
@@ -115,6 +118,7 @@ export class ItemSerializer {
     item.lvl = castToByte((array[1] & LevelMask) >> 3);
 
     item.durability = array[2];
+    item.raw = Array.from(array.subarray(0, ItemDataSize));
 
     // if (item.Definition.PossibleItemOptions.Any(o =>
     //         o.PossibleOptions.Any(i => i.OptionType == ItemOptionTypes.Excellent)))

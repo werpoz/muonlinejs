@@ -8,6 +8,7 @@
   border: 2px solid #000;
   color: #fff;
   font-size: 14px;
+  pointer-events: auto;
 
   @slot-size: 32px;
 
@@ -191,5 +192,11 @@
       -ms-user-select: none;
       transform: scale(1.4);
     }
+  }
+
+  .equipment-item.held,
+  .inventory-item.held .bg {
+    outline: 2px solid #ffd24a;
+    opacity: 0.5;
   }
 }

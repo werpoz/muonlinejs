@@ -273,6 +273,11 @@ export class ModelObject {
   }
 
   Unload() {
+    // remove the model (e.g. an unequipped weapon), the node stays for reuse
+    if (this.gltf) {
+      this.gltf.mesh.dispose();
+      this.gltf = null;
+    }
     this.Ready = false;
   }
 

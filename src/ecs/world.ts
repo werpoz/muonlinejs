@@ -23,6 +23,8 @@ export type Item = {
   lvl?: number;
   // stack size for potions, jewels etc.
   durability?: number;
+  // original item bytes, sent back to the server when moving the item
+  raw?: number[];
   isExcellent?: boolean;
   hasSkill?: boolean;
 };
