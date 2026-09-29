@@ -12,6 +12,7 @@ import { Chat } from './components/chat';
 import { NpcShop } from './components/npcShop';
 import { Vault } from './components/vault';
 import { ChaosMachine } from './components/chaosMachine';
+import { Friends, FriendRequestDialog } from './components/friends';
 import { Trade, TradeRequestDialog } from './components/trade';
 import { PartyFrame, PartyRequestDialog } from './components/party';
 
@@ -26,11 +27,13 @@ const HUD = observer(() => {
         <Trade />
         <Inventory />
         <CharacterInfo />
+        <Friends />
       </div>
       <MapsList />
       <Chat />
       <TradeRequestDialog />
       <PartyRequestDialog />
+      <FriendRequestDialog />
       <PartyFrame />
     </div>
   );

@@ -15,6 +15,10 @@ import {
   HitRequestPacket,
   PickupItemRequestPacket,
   PublicChatMessagePacket,
+  WhisperMessagePacket,
+  FriendAddRequestPacket,
+  FriendAddResponsePacket,
+  FriendDeletePacket,
   ConsumeItemRequestPacket,
   IncreaseCharacterStatPointPacket,
   ItemMoveRequestPacket,
@@ -318,7 +322,25 @@ class PlayerData {
 
 export type NotificationType = 'info' | 'error';
 
-export type ChatLine = { sender: string; text: string; system?: boolean };
+export type ChatLine = {
+  sender: string;
+  text: string;
+  system?: boolean;
+  // received whisper, or sent one (to: receiver)
+  whisper?: boolean;
+  to?: string;
+};
+
+export type Friend = {
+  name: string;
+  // server of the friend, OFFLINE_SERVER when offline
+  serverId: number;
+};
+
+export const OFFLINE_SERVER = 0xff;
+
+export const isFriendOnline = (friend: Friend) =>
+  friend.serverId !== OFFLINE_SERVER;
 
 // trade window of the original client: 8 columns x 4 rows for each side
 export const TRADE_SIZE = 32;
@@ -394,6 +416,16 @@ export const Store = new (class _Store {
   trade: TradeState | null = null;
   // name of the player who asked us to trade (answer dialog)
   tradeRequestFrom: string | null = null;
+  // friends of the messenger and the window to manage them (F)
+  friends: Friend[] = [];
+  friendsEnabled = false;
+  // player who wants to add us as a friend (answer dialog)
+  friendRequestFrom: string | null = null;
+  // last player who whispered us, for /r
+  lastWhisperFrom: string | null = null;
+  // text to open the chat input with (e.g. "/w name ")
+  chatDraft: string | null = null;
+
   // our party (the first member is the leader), null without party
   party: PartyMember[] | null = null;
   // player who invited us to a party (answer dialog)
@@ -460,6 +492,10 @@ export const Store = new (class _Store {
       chaosMachine: observable,
       trade: observable,
       party: observable,
+      friends: observable,
+      friendsEnabled: observable,
+      friendRequestFrom: observable,
+      chatDraft: observable,
       partyRequestFrom: observable,
       tradeRequestFrom: observable,
       skills: observable,
@@ -739,6 +775,87 @@ export const Store = new (class _Store {
     packet.setCharacter(name);
     packet.setMessage(text);
 
+    this.sendToGS(packet.buffer);
+  }
+
+  // Text typed in the chat: commands of the client or a public message.
+  //   /w name text   whisper       /r text        reply to the last whisper
+  //   /trade [name]  trade         /party [name]  party invitation
+  //   /friend name   add a friend
+  submitChat(message: string): void {
+    const command = (name: string) =>
+      new RegExp(`^/${name}(?:\\s+(.*))?$`, 'i').exec(message)?.[1]?.trim() ??
+      (new RegExp(`^/${name}$`, 'i').test(message) ? '' : null);
+
+    const whisper = /^\/(?:w|whisper)\s+(\S+)\s+(.+)$/i.exec(message);
+    const reply = command('r');
+    const trade = command('trade');
+    const party = command('party');
+    const friend = command('friend');
+
+    if (whisper) this.sendWhisper(whisper[1], whisper[2]);
+    else if (reply !== null) {
+      if (this.lastWhisperFrom && reply) this.sendWhisper(this.lastWhisperFrom, reply);
+      else this.addNotification('Nobody whispered you yet', 'error');
+    } else if (trade !== null) this.requestTrade(trade || undefined);
+    else if (party !== null) this.inviteToParty(party || undefined);
+    else if (friend) this.addFriend(friend);
+    else if (message) this.sendChatMessage(message);
+  }
+
+  sendWhisper(receiver: string, text: string): void {
+    // header (3) + receiver name (10) + message + null terminator
+    const packet = WhisperMessagePacket.createPacket(13 + text.length + 1);
+    packet.setReceiverName(receiver);
+    packet.setMessage(text);
+    this.sendToGS(packet.buffer);
+
+    // OpenMU doesn't answer when the player is not online
+    this.addChatLine({ sender: this.characterName, text, whisper: true, to: receiver });
+  }
+
+  // opens the chat input with this text
+  openChat(text: string): void {
+    runInAction(() => {
+      this.chatDraft = text;
+    });
+  }
+
+  takeChatDraft(): string | null {
+    const draft = this.chatDraft;
+    runInAction(() => {
+      this.chatDraft = null;
+    });
+    return draft;
+  }
+
+  addFriend(name: string): void {
+    if (this.friends.some(f => f.name.toLowerCase() === name.toLowerCase())) {
+      this.addNotification(`${name} is already your friend`, 'error');
+      return;
+    }
+    const packet = FriendAddRequestPacket.createPacket();
+    packet.setFriendName(name);
+    this.sendToGS(packet.buffer);
+    this.addNotification(`Friend request sent to ${name}`);
+  }
+
+  deleteFriend(name: string): void {
+    const packet = FriendDeletePacket.createPacket();
+    packet.setFriendName(name);
+    this.sendToGS(packet.buffer);
+  }
+
+  answerFriendRequest(accept: boolean): void {
+    const name = this.friendRequestFrom;
+    if (!name) return;
+    runInAction(() => {
+      this.friendRequestFrom = null;
+    });
+
+    const packet = FriendAddResponsePacket.createPacket();
+    packet.Accepted = accept;
+    packet.setFriendRequesterName(name);
     this.sendToGS(packet.buffer);
   }
 

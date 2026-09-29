@@ -38,6 +38,12 @@ import {
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
+  ChatMessageChatMessageTypeEnum,
+  MessengerInitializationPacket,
+  FriendAddedPacket,
+  FriendRequestPacket,
+  FriendDeletedPacket,
+  FriendOnlineStateUpdatePacket,
   PartyRequestPacket,
   PartyListPacket,
   PartyHealthUpdatePacket,
@@ -488,7 +494,9 @@ EventBus.on('ChatMessage', packet => {
     `ChatMessage: ${p.Type}, sender:${p.Sender}, msg: ${p.Message}`,
     p
   );
-  Store.addChatLine({ sender: p.Sender, text: p.Message });
+  const whisper = p.Type === ChatMessageChatMessageTypeEnum.Whisper;
+  if (whisper) Store.lastWhisperFrom = p.Sender;
+  Store.addChatLine({ sender: p.Sender, text: p.Message, whisper });
 });
 
 EventBus.on('ObjectAnimation', packet => {
@@ -1518,4 +1526,53 @@ EventBus.on('ItemCraftingResult', packet => {
     CRAFTING_RESULT_MESSAGES[p.Result] ?? 'The combination failed',
     p.Result === ItemCraftingResultCraftingResultEnum.Success ? 'info' : 'error'
   );
+});
+
+// friend list after entering the game; all offline, FriendOnlineStateUpdate
+// tells who is online
+EventBus.on('MessengerInitialization', packet => {
+  const p = new MessengerInitializationPacket(packet);
+  const friends = p.getFriends().map(f => ({ name: f.Name, serverId: f.ServerId }));
+  console.log(`MessengerInitialization: ${friends.map(f => f.name).join(', ')}`);
+
+  runInAction(() => {
+    Store.friends = friends;
+  });
+});
+
+function setFriend(name: string, serverId: number) {
+  runInAction(() => {
+    const friend = Store.friends.find(f => f.name === name);
+    if (friend) friend.serverId = serverId;
+    else Store.friends.push({ name, serverId });
+  });
+}
+
+EventBus.on('FriendAdded', packet => {
+  const p = new FriendAddedPacket(packet);
+  console.log(`FriendAdded: ${p.FriendName} (${p.ServerId})`);
+  setFriend(p.FriendName, p.ServerId);
+  Store.addNotification(`${p.FriendName} is now your friend`);
+});
+
+EventBus.on('FriendOnlineStateUpdate', packet => {
+  const p = new FriendOnlineStateUpdatePacket(packet);
+  console.log(`FriendOnlineStateUpdate: ${p.FriendName} (${p.ServerId})`);
+  setFriend(p.FriendName, p.ServerId);
+});
+
+EventBus.on('FriendRequest', packet => {
+  const p = new FriendRequestPacket(packet);
+  console.log(`FriendRequest from ${p.Requester}`);
+  runInAction(() => {
+    Store.friendRequestFrom = p.Requester;
+  });
+});
+
+EventBus.on('FriendDeleted', packet => {
+  const p = new FriendDeletedPacket(packet);
+  console.log(`FriendDeleted: ${p.FriendName}`);
+  runInAction(() => {
+    Store.friends = Store.friends.filter(f => f.name !== p.FriendName);
+  });
 });

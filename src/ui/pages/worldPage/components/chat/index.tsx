@@ -1,6 +1,6 @@
 import './style.less';
 import { observer } from 'mobx-react-lite';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Store } from '../../../../../store';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 
@@ -18,6 +18,16 @@ export const Chat = observer(() => {
     setTimeout(() => inputRef.current?.focus());
   });
 
+  // opened from somewhere else with a text (whisper to a friend)
+  const draft = Store.chatDraft;
+  useEffect(() => {
+    const text = Store.takeChatDraft();
+    if (text === null) return;
+    setText(text);
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus());
+  }, [draft]);
+
   const close = () => {
     setText('');
     setOpen(false);
@@ -27,8 +37,15 @@ export const Chat = observer(() => {
     <div className="chat">
       <div className="lines">
         {Store.chatMessages.map((line, i) => (
-          <div key={i} className={line.system ? 'line system' : 'line'}>
-            {line.sender && <span className="sender">{line.sender}: </span>}
+          <div
+            key={i}
+            className={`line${line.system ? ' system' : ''}${line.whisper ? ' whisper' : ''}`}
+          >
+            {line.to ? (
+              <span className="sender">[to {line.to}] </span>
+            ) : (
+              line.sender && <span className="sender">{line.sender}: </span>
+            )}
             {line.text}
           </div>
         ))}
@@ -44,14 +61,7 @@ export const Chat = observer(() => {
             if (e.key === 'Escape') close();
             if (e.key !== 'Enter') return;
 
-            const message = text.trim();
-            // /trade [name]: trade with that player (or the nearest one)
-            const trade = /^\/trade(?:\s+(\S+))?$/i.exec(message);
-            // /party [name]: invite that player (or the nearest one)
-            const party = /^\/party(?:\s+(\S+))?$/i.exec(message);
-            if (trade) Store.requestTrade(trade[1]);
-            else if (party) Store.inviteToParty(party[1]);
-            else if (message) Store.sendChatMessage(message);
+            Store.submitChat(text.trim());
             close();
           }}
         />

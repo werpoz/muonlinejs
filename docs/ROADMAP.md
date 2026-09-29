@@ -36,6 +36,16 @@
 - [x] Tooltips de objetos: daño/defensa por nivel, durabilidad, requisitos (en rojo si no se cumplen), clases, habilidad, suerte, opción adicional y opciones excelentes
 - [x] Joyas de Bless / Soul / Life: coger la joya y hacer clic en un objeto del inventario
 - [x] Máquina del Caos (Chaos Goblin): poner objetos, combinar (el servidor deduce la receta) y resultado
+- [x] Susurros (`/w nombre texto`, `/r texto`) y lista de amigos (F): añadir, aceptar, estado en línea, susurrar y borrar
+- [ ] Cartas del messenger (enviar, leer y borrar)
+- [ ] Guild: crear en el Guild Master, miembros, chat de guild y guerras
+- [ ] Tienda personal (vender sentado con letrero)
+- [ ] PvP: animaciones de ataque de otros jugadores y atacarlos
+- [ ] Minimapa (Tab) y ventana de opciones
+- [ ] Sonido y música
+- [ ] Misiones y cambio de clase (2.ª y 3.ª)
+- [ ] Eventos: Blood Castle, Devil Square y Chaos Castle
+- [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
 - [x] Haces de luz de Noria (se veían como placas negras enormes)

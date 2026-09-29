@@ -34,6 +34,15 @@ STCPackets.forEach(p => {
   }
 });
 
+// ChatMessage: the code is the message type (0 normal, 2 whisper), so
+// whispers come with code 0x02 (PatchVersionOkay also has it, but it's only
+// 4 bytes long)
+const WHISPER_CODE = 0x02;
+const chatMessage = STCPackets.find(p => p.Name === 'ChatMessage');
+if (chatMessage) {
+  (packetsCacheByCode[WHISPER_CODE] ??= []).push(chatMessage);
+}
+
 // Several packets can share a code (e.g. 0x22: item added to inventory,
 // pick up failed, money update). Prefer a matching sub code, then a
 // matching fixed length; fall back to the first packet without sub code.

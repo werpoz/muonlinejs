@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { SkillBar } from '../skillBar';
+import { toggleFriends } from '../friends';
 import { WINDOW_HEIGHT } from '../../../../components/muWindow';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
@@ -119,7 +120,7 @@ const BUTTONS: { className: string; title: string; onClick?: () => void }[] = [
     },
   },
   { className: 'bt02', title: 'Inventory (I)', onClick: toggleInventory },
-  { className: 'bt03', title: 'Friends' },
+  { className: 'bt03', title: 'Friends (F)', onClick: toggleFriends },
   { className: 'bt04', title: 'Menu' },
 ];
 

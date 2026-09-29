@@ -36,6 +36,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Tooltips | ✅ | Requisito de fuerza del Leather Helm +2 = 48, igual que OpenMU (rechazó equiparlo con 29 de fuerza) |
 | Party | ✅ | Dos clientes: `/party test1Elf` → `PartyRequest` → rechazar (sin party) / aceptar (`PartyInviteResponse`) → `PartyList` a ambos; `PartyHealthUpdate` (test1Elf con 20 de vida → 3/10); el líder expulsa y el miembro sale → `RemovePartyMember` y la party de 2 se disuelve |
 | Máquina del Caos | ✅ | Chaos Goblin → `NpcWindowResponse: ChaosMachine`; objetos con `ItemMoveRequest` (storage 3); `ChaosMachineMixRequest` de 3 bytes (OpenMU busca la receta) → poción sola: `IncorrectMixItems`; Jewel of Creation + Jewel of Chaos: `Success`, `StoreItemList` con la fruta y -3.000.000 zen. No deja cerrar con objetos dentro |
+| Susurros y amigos | ✅ | Dos clientes: `/w test1Elf …` → B recibe `ChatMessage` tipo 2 (llega con código 0x02); `/r` responde. Añadir amigo → `FriendRequest` → aceptar (`FriendAddResponse`) → `FriendAdded` + `FriendOnlineStateUpdate` (en línea); borrar → `FriendDeleted` |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:
@@ -56,6 +57,8 @@ Detalles observados:
   daño, defensa y requisitos eran incorrectos. Regenerado.
 - `PartyInviteResponse` estaba definido con longitud 4, pero tiene 6 bytes
   (`RequesterId` en el índice 4); OpenMU lo define con 6. Corregido.
+- Los susurros recibidos llegan como `ChatMessage` con el código 0x02 (el tipo
+  es el propio código), que el dispatcher no conocía: se descartaban.
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
 
