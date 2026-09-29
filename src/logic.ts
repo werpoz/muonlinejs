@@ -9,6 +9,10 @@ import { playEnergyBall } from './effects/energyBall';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
+import {
+  getGenericModelFactory,
+  getNpcModelInfo,
+} from './common/npcModelFactory';
 import { MonstersDatabase } from './common/monstersDatabase';
 import {
   MonsterActionType,
@@ -272,7 +276,9 @@ EventBus.on('AddNpcsToScope', packet => {
 
   npcs.forEach(npc => {
     const id = npc.Id & 0x7fff;
-    const definedModelFactory = ModelFactoryPerId[npc.TypeNumber];
+    const definedModelFactory =
+      ModelFactoryPerId[npc.TypeNumber] ??
+      getGenericModelFactory(npc.TypeNumber);
     if (!definedModelFactory) {
       console.warn(
         `No model factory found for NPC type ${npc.TypeNumber}. Using default PlayerObject.`
@@ -321,7 +327,10 @@ EventBus.on('AddNpcsToScope', packet => {
         x: 0,
         y: 0,
       },
-      objectNameInWorld: MonstersDatabase.get(npc.TypeNumber)?.Name || 'NPC',
+      objectNameInWorld:
+        MonstersDatabase.get(npc.TypeNumber)?.Name ||
+        getNpcModelInfo(npc.TypeNumber)?.name ||
+        'NPC',
       interactable: true,
     });
 
@@ -509,6 +518,14 @@ function moveLocalPlayer(map: number, x: number, y: number) {
   if (player.dead) {
     world.removeComponent(player, 'dead');
     player.playerAnimation.action = PlayerAction.PLAYER_STOP_MALE;
+  }
+
+  if (map !== world.mapIndex) {
+    const onLoaded = () => {
+      EventBus.off('warpCompleted', onLoaded);
+      Store.sendClientReadyAfterMapChange();
+    };
+    EventBus.on('warpCompleted', onLoaded);
   }
 
   EventBus.emit('requestWarp', { map, pos: { x, y } });

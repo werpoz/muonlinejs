@@ -27,6 +27,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Tirar objeto al suelo | ✅ | `DropItemRequest` → `ItemDropResponse`, `ItemsDropped` (el personaje no se mueve con ese clic) |
 | Aprender y lanzar habilidades | ✅ | Scroll of Fire Ball → `SkillAdded`; clic derecho → `TargetedSkill` → `SkillAnimation`, `ObjectHit` (22 de daño) |
 | Cambiar de mapa | ✅ | Lista (M) Lorencia → Noria: `WarpCommandRequest` → `MapChanged`; portal 25 de Noria → Lorencia: `EnterGateRequest` → `MapChanged` |
+| Monstruos/NPCs de otros mapas | ✅ | Noria: Goblin, Scorpion, Elf Lala, Amy, Charon… con su modelo; tras cambiar de mapa se envía `ClientReadyAfterMapChange` |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

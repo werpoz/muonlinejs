@@ -22,6 +22,7 @@ import {
   TargetedSkillPacket,
   EnterGateRequestPacket,
   WarpCommandRequestPacket,
+  ClientReadyAfterMapChangePacket,
   StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -697,6 +698,12 @@ export const Store = new (class _Store {
 
     console.log(`EnterGateRequest: ${gateNumber}`);
     this.sendToGS(packet.buffer);
+  }
+
+  // After a map change the server waits for this before adding the
+  // character to the new map (NPCs, monsters and players in scope).
+  sendClientReadyAfterMapChange(): void {
+    this.sendToGS(ClientReadyAfterMapChangePacket.createPacket().buffer);
   }
 
   // warpIndex is the index of the warp list in the server configuration
