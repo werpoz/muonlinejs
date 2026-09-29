@@ -51,6 +51,12 @@ You should see log messages from OpenMU in the browser console.
 /src              Game logic, packet definitions and encryption utilities
 ```
 
+## Documentación
+
+- [Arquitectura](docs/ARQUITECTURA.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Contribuir](CONTRIBUTING.md)
+
 ## Need help?
 
 If you encounter a bug or have an idea for improvement, please open an [issue](https://github.com/afrokick/muonlinejs/issues) or submit a pull request.
