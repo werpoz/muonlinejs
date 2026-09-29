@@ -17,6 +17,8 @@
 - [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo
 - [x] Habilidades de área: `AreaSkill` + el cliente declara los golpes con `AreaSkillHit` (probado con Flame)
 - [ ] Efectos visuales de las demás habilidades de área (solo Flame tiene efecto)
+- [x] Barra inferior con los gráficos originales (Season 6): pociones, globos de vida/maná, SD/AG, habilidades 1-5 con sus iconos, botones y experiencia
+- [ ] Resto de ventanas (inventario, personaje, tienda) con los gráficos originales
 - [x] Recoger objetos del suelo (clic o Espacio)
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)

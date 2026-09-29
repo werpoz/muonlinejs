@@ -6,59 +6,86 @@ import { ItemIcon } from '../../../../components/itemIcon';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { SKILL_ICONS, getSkillInfo } from '../../../../../common/skills';
 
-// hotkey slots of the bottom bar, filled with the learned skills in order
-const HOT_KEYS = ['6', '7', '8', '9', '0'];
+// Skill slots of the main frame (640x51 coordinates, see bottomBar):
+// 1-5 hold the learned skills in order, the green one is the selected skill.
+const SLOTS_X = [222, 254, 287, 320, 352];
+const CURRENT_SLOT_X = 387;
+const SLOT_Y = 4;
+const SLOT_W = 30;
+const SLOT_H = 36;
 
-// icon of the scroll/orb that teaches the skill (several look alike, so the
-// name is shown too)
+// public/interface/skill_icons.png: 20x24 icons, 8 per row, in skill number
+// order (skill 1 is the first icon); it holds the skills up to 56
+const ICON_W = 20;
+const ICON_H = 24;
+const ICONS_PER_ROW = 8;
+const LAST_SKILL_IN_SHEET = 56;
+
 const SkillIcon = ({ skill }: { skill: number }) => {
-  const icon = SKILL_ICONS[skill];
-  return (
-    <>
-      {!!icon && <ItemIcon group={icon.group} num={icon.num} />}
-      <span className="skill-name">{getSkillInfo(skill).name}</span>
-    </>
-  );
+  if (skill >= 1 && skill <= LAST_SKILL_IN_SHEET) {
+    const index = skill - 1;
+    return (
+      <span
+        className="skill-icon"
+        style={{
+          backgroundPosition: `-${(index % ICONS_PER_ROW) * ICON_W}px -${
+            Math.floor(index / ICONS_PER_ROW) * ICON_H
+          }px`,
+        }}
+      />
+    );
+  }
+
+  // not in the sheet: icon of the scroll/orb that teaches it
+  const item = SKILL_ICONS[skill];
+  return item ? <ItemIcon group={item.group} num={item.num} /> : null;
 };
 
-// Skills in the bottom bar: hotkeys 6-0 select a skill, "Current" shows the
-// selected one and opens the list of all learned skills. Right click on a
-// monster (or the ground for area skills) uses it.
+// Right click on a monster (or the ground for area skills) uses the
+// selected skill.
 export const SkillBar = observer(() => {
   const [listOpen, setListOpen] = useState(false);
   const skills = Store.skills;
+  const current = Store.currentSkill;
 
   useEventBus('keyPressed', code => {
-    const index = HOT_KEYS.findIndex(k => code === `Digit${k}`);
+    const index = SLOTS_X.findIndex((_, i) => code === `Digit${i + 1}`);
     const skill = skills[index];
     if (skill) Store.selectSkill(skill.number);
   });
 
-  const current = Store.currentSkill;
+  const slotStyle = (x: number) => ({
+    left: x,
+    top: SLOT_Y,
+    width: SLOT_W,
+    height: SLOT_H,
+  });
 
   return (
-    <div className="skills">
-      {HOT_KEYS.map((key, i) => {
+    <>
+      {SLOTS_X.map((x, i) => {
         const skill = skills[i];
         const selected = !!skill && skill.number === current;
         return (
           <button
-            key={key}
+            key={x}
             className={`skill-slot${selected ? ' selected' : ''}`}
-            title={skill ? getSkillInfo(skill.number).name : undefined}
+            style={slotStyle(x)}
+            title={skill ? `${getSkillInfo(skill.number).name} (${i + 1})` : undefined}
             onClick={() => skill && Store.selectSkill(skill.number)}
           >
-            <span className="hot-key">{key}</span>
             {!!skill && <SkillIcon skill={skill.number} />}
           </button>
         );
       })}
+
       <button
         className="skill-slot skill-current"
+        style={slotStyle(CURRENT_SLOT_X)}
         title={current !== null ? getSkillInfo(current).name : 'No skill'}
         onClick={() => setListOpen(open => !open)}
       >
-        {current !== null ? <SkillIcon skill={current} /> : 'Skill'}
+        {current !== null && <SkillIcon skill={current} />}
       </button>
 
       {listOpen && (
@@ -79,6 +106,6 @@ export const SkillBar = observer(() => {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 });

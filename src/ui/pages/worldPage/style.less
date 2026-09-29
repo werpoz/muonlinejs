@@ -23,11 +23,17 @@
     .panels-stack {
       position: absolute;
       top: 0;
-      bottom: 82px;
+      bottom: var(--main-frame-height, 82px);
       right: 0;
       display: flex;
       flex-direction: row;
       gap: 2px;
+
+      // panels use height: 100%, padding and border must fit inside it
+      > * {
+        box-sizing: border-box;
+        max-height: 100%;
+      }
     }
   }
 

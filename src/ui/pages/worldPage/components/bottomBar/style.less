@@ -3,189 +3,126 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #333;
   display: flex;
-  flex-direction: column;
-  pointer-events: auto;
+  justify-content: center;
+  pointer-events: none;
 
-  img {
-    width: 100%;
-    height: 100%;
+  .main-frame {
+    position: relative;
+    flex: none;
+    transform-origin: top center;
+    background: url('/interface/main_frame.png') no-repeat;
+    image-rendering: pixelated;
+    pointer-events: auto;
+
+    > * {
+      position: absolute;
+    }
   }
 
-  @icon-size: 52px;
-  @exp-bar-height: 8px;
-  @dark-fill-color: #0a0a0a;
-  @exp-fill-color: #66d914;
+  .potion-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 
-  .vertical-bar {
-    position: relative;
-
-    .bg {
-      position: absolute;
-      inset: 0;
-      background-color: #333;
-      border-radius: 2px;
-      border: 2px solid #000;
+    .item-icon {
+      pointer-events: none;
     }
 
-    .fill {
+    .count {
       position: absolute;
+      right: 2px;
       bottom: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-    }
-
-    .current {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      text-align: center;
       color: #fff;
-      font-size: 12px;
-    }
-  }
-
-  .hp-bar {
-    @fill-color: #e00101;
-    .fill {
-      background: linear-gradient(
-        to right,
-        @dark-fill-color,
-        @fill-color,
-        @fill-color,
-        @dark-fill-color
-      );
-    }
-  }
-
-  .mp-bar {
-    @fill-color: #0000ff;
-    .fill {
-      background: linear-gradient(
-        to right,
-        @dark-fill-color,
-        @fill-color,
-        @fill-color,
-        @dark-fill-color
-      );
-    }
-  }
-
-  .sd-bar {
-    @fill-color: #ffa500;
-    .fill {
-      background: linear-gradient(
-        to right,
-        @dark-fill-color,
-        @fill-color,
-        @fill-color,
-        @dark-fill-color
-      );
-    }
-  }
-
-  .ag-bar {
-    @fill-color: #9400d3;
-    .fill {
-      background: linear-gradient(
-        to right,
-        @dark-fill-color,
-        @fill-color,
-        @fill-color,
-        @dark-fill-color
-      );
-    }
-  }
-
-  .panel {
-    display: grid;
-    grid-template-columns: 8fr 2fr 1fr 12fr 1fr 2fr 8fr;
-    grid-template-rows: min-content;
-    gap: 1px;
-
-    .consumable-items {
-      display: flex;
-      justify-self: end;
-
-      .consumable-item {
-        position: relative;
-        width: @icon-size;
-        height: @icon-size;
-
-        border: 2px solid #333;
-        border-radius: 4px;
-
-        background: linear-gradient(to bottom, #0a0a0a, #666);
-
-        .item-icon {
-          transform: scale(2);
-        }
-
-        .hot-key {
-          position: absolute;
-          top: -6px;
-          left: -1px;
-          color: #ffd700;
-          text-shadow: 0 0 2px #000;
-          font-size: 16px;
-        }
-
-        .count {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          color: #fff;
-          font-size: 14px;
-        }
-      }
-    }
-
-    .skills {
-      justify-self: center;
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 1px;
-
       font-size: 8px;
-    }
-
-    .buttons {
-      justify-self: start;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-
-      font-size: 8px;
+      text-shadow: 0 0 2px #000;
     }
   }
 
-  .exp-bar {
-    position: relative;
-    height: @exp-bar-height;
-    background-color: #555;
-
+  .orb {
     .fill {
       position: absolute;
-      top: 0;
-      bottom: 0;
       left: 0;
-      background: linear-gradient(
-        to top,
-        @dark-fill-color,
-        @exp-fill-color,
-        @exp-fill-color,
-        @dark-fill-color
-      );
+      right: 0;
+      bottom: 0;
+      background-position: bottom;
+      background-repeat: no-repeat;
+    }
+
+    &.hp .fill {
+      background-image: url('/interface/hp_orb.png');
+    }
+
+    &.mp .fill {
+      background-image: url('/interface/mp_orb.png');
     }
 
     .value {
       position: absolute;
-      right: 1px;
-      top: -@exp-bar-height;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      text-align: center;
       color: #fff;
-      font-size: 12px;
+      font-size: 7px;
+      text-shadow: 0 0 2px #000;
     }
+  }
+
+  .vertical-bar {
+    .fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-position: bottom;
+      background-repeat: no-repeat;
+    }
+
+    &.sd .fill {
+      background-image: url('/interface/sd_bar.png');
+    }
+
+    &.ag .fill {
+      background-image: url('/interface/ag_bar.png');
+    }
+  }
+
+  // 4 states of 38x42 per sprite: normal, hover, pressed
+  .menu-button {
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+
+    &:hover {
+      background-position: 0 -42px;
+    }
+
+    &:active {
+      background-position: 0 -84px;
+    }
+
+    &.bt01 {
+      background-image: url('/interface/menu_bt01.png');
+    }
+    &.bt02 {
+      background-image: url('/interface/menu_bt02.png');
+    }
+    &.bt03 {
+      background-image: url('/interface/menu_bt03.png');
+    }
+    &.bt04 {
+      background-image: url('/interface/menu_bt04.png');
+    }
+  }
+
+  .exp-bar .fill {
+    height: 100%;
+    background: url('/interface/exp_bar.png') repeat-x;
+    background-size: auto 100%;
   }
 }
