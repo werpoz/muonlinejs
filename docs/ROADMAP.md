@@ -11,7 +11,7 @@
 - [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
 - [ ] Estado de muerte en la animación de monstruos
 - [ ] Nombres de algunos NPC (salen como "NPC")
-- [ ] Party
+- [x] Party (`/party [nombre]`): invitar, aceptar/rechazar, marco con los gráficos originales (líder, vida), expulsar y salir
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
 - [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo

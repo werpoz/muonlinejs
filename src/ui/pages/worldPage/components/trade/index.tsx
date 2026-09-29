@@ -5,6 +5,7 @@ import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { itemTooltipProps } from '../../../../components/itemTooltip';
 import { MuWindow } from '../../../../components/muWindow';
+import { RequestDialog } from '../../../../components/requestDialog';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { ItemStorageKind } from '../../../../../common/itemStorageKind';
 import { Item } from '../../../../../ecs/world';
@@ -174,22 +175,8 @@ export const TradeRequestDialog = observer(() => {
   if (!from) return null;
 
   return (
-    <div className="trade-request">
-      <div className="text">
-        <b>{from}</b> wants to trade with you
-      </div>
-      <div className="buttons">
-        <button
-          className="dialog-button ok"
-          title="Accept"
-          onClick={() => Store.answerTradeRequest(true)}
-        />
-        <button
-          className="dialog-button cancel"
-          title="Decline"
-          onClick={() => Store.answerTradeRequest(false)}
-        />
-      </div>
-    </div>
+    <RequestDialog onAnswer={accept => Store.answerTradeRequest(accept)}>
+      <b>{from}</b> wants to trade with you
+    </RequestDialog>
   );
 });

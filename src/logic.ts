@@ -38,6 +38,10 @@ import {
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
+  PartyRequestPacket,
+  PartyListPacket,
+  PartyHealthUpdatePacket,
+  RemovePartyMemberPacket,
   TradeRequestAnswerPacket,
   TradeItemAddedPacket,
   TradeItemRemovedPacket,
@@ -1402,4 +1406,64 @@ EventBus.on('TradeFinished', packet => {
     TRADE_RESULT_MESSAGES[p.Result] ?? 'The trade was closed',
     p.Result === TradeFinishedTradeResultEnum.Success ? 'info' : 'error'
   );
+});
+
+EventBus.on('PartyRequest', packet => {
+  const p = new PartyRequestPacket(packet);
+  const name = Store.playerNameById(p.RequesterId);
+  console.log(`PartyRequest from ${name} (${p.RequesterId})`);
+
+  runInAction(() => {
+    Store.partyRequestFrom = { id: p.RequesterId, name };
+  });
+});
+
+// sent to every member when someone joins or leaves; the first one is the
+// leader
+EventBus.on('PartyList', packet => {
+  const p = new PartyListPacket(packet);
+  const members = p.getMembers().map(m => ({
+    index: m.Index,
+    name: m.Name,
+    mapId: m.MapId,
+    x: m.PositionX,
+    y: m.PositionY,
+    health: m.MaximumHealth
+      ? Math.floor((m.CurrentHealth / m.MaximumHealth) * 10)
+      : 0,
+  }));
+  console.log(`PartyList: ${members.map(m => m.name).join(', ')}`);
+
+  const joined = !Store.party;
+  runInAction(() => {
+    Store.party = members;
+  });
+  if (joined) Store.addNotification('You joined a party');
+});
+
+// OpenMU sends it to the member that left or was kicked (and to everyone
+// when the party is dissolved); the others get a new PartyList
+EventBus.on('RemovePartyMember', packet => {
+  const p = new RemovePartyMemberPacket(packet);
+  console.log(`RemovePartyMember: ${p.Index}`);
+  if (!Store.party) return;
+
+  runInAction(() => {
+    Store.party = null;
+  });
+  Store.addNotification('You are no longer in a party');
+});
+
+// health of each member in tenths (0-10)
+EventBus.on('PartyHealthUpdate', packet => {
+  const p = new PartyHealthUpdatePacket(packet);
+  const party = Store.party;
+  if (!party) return;
+
+  runInAction(() => {
+    for (const { Index, Value } of p.getMembers()) {
+      const member = party.find(m => m.index === Index);
+      if (member) member.health = Value;
+    }
+  });
 });

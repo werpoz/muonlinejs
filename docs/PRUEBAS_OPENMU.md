@@ -34,6 +34,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Comercio entre jugadores | ✅ | Dos clientes: `/trade test1Elf` → `TradeRequest` → OK → `TradeRequestAnswer` a ambos; objeto (`ItemMoveRequest` storage 1) → `TradeItemAdded` al otro; zen → `TradeMoneySetResponse`/`TradeMoneyUpdate`; los dos aceptan → `TradeFinished: Success` e inventarios intercambiados. Rechazar y cancelar devuelven el objeto |
 | Joyas (Bless/Soul/Life) | ✅ | `ConsumeItemRequest` con `TargetSlot` → `InventoryItemUpgraded` + `ItemRemoved`. Leather Helm +0 → +1 → +2 (Bless); Soul falló (+1) y acertó (+2); Life añadió y luego quitó la opción. Sobre el Horn of Dinorant, Bless/Soul → `ItemConsumptionFailed` |
 | Tooltips | ✅ | Requisito de fuerza del Leather Helm +2 = 48, igual que OpenMU (rechazó equiparlo con 29 de fuerza) |
+| Party | ✅ | Dos clientes: `/party test1Elf` → `PartyRequest` → rechazar (sin party) / aceptar (`PartyInviteResponse`) → `PartyList` a ambos; `PartyHealthUpdate` (test1Elf con 20 de vida → 3/10); el líder expulsa y el miembro sale → `RemovePartyMember` y la party de 2 se disuelve |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:
@@ -52,6 +53,8 @@ Detalles observados:
 - `items.json` tenía las columnas desplazadas a partir del nombre (el conversor
   dejaba valores vacíos por los tabuladores de relleno de `Item.txt`), así que
   daño, defensa y requisitos eran incorrectos. Regenerado.
+- `PartyInviteResponse` estaba definido con longitud 4, pero tiene 6 bytes
+  (`RequesterId` en el índice 4); OpenMU lo define con 6. Corregido.
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
 

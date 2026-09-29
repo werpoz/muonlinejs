@@ -32,6 +32,9 @@ import {
   VaultClosedPacket,
   VaultMoveMoneyRequestPacket,
   TradeRequestPacket,
+  PartyInviteRequestPacket,
+  PartyInviteResponsePacket,
+  PartyPlayerKickRequestPacket,
   TradeRequestResponsePacket,
   TradeCancelPacket,
   TradeButtonStateChangePacket,
@@ -319,6 +322,17 @@ export type ChatLine = { sender: string; text: string; system?: boolean };
 // trade window of the original client: 8 columns x 4 rows for each side
 export const TRADE_SIZE = 32;
 
+export type PartyMember = {
+  // index in the party list, used to kick
+  index: number;
+  name: string;
+  mapId: number;
+  x: number;
+  y: number;
+  // 0-10, from PartyHealthUpdate
+  health: number;
+};
+
 export type TradeState = {
   partner: string;
   partnerLevel: number;
@@ -376,6 +390,11 @@ export const Store = new (class _Store {
   trade: TradeState | null = null;
   // name of the player who asked us to trade (answer dialog)
   tradeRequestFrom: string | null = null;
+  // our party (the first member is the leader), null without party
+  party: PartyMember[] | null = null;
+  // player who invited us to a party (answer dialog)
+  partyRequestFrom: { id: number; name: string } | null = null;
+
   // money sent with SetTradeMoney, confirmed by TradeMoneySetResponse
   pendingTradeMoney = 0;
   // we declined a request: the server answers "not accepted" to us too
@@ -435,6 +454,8 @@ export const Store = new (class _Store {
       heldItemStorage: observable,
       vault: observable,
       trade: observable,
+      party: observable,
+      partyRequestFrom: observable,
       tradeRequestFrom: observable,
       skills: observable,
       currentSkill: observable,
@@ -845,12 +866,12 @@ export const Store = new (class _Store {
     this.sendToGS(packet.buffer);
   }
 
-  // Trade request to another player in view, by name; without a name, to
-  // the nearest player.
-  requestTrade(name?: string): void {
+  // Another player in view, by name; without a name, the nearest one.
+  // Shows an error when there is none.
+  findPlayerNear(name?: string) {
     const world = this.world;
     const me = world?.playerEntity;
-    if (!world || !me) return;
+    if (!world || !me) return null;
 
     const players = world.netObjsQuery.entities.filter(
       e => e.charAppearance && !e.localPlayer && e.netId != null
@@ -871,8 +892,23 @@ export const Store = new (class _Store {
         name ? `${name} is not near you` : 'There is nobody near you',
         'error'
       );
-      return;
+      return null;
     }
+    return target;
+  }
+
+  // name of a player in view by its id (e.g. who sent a request)
+  playerNameById(id: number): string {
+    const entity = this.world?.netObjsQuery.entities.find(
+      e => e.netId === (id & 0x7fff)
+    );
+    return entity?.objectNameInWorld ?? `Player ${id & 0x7fff}`;
+  }
+
+  // Trade request to another player in view (see findPlayerNear)
+  requestTrade(name?: string): void {
+    const target = this.findPlayerNear(name);
+    if (!target) return;
     if (this.trade) {
       this.addNotification('You are already trading', 'error');
       return;
@@ -882,6 +918,49 @@ export const Store = new (class _Store {
     packet.PlayerId = target.netId!;
     this.sendToGS(packet.buffer);
     this.addNotification(`Trade requested to ${target.objectNameInWorld}`);
+  }
+
+  // Party invitation to another player in view (see findPlayerNear)
+  inviteToParty(name?: string): void {
+    const target = this.findPlayerNear(name);
+    if (!target) return;
+    if (this.party && this.party[0]?.name !== this.characterName) {
+      this.addNotification('Only the party leader can invite', 'error');
+      return;
+    }
+
+    const packet = PartyInviteRequestPacket.createPacket();
+    packet.TargetPlayerId = target.netId!;
+    this.sendToGS(packet.buffer);
+  }
+
+  answerPartyRequest(accept: boolean): void {
+    const request = this.partyRequestFrom;
+    if (!request) return;
+    runInAction(() => {
+      this.partyRequestFrom = null;
+    });
+
+    const packet = PartyInviteResponsePacket.createPacket();
+    packet.Accepted = accept;
+    packet.RequesterId = request.id;
+    this.sendToGS(packet.buffer);
+  }
+
+  // the leader kicks a member; any member can kick itself to leave
+  kickFromParty(index: number): void {
+    const packet = PartyPlayerKickRequestPacket.createPacket();
+    packet.PlayerIndex = index;
+    this.sendToGS(packet.buffer);
+  }
+
+  leaveParty(): void {
+    const me = this.party?.find(m => m.name === this.characterName);
+    if (me) this.kickFromParty(me.index);
+  }
+
+  get characterName(): string {
+    return this.world?.playerEntity?.objectNameInWorld ?? '';
   }
 
   answerTradeRequest(accept: boolean): void {

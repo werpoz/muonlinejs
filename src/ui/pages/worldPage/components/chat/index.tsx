@@ -47,7 +47,10 @@ export const Chat = observer(() => {
             const message = text.trim();
             // /trade [name]: trade with that player (or the nearest one)
             const trade = /^\/trade(?:\s+(\S+))?$/i.exec(message);
+            // /party [name]: invite that player (or the nearest one)
+            const party = /^\/party(?:\s+(\S+))?$/i.exec(message);
             if (trade) Store.requestTrade(trade[1]);
+            else if (party) Store.inviteToParty(party[1]);
             else if (message) Store.sendChatMessage(message);
             close();
           }}
