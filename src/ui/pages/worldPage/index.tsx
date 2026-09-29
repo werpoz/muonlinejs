@@ -5,6 +5,7 @@ import { DamageNumbers } from '../../components/damageNumbers';
 import { HeldItem } from '../../components/heldItem';
 import { ItemTooltip } from '../../components/itemTooltip';
 import { MapsList } from './components/mapsList';
+import { Minimap } from './components/minimap';
 import { BottomBar } from './components/bottomBar';
 import { CharacterInfo } from './components/characterInfo';
 import { Inventory } from './components/inventory';
@@ -30,6 +31,7 @@ const HUD = observer(() => {
         <Friends />
       </div>
       <MapsList />
+      <Minimap />
       <Chat />
       <TradeRequestDialog />
       <PartyRequestDialog />

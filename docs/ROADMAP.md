@@ -41,7 +41,8 @@
 - [ ] Guild: crear en el Guild Master, miembros, chat de guild y guerras
 - [ ] Tienda personal (vender sentado con letrero)
 - [ ] PvP: animaciones de ataque de otros jugadores y atacarlos
-- [ ] Minimapa (Tab) y ventana de opciones
+- [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
+- [ ] Ventana de opciones
 - [ ] Sonido y música
 - [ ] Misiones y cambio de clase (2.ª y 3.ª)
 - [ ] Eventos: Blood Castle, Devil Square y Chaos Castle

@@ -35,7 +35,7 @@ try {
 window.addEventListener('keydown', ev => {
   const target = ev.target as HTMLElement | null;
   const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
-  if (!typing && ['ArrowDown', 'ArrowUp', ' ', 'F3'].includes(ev.key)) {
+  if (!typing && ['ArrowDown', 'ArrowUp', ' ', 'F3', 'Tab'].includes(ev.key)) {
     ev.preventDefault();
   }
 });

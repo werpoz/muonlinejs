@@ -7,6 +7,9 @@ import { useEventBus } from '../../../../../hooks/useEventBus';
 import { LL } from '../../../../../libs/localization';
 import { Store } from '../../../../../store';
 
+export const getMapName = (id: ENUM_WORLD) =>
+  MAPS_LIST.find(m => m.id === id)?.name ?? ENUM_WORLD[id] ?? `Map ${id}`;
+
 const MAPS_LIST: {
   id: ENUM_WORLD;
   // index of the warp list in the server configuration (WarpCommandRequest)

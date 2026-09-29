@@ -150,6 +150,7 @@ export async function loadMapIntoScene(
     const {
       objects,
       terrain,
+      minimap,
       RequestTerrainHeight,
       IsWalkable,
       RequestTerrainFlag,
@@ -160,6 +161,7 @@ export async function loadMapIntoScene(
     world.isWalkable = IsWalkable;
     world.getTerrainFlag = RequestTerrainFlag;
     world.getTerrainTile = GetTerrainTile;
+    world.minimap = minimap;
 
     if (map === ENUM_WORLD.WD_10ICARUS) {
       terrain.isVisible = false;

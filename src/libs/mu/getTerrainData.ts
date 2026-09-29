@@ -14,6 +14,7 @@ import {
   readOJZBufferAsJPEGBuffer,
 } from '../../common/utils';
 import { parseTerrainAttribute } from '../../common/terrain/parseTerrainAttribute';
+import { averageColor, createMinimap } from '../../common/terrain/createMinimap';
 import { parseTerrainHeight } from '../../common/terrain/parseTerrainHeight';
 import { parseTerrainMapping } from '../../common/terrain/parseTerrainMapping';
 import { parseTerrainLight } from '../../common/terrain/parseTerrainLight';
@@ -67,20 +68,26 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
 
   const textureNames = getTilesList(map);
 
-  const terrainTextures = (
-    await Promise.all(
-      textureNames.map(async (t, i) => {
-        const filePath = `World${worldNum}/${t}.OZJ`;
-        const ozjBytes = await downloadDataBytesBuffer(filePath);
+  const loadedTextures = await Promise.all(
+    textureNames.map(async (t, i) => {
+      const filePath = `World${worldNum}/${t}.OZJ`;
+      const ozjBytes = await downloadDataBytesBuffer(filePath);
 
-        return readOJZBufferAsJPEGBuffer(
-          scene,
-          filePath.replace('.', `_${i}.`),
-          ozjBytes
-        );
-      })
-    )
-  ).map(t => t.Texture);
+      return readOJZBufferAsJPEGBuffer(
+        scene,
+        filePath.replace('.', `_${i}.`),
+        ozjBytes
+      );
+    })
+  );
+  const terrainTextures = loadedTextures.map(t => t.Texture);
+
+  const minimap = createMinimap(
+    terrainMapping,
+    loadedTextures.map(t => averageColor(t.BufferFloat)),
+    terrainLight,
+    terrainAttrs
+  );
 
   const objsBuffer = await downloadDataBytesBuffer(
     `World${worldNum}/EncTerrain${worldNum}.obj`
@@ -235,6 +242,7 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
   return {
     objects,
     terrain,
+    minimap,
     terrainHeight,
     RequestTerrainHeight,
     IsWalkable,

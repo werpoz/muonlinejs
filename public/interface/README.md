@@ -26,3 +26,5 @@ They are Webzen's assets, like the models and item icons of this repo.
 | party_back.png / party_hpbar.png | newui_Party_Back (77x23) / newui_Party_HpBar (69x3, 10 segments) |
 | party_x.png / party_flag.png | newui_Party_X (2 states of 11x11) / newui_Party_flag (leader) |
 | chaos_mix.png | newui_Bt_mix (2 states of 44x35: normal, disabled) |
+| minimap_cha / _npc / _party / _portal.png | mini_map_ui_cha / npc / party / portal (18x18 markers) |
+| minimap_corner.png / minimap_line.png | mini_map_ui_corner (42x42) / mini_map_ui_line (42x8, frame) |

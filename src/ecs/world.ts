@@ -152,6 +152,9 @@ export class World extends ECSWorld<Entity> {
 
   mapIndex = ENUM_WORLD.WD_55LOGINSCENE;
 
+  // 256x256 RGBA image of the current map (see createMinimap)
+  minimap: Uint8ClampedArray | null = null;
+
   terrain: {
     mesh: Mesh;
     MapTileObjects: (typeof ModelObject)[];
