@@ -38,7 +38,8 @@
 - [x] Máquina del Caos (Chaos Goblin): poner objetos, combinar (el servidor deduce la receta) y resultado
 - [x] Susurros (`/w nombre texto`, `/r texto`) y lista de amigos (F): añadir, aceptar, estado en línea, susurrar y borrar
 - [ ] Cartas del messenger (enviar, leer y borrar)
-- [ ] Guild: crear en el Guild Master, miembros, chat de guild y guerras
+- [x] Guild: crear en el Guild Master (nombre y emblema), unirse (`/guild nombre`), miembros (G), expulsar, salir/disolver, chat (`@texto`) y nombre de la guild sobre los jugadores
+- [ ] Guerras de guild y alianzas
 - [ ] Tienda personal (vender sentado con letrero)
 - [ ] PvP: animaciones de ataque de otros jugadores y atacarlos
 - [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador

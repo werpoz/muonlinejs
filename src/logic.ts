@@ -38,6 +38,16 @@ import {
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
+  GuildListPacket,
+  GuildJoinRequestPacket,
+  GuildJoinResponsePacket,
+  GuildJoinResponseGuildJoinRequestResultEnum,
+  GuildKickResponsePacket,
+  GuildKickResponseGuildKickSuccessEnum,
+  GuildCreationResultPacket,
+  GuildMemberLeftGuildPacket,
+  AssignCharacterToGuildPacket,
+  GuildInformationPacket,
   ChatMessageChatMessageTypeEnum,
   MessengerInitializationPacket,
   FriendAddedPacket,
@@ -93,7 +103,7 @@ import { Entity, Item, World } from './ecs/world';
 import { createAttributeSystem } from './libs/attributeSystem';
 import { Vector3 } from './libs/babylon/exports';
 import { EventBus } from './libs/eventBus';
-import { Store, TRADE_SIZE, UIState } from './store';
+import { Store, TRADE_SIZE, UIState, unpackEmblem } from './store';
 
 const ONE_SHOT_ANIMATION_TIME = 0.6;
 const NO_TERRAIN_HEIGHT = -9999;
@@ -390,6 +400,21 @@ EventBus.on('AddCharactersToScope', packet => {
 
   chars.forEach(char => {
     const maskedId = char.Id & 0x7fff;
+
+    // after a map change the server sends the local player again: keep the
+    // same entity (spawning it again duplicated the player)
+    const existing = world.playerEntity;
+    if (existing && Store.playerId === maskedId) {
+      existing.worldIndex = worldIndex;
+      existing.transform.pos.x = char.CurrentPositionX;
+      existing.transform.pos.z = char.CurrentPositionY;
+      existing.transform.pos.y = world.getTerrainHeight(
+        char.CurrentPositionX,
+        char.CurrentPositionY
+      );
+      return;
+    }
+
     const appearance = deserializeAppearance(char.Appearance);
     const playerEntity = spawnPlayer(world, { cls: appearance.cls });
     world.addComponent(playerEntity, 'netId', maskedId);
@@ -496,7 +521,12 @@ EventBus.on('ChatMessage', packet => {
   );
   const whisper = p.Type === ChatMessageChatMessageTypeEnum.Whisper;
   if (whisper) Store.lastWhisperFrom = p.Sender;
-  Store.addChatLine({ sender: p.Sender, text: p.Message, whisper });
+
+  // guild and party messages come as normal ones with their prefix
+  const prefix = p.Message[0];
+  const channel = prefix === '@' ? 'guild' : prefix === '~' ? 'party' : undefined;
+  const text = channel ? p.Message.slice(1) : p.Message;
+  Store.addChatLine({ sender: p.Sender, text, whisper, channel });
 });
 
 EventBus.on('ObjectAnimation', packet => {
@@ -1574,5 +1604,159 @@ EventBus.on('FriendDeleted', packet => {
   console.log(`FriendDeleted: ${p.FriendName}`);
   runInAction(() => {
     Store.friends = Store.friends.filter(f => f.name !== p.FriendName);
+  });
+});
+
+// Guild Master NPC: asks if the player wants to create a guild
+EventBus.on('ShowGuildMasterDialog', () => {
+  runInAction(() => {
+    Store.guildMasterDialog = true;
+  });
+});
+
+EventBus.on('ShowGuildCreationDialog', () => {
+  runInAction(() => {
+    Store.guildCreationOpen = true;
+  });
+});
+
+EventBus.on('GuildCreationResult', packet => {
+  const p = new GuildCreationResultPacket(packet);
+  console.log(`GuildCreationResult: ${p.Success} (${p.Error})`);
+
+  if (!p.Success) {
+    Store.addNotification('This guild name is already taken', 'error');
+    return;
+  }
+  runInAction(() => {
+    Store.guildCreationOpen = false;
+  });
+  Store.addNotification('The guild was created');
+  Store.requestGuildList();
+});
+
+EventBus.on('GuildList', packet => {
+  const p = new GuildListPacket(packet);
+  const members = p.IsInGuild
+    ? p.getMembers().map(m => ({
+        name: m.Name,
+        serverId: m.ServerId,
+        role: m.Role,
+      }))
+    : null;
+  console.log(`GuildList: ${members?.map(m => m.name).join(', ') ?? 'no guild'}`);
+
+  runInAction(() => {
+    Store.guild = members;
+  });
+});
+
+// a player asks to join our guild
+EventBus.on('GuildJoinRequest', packet => {
+  const p = new GuildJoinRequestPacket(packet);
+  const name = Store.playerNameById(p.RequesterId);
+  console.log(`GuildJoinRequest from ${name}`);
+  runInAction(() => {
+    Store.guildJoinRequestFrom = { id: p.RequesterId, name };
+  });
+});
+
+const GUILD_JOIN_MESSAGES: Record<GuildJoinResponseGuildJoinRequestResultEnum, string> = {
+  [GuildJoinResponseGuildJoinRequestResultEnum.Refused]: 'The guild request was refused',
+  [GuildJoinResponseGuildJoinRequestResultEnum.Accepted]: 'You joined the guild',
+  [GuildJoinResponseGuildJoinRequestResultEnum.GuildFull]: 'The guild is full',
+  [GuildJoinResponseGuildJoinRequestResultEnum.Disconnected]: 'The guild master is not online',
+  [GuildJoinResponseGuildJoinRequestResultEnum.NotTheGuildMaster]: 'That player is not a guild master',
+  [GuildJoinResponseGuildJoinRequestResultEnum.AlreadyHaveGuild]: 'You already have a guild',
+  [GuildJoinResponseGuildJoinRequestResultEnum.GuildMasterOrRequesterIsBusy]: 'The guild master is busy',
+  [GuildJoinResponseGuildJoinRequestResultEnum.MinimumLevel6]: 'You need level 6 to join a guild',
+};
+
+EventBus.on('GuildJoinResponse', packet => {
+  const p = new GuildJoinResponsePacket(packet);
+  console.log(`GuildJoinResponse: ${GuildJoinResponseGuildJoinRequestResultEnum[p.Result]}`);
+  const accepted = p.Result === GuildJoinResponseGuildJoinRequestResultEnum.Accepted;
+  Store.addNotification(GUILD_JOIN_MESSAGES[p.Result] ?? 'Guild request failed', accepted ? 'info' : 'error');
+  if (accepted) Store.requestGuildList();
+});
+
+EventBus.on('GuildKickResponse', packet => {
+  const p = new GuildKickResponsePacket(packet);
+  const result = GuildKickResponseGuildKickSuccessEnum;
+  console.log(`GuildKickResponse: ${result[p.Result]}`);
+
+  switch (p.Result) {
+    case result.KickSucceeded:
+      Store.addNotification('The member was kicked');
+      Store.requestGuildList();
+      break;
+    case result.GuildDisband:
+    case result.GuildMemberWithdrawn:
+      Store.addNotification(
+        p.Result === result.GuildDisband ? 'The guild was disbanded' : 'You left the guild'
+      );
+      runInAction(() => {
+        Store.guild = null;
+      });
+      break;
+    case result.FailedPasswordIncorrect:
+      Store.addNotification('Wrong security code', 'error');
+      break;
+    default:
+      Store.addNotification('Only the guild master can do that', 'error');
+  }
+});
+
+// a player in view left its guild (also us, or kicked)
+EventBus.on('GuildMemberLeftGuild', packet => {
+  const p = new GuildMemberLeftGuildPacket(packet);
+  const id = p.PlayerId & 0x7fff;
+  console.log(`GuildMemberLeftGuild: ${id} (master ${p.IsGuildMaster})`);
+
+  runInAction(() => {
+    Store.playerGuilds.delete(id);
+    if (id === Store.playerId) Store.guild = null;
+  });
+  if (Store.guild) Store.requestGuildList();
+});
+
+// guild of the players in view; the names come with GuildInformation
+EventBus.on('AssignCharacterToGuild', packet => {
+  const p = new AssignCharacterToGuildPacket(packet);
+  const members = p.getMembers();
+  console.log(`AssignCharacterToGuild: ${members.map(m => `${m.PlayerId & 0x7fff}->${m.GuildId}`).join(', ')}`);
+
+  runInAction(() => {
+    for (const m of members) {
+      Store.playerGuilds.set(m.PlayerId & 0x7fff, {
+        guildId: m.GuildId,
+        role: m.Role,
+      });
+    }
+  });
+  const unknown = new Set(
+    members.map(m => m.GuildId).filter(id => !Store.guildInfos.has(id))
+  );
+  unknown.forEach(id => Store.requestGuildInfo(id));
+  // we or someone of our guild (a new member): refresh the member list
+  const myGuild =
+    Store.playerId != null ? Store.playerGuilds.get(Store.playerId)?.guildId : undefined;
+  if (
+    members.some(
+      m => (m.PlayerId & 0x7fff) === Store.playerId || m.GuildId === myGuild
+    )
+  ) {
+    Store.requestGuildList();
+  }
+});
+
+EventBus.on('GuildInformation', packet => {
+  const p = new GuildInformationPacket(packet);
+  const bytes = new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength);
+  const emblem = unpackEmblem(bytes.slice(25, 25 + 32));
+  console.log(`GuildInformation: ${p.GuildId} ${p.GuildName}`);
+
+  runInAction(() => {
+    Store.guildInfos.set(p.GuildId, { name: p.GuildName, emblem });
   });
 });

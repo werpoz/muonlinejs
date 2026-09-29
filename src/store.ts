@@ -15,6 +15,14 @@ import {
   HitRequestPacket,
   PickupItemRequestPacket,
   PublicChatMessagePacket,
+  GuildMasterAnswerPacket,
+  GuildCreateRequestPacket,
+  CancelGuildCreationPacket,
+  GuildListRequestPacket,
+  GuildInfoRequestPacket,
+  GuildJoinRequestPacket,
+  GuildJoinResponsePacket,
+  GuildKickPlayerRequestPacket,
   WhisperMessagePacket,
   FriendAddRequestPacket,
   FriendAddResponsePacket,
@@ -51,7 +59,10 @@ import {
   ServerListRequestPacket,
   ServerListResponsePacket,
 } from './common/packets/ConnectServerPackets';
-import { CharacterListPacket } from './common/packets/ServerToClientPackets';
+import {
+  CharacterListPacket,
+  GuildMemberRoleEnum,
+} from './common/packets/ServerToClientPackets';
 import { stringToBytes } from './common/utils';
 import {
   CLIENT_VERSION,
@@ -328,6 +339,8 @@ export type ChatLine = {
   system?: boolean;
   // received whisper, or sent one (to: receiver)
   whisper?: boolean;
+  // guild (@) or party (~) chat
+  channel?: 'guild' | 'party';
   to?: string;
 };
 
@@ -338,6 +351,48 @@ export type Friend = {
 };
 
 export const OFFLINE_SERVER = 0xff;
+
+export type GuildMember = {
+  name: string;
+  // 0xFF when offline
+  serverId: number;
+  role: GuildMemberRoleEnum;
+};
+
+// role in a guild (NormalMember, BattleMaster, GuildMaster)
+export { GuildMemberRoleEnum as GuildRole };
+
+// guild emblem: 8x8 colors of GUILD_COLORS
+export const EMBLEM_SIZE = 8;
+
+// colors of the guild emblems of the original client (0 is transparent)
+export const GUILD_COLORS = [
+  'transparent',
+  '#000000',
+  '#808080',
+  '#ffffff',
+  '#fe0000',
+  '#fe7f00',
+  '#fefe00',
+  '#7ffe00',
+  '#00fe00',
+  '#00fe7f',
+  '#00fefe',
+  '#007ffe',
+  '#0000fe',
+  '#7f00fe',
+  '#fe00fe',
+  '#fe007f',
+];
+
+// 64 color indexes -> 32 bytes, 2 pixels per byte (first in the high bits)
+export const packEmblem = (colors: number[]) =>
+  Array.from({ length: colors.length / 2 }, (_, i) =>
+    ((colors[i * 2] & 0xf) << 4) | (colors[i * 2 + 1] & 0xf)
+  );
+
+export const unpackEmblem = (bytes: ArrayLike<number>) =>
+  Array.from(bytes).flatMap(b => [b >> 4, b & 0xf]);
 
 export const isFriendOnline = (friend: Friend) =>
   friend.serverId !== OFFLINE_SERVER;
@@ -426,6 +481,19 @@ export const Store = new (class _Store {
   // text to open the chat input with (e.g. "/w name ")
   chatDraft: string | null = null;
 
+  // our guild (GuildList), null without guild
+  guild: GuildMember[] | null = null;
+  guildEnabled = false;
+  // Guild Master NPC: question and creation form
+  guildMasterDialog = false;
+  guildCreationOpen = false;
+  // player who wants to join our guild (we are its master)
+  guildJoinRequestFrom: { id: number; name: string } | null = null;
+  // guild of the players in view (AssignCharacterToGuild) and guild names /
+  // emblems (GuildInformation)
+  playerGuilds = new Map<number, { guildId: number; role: GuildMemberRoleEnum }>();
+  guildInfos = new Map<number, { name: string; emblem: number[] }>();
+
   // our party (the first member is the leader), null without party
   party: PartyMember[] | null = null;
   // player who invited us to a party (answer dialog)
@@ -493,6 +561,13 @@ export const Store = new (class _Store {
       trade: observable,
       party: observable,
       friends: observable,
+      guild: observable,
+      guildEnabled: observable,
+      guildMasterDialog: observable,
+      guildCreationOpen: observable,
+      guildJoinRequestFrom: observable,
+      playerGuilds: observable,
+      guildInfos: observable,
       friendsEnabled: observable,
       friendRequestFrom: observable,
       chatDraft: observable,
@@ -781,7 +856,9 @@ export const Store = new (class _Store {
   // Text typed in the chat: commands of the client or a public message.
   //   /w name text   whisper       /r text        reply to the last whisper
   //   /trade [name]  trade         /party [name]  party invitation
-  //   /friend name   add a friend
+  //   /friend name   add a friend  /guild [name]  ask to join a guild
+  //   @text / ~text  guild / party chat (sent as it is, OpenMU handles
+  //                  the prefix)
   submitChat(message: string): void {
     const command = (name: string) =>
       new RegExp(`^/${name}(?:\\s+(.*))?$`, 'i').exec(message)?.[1]?.trim() ??
@@ -792,6 +869,7 @@ export const Store = new (class _Store {
     const trade = command('trade');
     const party = command('party');
     const friend = command('friend');
+    const guild = command('guild');
 
     if (whisper) this.sendWhisper(whisper[1], whisper[2]);
     else if (reply !== null) {
@@ -800,6 +878,7 @@ export const Store = new (class _Store {
     } else if (trade !== null) this.requestTrade(trade || undefined);
     else if (party !== null) this.inviteToParty(party || undefined);
     else if (friend) this.addFriend(friend);
+    else if (guild !== null) this.requestJoinGuild(guild || undefined);
     else if (message) this.sendChatMessage(message);
   }
 
@@ -857,6 +936,87 @@ export const Store = new (class _Store {
     packet.Accepted = accept;
     packet.setFriendRequesterName(name);
     this.sendToGS(packet.buffer);
+  }
+
+  // Guild Master NPC: the answer sets the player back to the normal state,
+  // which OpenMU requires to create the guild
+  answerGuildMaster(create: boolean): void {
+    runInAction(() => {
+      this.guildMasterDialog = false;
+      this.guildCreationOpen = create;
+    });
+    const packet = GuildMasterAnswerPacket.createPacket();
+    packet.ShowCreationDialog = create;
+    this.sendToGS(packet.buffer);
+  }
+
+  createGuild(name: string, emblem: number[]): void {
+    const packet = GuildCreateRequestPacket.createPacket();
+    packet.setGuildName(name);
+    packet.setGuildEmblem(packEmblem(emblem), EMBLEM_SIZE * EMBLEM_SIZE / 2);
+    this.sendToGS(packet.buffer);
+  }
+
+  cancelGuildCreation(): void {
+    runInAction(() => {
+      this.guildCreationOpen = false;
+    });
+    this.sendToGS(CancelGuildCreationPacket.createPacket().buffer);
+  }
+
+  requestGuildList(): void {
+    this.sendToGS(GuildListRequestPacket.createPacket().buffer);
+  }
+
+  requestGuildInfo(guildId: number): void {
+    const packet = GuildInfoRequestPacket.createPacket();
+    packet.GuildId = guildId;
+    this.sendToGS(packet.buffer);
+  }
+
+  // ask a guild master in view to join its guild (see findPlayerNear)
+  requestJoinGuild(name?: string): void {
+    const target = this.findPlayerNear(name);
+    if (!target) return;
+    const packet = GuildJoinRequestPacket.createPacket();
+    packet.GuildMasterPlayerId = target.netId!;
+    this.sendToGS(packet.buffer);
+    this.addNotification(`Guild request sent to ${target.objectNameInWorld}`);
+  }
+
+  answerGuildJoin(accept: boolean): void {
+    const request = this.guildJoinRequestFrom;
+    if (!request) return;
+    runInAction(() => {
+      this.guildJoinRequestFrom = null;
+    });
+    const packet = GuildJoinResponsePacket.createPacket();
+    packet.Accepted = accept;
+    packet.RequesterId = request.id;
+    this.sendToGS(packet.buffer);
+  }
+
+  // the master kicks a member; kicking yourself leaves the guild (or
+  // disbands it, for the master). OpenMU checks the security code of the
+  // account when it has one.
+  kickGuildMember(name: string, securityCode = ''): void {
+    const packet = GuildKickPlayerRequestPacket.createPacket(
+      13 + securityCode.length + 1
+    );
+    packet.setPlayerName(name);
+    packet.setSecurityCode(securityCode);
+    this.sendToGS(packet.buffer);
+  }
+
+  // name of the guild of a player in view
+  guildNameOf(netId: number | undefined): string | undefined {
+    if (netId == null) return undefined;
+    const relation = this.playerGuilds.get(netId);
+    return relation && this.guildInfos.get(relation.guildId)?.name;
+  }
+
+  get myGuildName(): string | undefined {
+    return this.guildNameOf(this.playerId ?? undefined);
   }
 
   addChatLine(line: ChatLine): void {

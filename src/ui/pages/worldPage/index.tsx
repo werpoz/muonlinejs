@@ -14,6 +14,12 @@ import { NpcShop } from './components/npcShop';
 import { Vault } from './components/vault';
 import { ChaosMachine } from './components/chaosMachine';
 import { Friends, FriendRequestDialog } from './components/friends';
+import {
+  Guild,
+  GuildCreation,
+  GuildJoinDialog,
+  GuildMasterDialog,
+} from './components/guild';
 import { Trade, TradeRequestDialog } from './components/trade';
 import { PartyFrame, PartyRequestDialog } from './components/party';
 
@@ -29,6 +35,8 @@ const HUD = observer(() => {
         <Inventory />
         <CharacterInfo />
         <Friends />
+        <Guild />
+        <GuildCreation />
       </div>
       <MapsList />
       <Minimap />
@@ -36,6 +44,8 @@ const HUD = observer(() => {
       <TradeRequestDialog />
       <PartyRequestDialog />
       <FriendRequestDialog />
+      <GuildMasterDialog />
+      <GuildJoinDialog />
       <PartyFrame />
     </div>
   );

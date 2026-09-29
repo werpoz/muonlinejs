@@ -33,6 +33,9 @@ export const WorldObjects = observer(() => {
               entity={entity}
               key={i}
               text={entity.objectNameInWorld}
+              subText={
+                entity.charAppearance ? Store.guildNameOf(entity.netId) : undefined
+              }
             />
           );
 

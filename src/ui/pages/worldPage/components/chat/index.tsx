@@ -39,7 +39,7 @@ export const Chat = observer(() => {
         {Store.chatMessages.map((line, i) => (
           <div
             key={i}
-            className={`line${line.system ? ' system' : ''}${line.whisper ? ' whisper' : ''}`}
+            className={`line${line.system ? ' system' : ''}${line.whisper ? ' whisper' : ''}${line.channel ? ` ${line.channel}` : ''}`}
           >
             {line.to ? (
               <span className="sender">[to {line.to}] </span>

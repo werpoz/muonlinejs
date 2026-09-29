@@ -143,7 +143,9 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     const codeIndex = packetHeaderSize === 3 ? 3 : 2;
     const packetCode = packet.getUint8(codeIndex);
 
-    const subCode = packet.getUint8(codeIndex + 1);
+    // packets of 3 bytes (e.g. ShowGuildMasterDialog) have no sub code
+    const subCode =
+      packet.byteLength > codeIndex + 1 ? packet.getUint8(codeIndex + 1) : -1;
 
     // an unknown code must not stop the queue
     const packetsByCode = packetsCacheByCode[packetCode] ?? [];
