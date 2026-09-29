@@ -20,6 +20,7 @@
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
 - [ ] Tirar objetos del inventario
 - [x] Etiquetas de nombre sobre personajes, NPCs y objetos
+- [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
 - [ ] Repartir puntos de nivel
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén

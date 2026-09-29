@@ -23,6 +23,9 @@ import {
   CharacterLevelUpdatePacket,
   ExperienceGainedPacket,
   InventoryMoneyUpdatePacket,
+  ItemConsumptionFailedPacket,
+  ItemDurabilityChangedPacket,
+  ItemRemovedPacket,
   ItemAddedToInventoryPacket,
   ItemPickUpRequestFailedPacket,
   ItemPickUpRequestFailedItemPickUpFailReasonEnum,
@@ -775,4 +778,31 @@ EventBus.on('InventoryMoneyUpdate', packet => {
 
   if (diff > 0) Store.addNotification(`Obtained ${diff} Zen`);
   console.log(`InventoryMoneyUpdate: ${p.Money}`);
+});
+
+EventBus.on('ItemDurabilityChanged', packet => {
+  const p = new ItemDurabilityChangedPacket(packet);
+  const items = Store.playerData.items;
+  const item = items[p.InventorySlot];
+  if (!item) return;
+
+  runInAction(() => {
+    items[p.InventorySlot] = { ...item, durability: p.Durability };
+  });
+});
+
+EventBus.on('ItemRemoved', packet => {
+  const p = new ItemRemovedPacket(packet);
+
+  runInAction(() => {
+    Store.playerData.items[p.InventorySlot] = null as any;
+  });
+
+  if (p.InventorySlot <= InventoryConstants.LastEquippableItemSlotIndex) {
+    Store.syncPlayerAppearance();
+  }
+});
+
+EventBus.on('ItemConsumptionFailed', () => {
+  Store.addNotification('Cannot use the item', 'error');
 });

@@ -114,7 +114,7 @@ export class ItemSerializer {
 
     item.lvl = castToByte((array[1] & LevelMask) >> 3);
 
-    // item.Durability = array[2];
+    item.durability = array[2];
 
     // if (item.Definition.PossibleItemOptions.Any(o =>
     //         o.PossibleOptions.Any(i => i.OptionType == ItemOptionTypes.Excellent)))

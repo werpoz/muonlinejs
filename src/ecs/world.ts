@@ -21,6 +21,8 @@ export type Item = {
   num: number;
   group: number;
   lvl?: number;
+  // stack size for potions, jewels etc.
+  durability?: number;
   isExcellent?: boolean;
   hasSkill?: boolean;
 };

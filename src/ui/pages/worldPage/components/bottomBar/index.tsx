@@ -3,6 +3,18 @@ import { observer } from 'mobx-react-lite';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { Item } from '../../../../../ecs/world';
+import { useEventBus } from '../../../../../hooks/useEventBus';
+import { InventoryConstants } from '../../../../../common/inventoryConstants';
+import {
+  CONSUMABLE_HOT_KEYS,
+  type ConsumableHotKey,
+  findHotKeyItem,
+} from '../../../../../common/consumables';
+
+const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
+
+const getHotKeyItem = (hotKey: ConsumableHotKey) =>
+  findHotKeyItem(Store.playerData.items, hotKey, FIRST_INVENTORY_SLOT);
 
 const ConsumableItem = ({
   hotKey,
@@ -14,10 +26,16 @@ const ConsumableItem = ({
   count: number;
 }) => {
   return (
-    <div className="consumable-item">
+    <div
+      className="consumable-item"
+      onClick={() => {
+        const { slot } = getHotKeyItem(hotKey as ConsumableHotKey);
+        if (slot >= 0) Store.consumeItem(slot);
+      }}
+    >
       <span className="hot-key">{hotKey}</span>
       {!!icon && <ItemIcon {...icon} />}
-      <span className="count">{count}</span>
+      {count > 0 && <span className="count">{count}</span>}
     </div>
   );
 };
@@ -60,14 +78,29 @@ export const ExpBar = observer(() => {
 export const BottomBar = observer(() => {
   const playerData = Store.playerData;
 
+  useEventBus('keyPressed', code => {
+    const hotKey = CONSUMABLE_HOT_KEYS.find(k => code === `Key${k}`);
+    if (!hotKey) return;
+
+    const { slot } = getHotKeyItem(hotKey);
+    if (slot >= 0) Store.consumeItem(slot);
+  });
+
   return (
     <div className="bottom-bar">
       <div className="panel">
         <div className="consumable-items">
-          <ConsumableItem hotKey="Q" icon={{ group: 14, num: 0 }} count={10} />
-          <ConsumableItem hotKey="W" icon={{ group: 14, num: 1 }} count={10} />
-          <ConsumableItem hotKey="E" icon={{ group: 14, num: 2 }} count={10} />
-          <ConsumableItem hotKey="R" icon={{ group: 14, num: 3 }} count={10} />
+          {CONSUMABLE_HOT_KEYS.map(hotKey => {
+            const { item, count } = getHotKeyItem(hotKey);
+            return (
+              <ConsumableItem
+                key={hotKey}
+                hotKey={hotKey}
+                icon={item}
+                count={count}
+              />
+            );
+          })}
         </div>
         <VerticalBar
           className="hp-bar"

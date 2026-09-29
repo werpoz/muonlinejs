@@ -20,6 +20,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Matar monstruo y ganar experiencia | ✅ | `ObjectGotKilled`, `ExperienceGained` |
 | Chat (enviar/recibir) y comandos de GM | ✅ | `PublicChatMessage`, `ChatMessage`, `ServerMessage` |
 | Recoger objeto con clic y con Espacio | ✅ | `ItemsDropped` → `PickupItemRequest` → `ItemDropRemoved`, `ItemAddedToInventory` |
+| Usar pociones (Q/W y clic derecho) | ✅ | `ConsumeItemRequest` → `ItemDurabilityChanged`, `CurrentHealthAndShield` (vida 35 → 112) |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

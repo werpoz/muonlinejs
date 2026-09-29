@@ -15,6 +15,7 @@ import {
   HitRequestPacket,
   PickupItemRequestPacket,
   PublicChatMessagePacket,
+  ConsumeItemRequestPacket,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -638,6 +639,14 @@ export const Store = new (class _Store {
       this.chatMessages.push(line);
       if (this.chatMessages.length > MAX_CHAT_LINES) this.chatMessages.shift();
     });
+  }
+
+  consumeItem(slot: number): void {
+    const packet = ConsumeItemRequestPacket.createPacket();
+    packet.ItemSlot = slot;
+    packet.TargetSlot = 0;
+
+    this.sendToGS(packet.buffer);
   }
 
   sendPickupRequest(itemId: number): void {

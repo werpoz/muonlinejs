@@ -6,6 +6,10 @@ import { useEventBus } from '../../../../../hooks/useEventBus';
 import { Item } from '../../../../../ecs/world';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { useState } from 'react';
+import { InventoryConstants } from '../../../../../common/inventoryConstants';
+import { isConsumable } from '../../../../../common/consumables';
+
+const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
 
 const EquipmentItem = ({
   className,
@@ -49,13 +53,20 @@ const ItemTooltip = ({
   );
 };
 
-const InventoryItem = ({ item }: { item: Item | null }) => {
+const InventoryItem = ({ item, slot }: { item: Item | null; slot: number }) => {
   const config = item ? ItemsDatabase.getItem(item.group, item.num) : null;
   const w = config?.X ?? 1;
   const h = config?.Y ?? 1;
 
   return (
-    <div className={`inventory-item w-${w} h-${h}${!item ? '' : ' used'}`}>
+    <div
+      className={`inventory-item w-${w} h-${h}${!item ? '' : ' used'}`}
+      onContextMenu={e => {
+        // right click uses potions, like in the original client
+        e.preventDefault();
+        if (isConsumable(item)) Store.consumeItem(slot);
+      }}
+    >
       <div className="bg">
         <ItemTooltip item={item}>
           {!!item && <ItemIcon {...item} />}
@@ -100,7 +111,11 @@ export const Inventory = observer(() => {
       </div>
       <div className="inventory-items">
         {playerData.inventoryItems.map((item, index) => (
-          <InventoryItem key={index} item={item} />
+          <InventoryItem
+            key={index}
+            item={item}
+            slot={FIRST_INVENTORY_SLOT + index}
+          />
         ))}
       </div>
       <div className="zen">Zen: {playerData.money}</div>
