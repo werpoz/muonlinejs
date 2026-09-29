@@ -5,8 +5,9 @@
 - [x] Carga de terreno, modelos y objetos
 - [x] Movimiento y pathfinding
 - [x] Inventario básico (serialización compatible con OpenMU)
-- [ ] Login y selección de servidor completos
-- [ ] Selección / creación de personaje
+- [x] Lista de servidores, login y selección de personaje (probado con OpenMU Season 6)
+- [ ] Creación / borrado de personaje (sin probar)
+- [ ] Arreglar los 44 errores de `tsc` para poder activarlo como obligatorio en CI
 - [ ] Chat y party
 - [ ] Combate y habilidades (efectos: energy ball, flame ya iniciados)
 - [ ] Monstruos y NPCs con IA desde el servidor

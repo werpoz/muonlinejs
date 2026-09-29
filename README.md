@@ -55,6 +55,7 @@ You should see log messages from OpenMU in the browser console.
 
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Prueba con OpenMU](docs/PRUEBAS_OPENMU.md)
 - [Contribuir](CONTRIBUTING.md)
 
 ## Need help?
