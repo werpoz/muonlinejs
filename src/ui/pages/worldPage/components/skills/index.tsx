@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Vector3 } from '../../../../../libs/babylon/exports';
 import { playEnergyBall } from '../../../../../effects/energyBall';
 import { Rand } from '../../../../../common/rand';
+import { getSkillInfo } from '../../../../../common/skills';
 
 export const Skills = observer(() => {
   const [flame, setFlame] = useState<{ stop: () => void } | null>(null);
@@ -44,6 +45,26 @@ export const Skills = observer(() => {
   //   }, 1000);
   // }, [world]);
 
+  // online: skills learned on the server; right click on a monster uses the
+  // selected one
+  if (!Store.isOffline) {
+    return (
+      <div className="test-skills">
+        {Store.skills.map(skill => (
+          <button
+            key={skill.number}
+            className={skill.number === Store.currentSkill ? 'selected' : ''}
+            title="Right click on a monster to use it"
+            onClick={() => Store.selectSkill(skill.number)}
+          >
+            {getSkillInfo(skill.number).name}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // offline demo of the effects
   return (
     <div className="test-skills">
       <button

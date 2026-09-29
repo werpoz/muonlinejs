@@ -19,6 +19,7 @@ import {
   IncreaseCharacterStatPointPacket,
   ItemMoveRequestPacket,
   DropItemRequestPacket,
+  TargetedSkillPacket,
   StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -328,6 +329,10 @@ export const Store = new (class _Store {
 
   // inventory slot of the item picked up with the mouse
   heldItemSlot: number | null = null;
+
+  // learned skills and the one used with the right mouse button
+  skills: { index: number; number: number; level: number }[] = [];
+  currentSkill: number | null = null;
   // move sent to the server, ItemMoved only tells the target slot
   pendingItemMove: { from: number; to: number } | null = null;
 
@@ -367,6 +372,8 @@ export const Store = new (class _Store {
       characterInfoEnabled: observable,
       inventoryEnabled: observable,
       heldItemSlot: observable,
+      skills: observable,
+      currentSkill: observable,
     });
     this.loadConfig();
   }
@@ -671,6 +678,20 @@ export const Store = new (class _Store {
 
       this.heldItemSlot = null;
       if (held !== slot) this.moveItem(held, slot);
+    });
+  }
+
+  sendTargetedSkill(skill: number, targetId: number): void {
+    const packet = TargetedSkillPacket.createPacket();
+    packet.SkillId = skill;
+    packet.TargetId = targetId;
+
+    this.sendToGS(packet.buffer);
+  }
+
+  selectSkill(skill: number | null): void {
+    runInAction(() => {
+      this.currentSkill = skill;
     });
   }
 

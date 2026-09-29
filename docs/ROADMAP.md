@@ -14,7 +14,8 @@
 - [ ] Party
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
-- [ ] Habilidades (Flame y Energy Ball son solo efectos locales)
+- [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo
+- [ ] Habilidades de área (Flame, Twister, Evil Spirit…: necesitan `AreaSkillHit`)
 - [x] Recoger objetos del suelo (clic o Espacio)
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)

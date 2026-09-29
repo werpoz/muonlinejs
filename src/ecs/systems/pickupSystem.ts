@@ -61,7 +61,10 @@ export const PickupSystem: ISystemFactory = world => {
       const player = world.playerEntity;
       if (!player || player.dead) return;
 
-      const pressed = world.pointerPressed && !world.pointerConsumed;
+      const pressed =
+        world.pointerPressed &&
+        world.pointerButton === 0 &&
+        !world.pointerConsumed;
       if (pressed && !wasPressed) {
         const hovered = world.currentPointerTarget;
         // a click elsewhere cancels a pending pick up

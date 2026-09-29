@@ -84,7 +84,7 @@ export const PlayerControllerSystem: ISystemFactory = world => {
         isAttackable(hovered) ||
         isPickable(hovered);
 
-      if (world.pointerPressed && !busy) {
+      if (world.pointerPressed && world.pointerButton === 0 && !busy) {
         if (delay <= 0) {
           delay = MOVE_DELAY;
           tryMove();

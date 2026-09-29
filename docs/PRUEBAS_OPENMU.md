@@ -25,6 +25,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Morir y reaparecer | ✅ | `ObjectGotKilled` → `RespawnAfterDeath` (pueblo, vida llena, se puede volver a caminar) |
 | Mover/equipar objetos | ✅ | `ItemMoveRequest` → `ItemMoved` (hacha: equipo ↔ inventario, el modelo la suelta/recoge); movimiento inválido → `ItemMoveRequestFailed` |
 | Tirar objeto al suelo | ✅ | `DropItemRequest` → `ItemDropResponse`, `ItemsDropped` (el personaje no se mueve con ese clic) |
+| Aprender y lanzar habilidades | ✅ | Scroll of Fire Ball → `SkillAdded`; clic derecho → `TargetedSkill` → `SkillAnimation`, `ObjectHit` (22 de daño) |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

@@ -25,6 +25,25 @@ export function isConsumable(item: Item | null | undefined): item is Item {
   );
 }
 
+const SCROLLS_GROUP = 15; // wizard spells
+const ORBS_GROUP = 12;
+// orbs of skills (12/15 is the Jewel of Chaos, not an orb)
+const SKILL_ORBS = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19];
+
+// Items used with a right click in the inventory: potions and the scrolls /
+// orbs that teach a skill.
+export function isUsableFromInventory(
+  item: Item | null | undefined
+): item is Item {
+  if (!item) return false;
+
+  const teachesSkill =
+    item.group === SCROLLS_GROUP ||
+    (item.group === ORBS_GROUP && SKILL_ORBS.includes(item.num));
+
+  return teachesSkill || isConsumable(item);
+}
+
 // Potion used by a hotkey: first slot of the preferred kind, plus the
 // total amount of all potions of that hotkey (stack size is the durability).
 export function findHotKeyItem(

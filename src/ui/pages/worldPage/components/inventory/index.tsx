@@ -7,7 +7,7 @@ import { Item } from '../../../../../ecs/world';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { useState } from 'react';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
-import { isConsumable } from '../../../../../common/consumables';
+import { isUsableFromInventory } from '../../../../../common/consumables';
 
 const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
 
@@ -76,7 +76,7 @@ const InventoryItem = observer(
         onContextMenu={e => {
           // right click uses potions, like in the original client
           e.preventDefault();
-          if (isConsumable(item)) Store.consumeItem(slot);
+          if (isUsableFromInventory(item)) Store.consumeItem(slot);
         }}
       >
         <div className="bg">

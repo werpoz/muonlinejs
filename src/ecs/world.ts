@@ -166,6 +166,9 @@ export class World extends ECSWorld<Entity> {
 
   pointerPressed = false;
 
+  // mouse button of the current press: 0 left, 2 right
+  pointerButton = 0;
+
   // the current click was used by the UI logic (e.g. dropping an item) and
   // must not also walk/attack/pick up, until the button is released
   pointerConsumed = false;

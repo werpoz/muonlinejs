@@ -52,10 +52,17 @@ export const PointerInputSystem: ISystemFactory = world => {
 
     if (ev.type === PointerEventTypes.POINTERDOWN) {
       world.pointerPressed = true;
+      world.pointerButton = ev.event.button;
     } else if (ev.type === PointerEventTypes.POINTERUP) {
       world.pointerPressed = false;
     }
   });
+
+  // right click casts skills, it must not open the browser menu
+  scene
+    .getEngine()
+    .getRenderingCanvas()
+    ?.addEventListener('contextmenu', e => e.preventDefault());
 
   window.addEventListener('lostpointercapture', ev => {
     world.pointerPressed = false;

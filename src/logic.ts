@@ -4,6 +4,8 @@ import { deserializeAppearance } from './common/deserializeAppearance';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
 import { InventoryConstants } from './common/inventoryConstants';
+import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
+import { playEnergyBall } from './effects/energyBall';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -22,6 +24,9 @@ import {
   ChatMessagePacket,
   MapChangedPacket,
   RespawnAfterDeathPacket,
+  SkillAddedPacket,
+  SkillAnimationPacket,
+  SkillListUpdatePacket,
   CharacterLevelUpdatePacket,
   CharacterStatIncreaseResponsePacket,
   ExperienceGainedPacket,
@@ -943,5 +948,83 @@ EventBus.on('ItemDropResponse', packet => {
 
   if (p.InventorySlot <= InventoryConstants.LastEquippableItemSlotIndex) {
     Store.syncPlayerAppearance();
+  }
+});
+
+EventBus.on('SkillListUpdate', packet => {
+  const p = new SkillListUpdatePacket(packet);
+  const skills = p.getSkills(p.Count).map(s => ({
+    index: s.SkillIndex,
+    number: s.SkillNumber,
+    level: s.SkillLevel,
+  }));
+  console.log('SkillListUpdate', skills);
+
+  runInAction(() => {
+    Store.skills = skills;
+    if (!skills.some(s => s.number === Store.currentSkill)) {
+      Store.currentSkill = skills[0]?.number ?? null;
+    }
+  });
+});
+
+// SkillAdded and SkillRemoved share code, sub code and length; the flag
+// byte tells them apart.
+const SKILL_REMOVED_FLAG = 0xff;
+
+EventBus.on('SkillAdded', packet => {
+  const p = new SkillAddedPacket(packet);
+  const skill = {
+    index: p.SkillIndex,
+    number: p.SkillNumber,
+    level: p.SkillLevel,
+  };
+  const removed = p.Flag === SKILL_REMOVED_FLAG;
+  console.log(removed ? 'SkillRemoved' : 'SkillAdded', skill);
+
+  runInAction(() => {
+    Store.skills = Store.skills.filter(s => s.number !== skill.number);
+    if (removed) {
+      if (Store.currentSkill === skill.number) Store.currentSkill = null;
+      return;
+    }
+
+    Store.skills.push(skill);
+    Store.currentSkill ??= skill.number;
+  });
+
+  if (!removed) {
+    Store.addNotification(`Learned ${getSkillInfo(skill.number).name}`);
+  }
+});
+
+EventBus.on('SkillAnimation', packet => {
+  const p = new SkillAnimationPacket(packet);
+  const world = Store.world;
+  if (!world) return;
+
+  const find = (id: number) =>
+    world.netObjsQuery.entities.find(e => e.netId === (id & 0x7fff));
+  const caster = find(p.PlayerId);
+  const target = find(p.TargetId);
+  console.log(`SkillAnimation: skill ${p.SkillId}, ${p.PlayerId} -> ${p.TargetId}`);
+
+  // the local player already started its animation when casting
+  if (caster && !caster.localPlayer) {
+    if (caster.playerAnimation) {
+      caster.playerAnimation.action = PlayerAction.PLAYER_SKILL_HAND1;
+      caster.playerAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
+    } else if (caster.monsterAnimation) {
+      caster.monsterAnimation.action = MonsterActionType.Attack1;
+      caster.monsterAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
+    }
+  }
+
+  if (caster && target && PROJECTILE_SKILLS.has(p.SkillId)) {
+    const from = new Vector3().copyFrom(caster.transform.pos as Vector3);
+    const to = new Vector3().copyFrom(target.transform.pos as Vector3);
+    from.addInPlaceFromFloats(0.5, 1.25, 0.5);
+    to.addInPlaceFromFloats(0.5, 1, 0.5);
+    playEnergyBall(world.scene, from, to);
   }
 });
