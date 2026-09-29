@@ -6,6 +6,7 @@ import { ItemSerializer } from './common/itemSerializer';
 import { InventoryConstants } from './common/inventoryConstants';
 import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
 import { playEnergyBall } from './effects/energyBall';
+import { playFlame } from './effects/flame';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -34,6 +35,7 @@ import {
   ItemBoughtPacket,
   NpcItemSellResultPacket,
   SkillAnimationPacket,
+  AreaSkillAnimationPacket,
   SkillListUpdatePacket,
   CharacterLevelUpdatePacket,
   CharacterStatIncreaseResponsePacket,
@@ -1132,5 +1134,36 @@ EventBus.on('NpcItemSellResult', packet => {
   });
   if (slot !== null && slot <= InventoryConstants.LastEquippableItemSlotIndex) {
     Store.syncPlayerAppearance();
+  }
+});
+
+const FLAME_SKILL = 5;
+const FLAME_EFFECT_TIME_MS = 1500;
+
+EventBus.on('AreaSkillAnimation', packet => {
+  const p = new AreaSkillAnimationPacket(packet);
+  const world = Store.world;
+  if (!world) return;
+  console.log(
+    `AreaSkillAnimation: skill ${p.SkillId}, ${p.PlayerId} at (${p.PointX}, ${p.PointY})`
+  );
+
+  const caster = world.netObjsQuery.entities.find(
+    e => e.netId === (p.PlayerId & 0x7fff)
+  );
+  // the local player already started its animation when casting
+  if (caster && !caster.localPlayer && caster.playerAnimation) {
+    caster.playerAnimation.action = PlayerAction.PLAYER_SKILL_HAND1;
+    caster.playerAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
+  }
+
+  if (p.SkillId === FLAME_SKILL) {
+    const pos = new Vector3(
+      p.PointX + 0.5,
+      world.getTerrainHeight(p.PointX, p.PointY),
+      p.PointY + 0.5
+    );
+    const flame = playFlame(world.scene, pos);
+    setTimeout(() => flame.stop(), FLAME_EFFECT_TIME_MS);
   }
 });

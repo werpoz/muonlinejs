@@ -20,6 +20,8 @@ import {
   ItemMoveRequestPacket,
   DropItemRequestPacket,
   TargetedSkillPacket,
+  AreaSkillPacket,
+  AreaSkillHitPacket,
   EnterGateRequestPacket,
   WarpCommandRequestPacket,
   ClientReadyAfterMapChangePacket,
@@ -760,6 +762,62 @@ export const Store = new (class _Store {
     const packet = WarpCommandRequestPacket.createPacket();
     packet.CommandKey = 0;
     packet.WarpInfoIndex = warpIndex;
+
+    this.sendToGS(packet.buffer);
+  }
+
+  private areaSkillCounter = 0;
+
+  // Area skill on the tile (x, y), direction 0-7 like walking. The hits are
+  // declared afterwards with AreaSkillHit (see AreaSkillHitSystem), which
+  // refers to the animation counter sent here.
+  sendAreaSkill(skill: number, x: number, y: number, direction: number): void {
+    // 0 is not a valid reference for the hits
+    this.areaSkillCounter = (this.areaSkillCounter % 255) + 1;
+
+    const packet = AreaSkillPacket.createPacket();
+    packet.SkillId = skill;
+    packet.TargetX = x;
+    packet.TargetY = y;
+    // the original client sends the looking angle scaled to a byte
+    packet.Rotation = (direction * 32) & 0xff;
+    packet.ExtraTargetId = 0;
+    packet.AnimationCounter = this.areaSkillCounter;
+
+    this.sendToGS(packet.buffer);
+    EventBus.emit('areaSkillCast', {
+      skill,
+      x,
+      y,
+      animationCounter: this.areaSkillCounter,
+    });
+  }
+
+  sendAreaSkillHit(
+    skill: number,
+    x: number,
+    y: number,
+    hitCounter: number,
+    targetIds: number[],
+    animationCounter: number
+  ): void {
+    // header (9) + [target id (2), animation counter (1)] per target
+    const TARGETS_OFFSET = 9;
+    const TARGET_SIZE = 3;
+    const packet = AreaSkillHitPacket.createPacket(
+      TARGETS_OFFSET + TARGET_SIZE * targetIds.length
+    );
+    packet.SkillId = skill;
+    packet.TargetX = x;
+    packet.TargetY = y;
+    packet.HitCounter = hitCounter & 0xff;
+    packet.TargetCount = targetIds.length;
+
+    targetIds.forEach((id, i) => {
+      const offset = TARGETS_OFFSET + i * TARGET_SIZE;
+      packet.buffer.setUint16(offset, id, false);
+      packet.buffer.setUint8(offset + 2, animationCounter);
+    });
 
     this.sendToGS(packet.buffer);
   }

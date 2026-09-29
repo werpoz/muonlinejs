@@ -15,7 +15,8 @@
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
 - [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo
-- [ ] Habilidades de área (Flame, Twister, Evil Spirit…: necesitan `AreaSkillHit`)
+- [x] Habilidades de área: `AreaSkill` + el cliente declara los golpes con `AreaSkillHit` (probado con Flame)
+- [ ] Efectos visuales de las demás habilidades de área (solo Flame tiene efecto)
 - [x] Recoger objetos del suelo (clic o Espacio)
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)

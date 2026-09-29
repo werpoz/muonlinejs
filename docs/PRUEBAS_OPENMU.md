@@ -29,6 +29,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Cambiar de mapa | ✅ | Lista (M) Lorencia → Noria: `WarpCommandRequest` → `MapChanged`; portal 25 de Noria → Lorencia: `EnterGateRequest` → `MapChanged` |
 | Monstruos/NPCs de otros mapas | ✅ | Noria: Goblin, Scorpion, Elf Lala, Amy, Charon… con su modelo; tras cambiar de mapa se envía `ClientReadyAfterMapChange` |
 | Tienda de NPC (Amy, Noria) | ✅ | `TalkToNpcRequest` → `NpcWindowResponse` + `StoreItemList` (32 objetos); comprar → `InventoryMoneyUpdate` (-330 zen); vender → `NpcItemSellResult` (+20 zen) |
+| Habilidad de área (Flame) | ✅ | `AreaSkill` → `AreaSkillAnimation`; `AreaSkillHit` con la araña → `ObjectHit` (84 de daño), muere |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

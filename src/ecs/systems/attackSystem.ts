@@ -97,11 +97,47 @@ export const AttackSystem: ISystemFactory = world => {
       Store.addNotification('Select a skill first', 'error');
       return null;
     }
-    if (!getSkillInfo(current).targeted) {
-      Store.addNotification('Area skills are not supported yet', 'error');
-      return null;
-    }
     return current;
+  };
+
+  // Right click on the ground with an area skill: cast it there if in range.
+  const castAreaSkillOnGround = (player: Entity, skill: number) => {
+    const scene = world.scene;
+    const pick = scene.pick(
+      scene.pointerX,
+      scene.pointerY,
+      m => m === world.terrain?.mesh,
+      true
+    );
+    const point = pick?.pickedPoint;
+    if (!point) return;
+
+    const playerTile = {
+      x: ~~player.transform!.pos.x,
+      y: ~~player.transform!.pos.z,
+    };
+    const tile = { x: ~~point.x, y: ~~point.z };
+    if (tileDistance(playerTile, tile) > getSkillInfo(skill).range) {
+      Store.addNotification('Too far', 'error');
+      return;
+    }
+    if (cooldown > 0) return;
+    cooldown = ATTACK_INTERVAL;
+
+    castAreaSkill(player, skill, playerTile, tile);
+  };
+
+  const castAreaSkill = (
+    player: Entity,
+    skill: number,
+    from: IVector2Like,
+    to: IVector2Like
+  ) => {
+    player.transform!.rot.y =
+      Math.atan2(to.y - from.y, to.x - from.x) + Math.PI / 2;
+    player.playerAnimation!.action = PlayerAction.PLAYER_SKILL_HAND1;
+    player.playerAnimation!.oneShotTime = ATTACK_ANIMATION_TIME;
+    Store.sendAreaSkill(skill, to.x, to.y, getLookingDirection(from, to));
   };
 
   return {
@@ -120,9 +156,16 @@ export const AttackSystem: ISystemFactory = world => {
         // left button hits, right button uses the selected skill
         world.attackTarget = isAttackable(hovered) ? hovered : null;
         skill = null;
-        if (world.attackTarget && world.pointerButton === 2) {
-          skill = skillForRightClick();
-          if (skill === null) world.attackTarget = null;
+        if (world.pointerButton === 2) {
+          const selected = skillForRightClick();
+          if (!world.attackTarget) {
+            if (selected !== null && !getSkillInfo(selected).targeted) {
+              castAreaSkillOnGround(player, selected);
+            }
+          } else {
+            skill = selected;
+            if (skill === null) world.attackTarget = null;
+          }
         }
         goal = null;
         hitsSinceClick = 0;
@@ -188,7 +231,14 @@ export const AttackSystem: ISystemFactory = world => {
       player.playerAnimation.oneShotTime = ATTACK_ANIMATION_TIME;
 
       hitsSinceClick++;
-      if (skill !== null) {
+      if (skill !== null && !getSkillInfo(skill).targeted) {
+        Store.sendAreaSkill(
+          skill,
+          targetTile.x,
+          targetTile.y,
+          getLookingDirection(playerTile, targetTile)
+        );
+      } else if (skill !== null) {
         Store.sendTargetedSkill(skill, target.netId!);
       } else {
         Store.sendHitRequest(

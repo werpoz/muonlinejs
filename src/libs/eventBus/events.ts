@@ -28,5 +28,6 @@ export type Events = CSEvents &
     keyPressed: string;
     keyReleased: string;
     pageVisibilityChanged: boolean;
+    areaSkillCast: { skill: number; x: number; y: number; animationCounter: number };
     damageShown: { entity: Entity; damage: number; isLocalPlayer: boolean };
   };

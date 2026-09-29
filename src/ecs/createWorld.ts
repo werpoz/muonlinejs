@@ -24,6 +24,7 @@ import { PickupSystem } from './systems/pickupSystem';
 import { DropItemSystem } from './systems/dropItemSystem';
 import { GateSystem } from './systems/gateSystem';
 import { NpcTalkSystem } from './systems/npcTalkSystem';
+import { AreaSkillHitSystem } from './systems/areaSkillHitSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
@@ -32,6 +33,7 @@ const factories: ISystemFactory[] = [
   InteractiveAreaSystem,
   DropItemSystem,
   AttackSystem,
+  AreaSkillHitSystem,
   PickupSystem,
   NpcTalkSystem,
   PlayerControllerSystem,
