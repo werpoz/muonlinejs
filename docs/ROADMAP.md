@@ -21,7 +21,8 @@
 - [ ] Tirar objetos del inventario
 - [x] Etiquetas de nombre sobre personajes, NPCs y objetos
 - [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
-- [ ] Repartir puntos de nivel
+- [x] Repartir puntos de nivel (panel C)
+- [ ] Daño/defensa del panel C (valores fijos de ejemplo)
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén
 - [ ] Más mapas

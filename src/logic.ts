@@ -21,6 +21,7 @@ import {
   CharacterInventoryPacket,
   ChatMessagePacket,
   CharacterLevelUpdatePacket,
+  CharacterStatIncreaseResponsePacket,
   ExperienceGainedPacket,
   InventoryMoneyUpdatePacket,
   ItemConsumptionFailedPacket,
@@ -805,4 +806,34 @@ EventBus.on('ItemRemoved', packet => {
 
 EventBus.on('ItemConsumptionFailed', () => {
   Store.addNotification('Cannot use the item', 'error');
+});
+
+EventBus.on('CharacterStatIncreaseResponse', packet => {
+  const p = new CharacterStatIncreaseResponsePacket(packet);
+  console.log(`CharacterStatIncreaseResponse: ${p.Success}, stat ${p.Attribute}`);
+  if (!p.Success) return;
+
+  runInAction(() => {
+    const d = Store.playerData;
+    d.points = Math.max(0, d.points - 1);
+    d.maxSD = p.UpdatedMaximumShield;
+    d.maxAG = p.UpdatedMaximumAbility;
+
+    switch (p.Attribute) {
+      case 0:
+        d.str++;
+        break;
+      case 1:
+        d.agi++;
+        break;
+      case 2:
+        d.sta++;
+        d.maxHP = p.UpdatedDependentMaximumStat;
+        break;
+      case 3:
+        d.eng++;
+        d.maxMP = p.UpdatedDependentMaximumStat;
+        break;
+    }
+  });
 });

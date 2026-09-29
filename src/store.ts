@@ -16,6 +16,7 @@ import {
   PickupItemRequestPacket,
   PublicChatMessagePacket,
   ConsumeItemRequestPacket,
+  IncreaseCharacterStatPointPacket,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -639,6 +640,14 @@ export const Store = new (class _Store {
       this.chatMessages.push(line);
       if (this.chatMessages.length > MAX_CHAT_LINES) this.chatMessages.shift();
     });
+  }
+
+  // stat: 0 strength, 1 agility, 2 vitality, 3 energy, 4 leadership
+  increaseStat(stat: number): void {
+    const packet = IncreaseCharacterStatPointPacket.createPacket();
+    packet.StatType = stat;
+
+    this.sendToGS(packet.buffer);
   }
 
   consumeItem(slot: number): void {

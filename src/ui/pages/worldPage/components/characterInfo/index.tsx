@@ -3,25 +3,28 @@ import { Store } from '../../../../../store';
 import './style.less';
 import { observer } from 'mobx-react-lite';
 
-const Stat = ({
-  label,
-  value,
-  onClick,
-}: {
-  label: string;
-  value: number;
-  onClick: () => void;
-}) => {
-  return (
-    <div className="stat">
-      <span className="label">{label}</span>
-      <span className="value">{value}</span>
-      <button className="add-point" onClick={onClick}>
-        +
-      </button>
-    </div>
-  );
-};
+enum StatType {
+  Strength = 0,
+  Agility = 1,
+  Vitality = 2,
+  Energy = 3,
+}
+
+const Stat = observer(
+  ({ label, value, stat }: { label: string; value: number; stat: StatType }) => {
+    return (
+      <div className="stat">
+        <span className="label">{label}</span>
+        <span className="value">{value}</span>
+        {Store.playerData.points > 0 && (
+          <button className="add-point" onClick={() => Store.increaseStat(stat)}>
+            +
+          </button>
+        )}
+      </div>
+    );
+  }
+);
 
 const AttributeValue = ({ text }: { text: string }) => {
   return <span className="attribute-value">{text}</span>;
@@ -53,7 +56,9 @@ export const CharacterInfo = observer(() => {
 
   return (
     <div className="character-info">
-      <span className="nickname">Test</span>
+      <span className="nickname">
+        {Store.world?.playerEntity?.objectNameInWorld}
+      </span>
       <span className="status">(Dark Knight)</span>
       <div className="level-points">
         <span className="level">Level: {playerData.level}</span>
@@ -65,16 +70,16 @@ export const CharacterInfo = observer(() => {
         Exp:{playerData.exp}/{playerData.expToNextLvl}
       </span>
       <div className="stats">
-        <Stat label="STR" value={playerData.str} onClick={() => {}} />
+        <Stat label="STR" value={playerData.str} stat={StatType.Strength} />
         <AttributeValue text={dmg} />
         <AttributeValue text={attackRate} />
-        <Stat label="AGI" value={playerData.agi} onClick={() => {}} />
+        <Stat label="AGI" value={playerData.agi} stat={StatType.Agility} />
         <AttributeValue text={defense} />
         <AttributeValue text={attackSpeed} />
         <AttributeValue text={defenceRate} />
-        <Stat label="STA" value={playerData.sta} onClick={() => {}} />
+        <Stat label="STA" value={playerData.sta} stat={StatType.Vitality} />
         <AttributeValue text={hp} />
-        <Stat label="ENG" value={playerData.eng} onClick={() => {}} />
+        <Stat label="ENG" value={playerData.eng} stat={StatType.Energy} />
         <AttributeValue text={mp} />
         <AttributeValue text={skillDamage} />
       </div>
