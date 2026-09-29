@@ -33,6 +33,12 @@ export class MapTileObject extends ModelObject {
     if (modelPath === 'Object3/Object20.glb') {
       const m = this.getMesh(0)!;
       m.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);
+    }
+    // noria light beams: black texture background, additive like the other lights
+    else if (modelPath === 'Object4/Object38.glb') {
+      this.getMeshes(true).forEach(mesh => {
+        mesh.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);
+      });
     } else if (modelPath === 'Object8/Object39.glb') {
       const m = this.getMesh(0)!;
       m.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);

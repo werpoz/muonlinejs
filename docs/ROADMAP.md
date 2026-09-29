@@ -30,6 +30,6 @@
 - [ ] Tiendas, trade y almacén
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
-- [ ] Objetos del mapa de Noria que se ven como placas negras enormes
+- [x] Haces de luz de Noria (se veían como placas negras enormes)
 - [ ] Modelos que faltan en `game-assets` (trampas de Blood Castle, algunos NPC)
 - [ ] Tests de paquetes y cifrado en CI
