@@ -18,6 +18,8 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Monstruos visibles y atacando al jugador | ✅ | `AddNpcsToScope`, `ObjectAnimation`, `ObjectHit` |
 | Atacar un monstruo (clic = 1 golpe, mantener = seguir) | ✅ | `HitRequest` → `ObjectHit` (daño 2–9 con Small Axe) |
 | Matar monstruo y ganar experiencia | ✅ | `ObjectGotKilled`, `ExperienceGained` |
+| Chat (enviar/recibir) y comandos de GM | ✅ | `PublicChatMessage`, `ChatMessage`, `ServerMessage` |
+| Recoger objeto con clic y con Espacio | ✅ | `ItemsDropped` → `PickupItemRequest` → `ItemDropRemoved`, `ItemAddedToInventory` |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:
@@ -29,6 +31,9 @@ Detalles observados:
   corrigió la posición con `ObjectMoved`. Parece un desajuste entre los tiles
   que el cliente considera transitables y los del servidor.
 - Muchos avisos de MobX en modo estricto (se modifica estado fuera de `action`).
+- Las etiquetas de nombre se colocan fuera de la pantalla (coordenada Y
+  mal calculada), por eso no se ven sobre NPCs ni objetos.
+- Los mensajes del servidor llegan con un prefijo `000000000`.
 - Dos NPC de Lorencia aparecen con la etiqueta "NPC" en lugar de su nombre.
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
@@ -50,6 +55,13 @@ desconectado), p. ej. a (190, 130), donde hay arañas y Budge Dragons:
 
 ```sql
 update data."Character" set "PositionX"=190, "PositionY"=130 where "Name"='test0Dk';
+```
+
+Para probar la recogida sin cazar, da rango de GM al personaje (desconectado)
+y usa `/item <grupo> <número>` en el chat (Enter), que tira el objeto al suelo:
+
+```sql
+update data."Character" set "CharacterStatus"=32 where "Name"='test0Dk';
 ```
 
 Cuentas de prueba: `test0`…`test9` (contraseña igual al usuario).

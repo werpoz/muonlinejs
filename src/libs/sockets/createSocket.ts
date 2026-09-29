@@ -8,7 +8,14 @@ type Options = {
   tcpPort: number;
 };
 
-const STCPackets = [...ConnectServerPackets, ...ServerToClientPackets].filter(p => p.Direction === 'ServerToClient');
+// Packets of other protocol versions share codes with the Season 6 ones
+// (e.g. MoneyDropped vs ItemsDropped), so they are not dispatched.
+const isOtherVersionPacket = (name: string) =>
+  /(075|095)$/.test(name) || name === 'MoneyDropped';
+
+const STCPackets = [...ConnectServerPackets, ...ServerToClientPackets].filter(
+  p => p.Direction === 'ServerToClient' && !isOtherVersionPacket(p.Name)
+);
 
 type STCPacket = (typeof STCPackets)[number];
 

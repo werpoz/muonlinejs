@@ -8,6 +8,22 @@ import type { EntityTypeFromQuery, ISystemFactory } from '../world';
 
 const COLOR_RED = new Color3(1, 0, 0);
 
+// Items on the ground can be very thin (e.g. an axe lying on its side),
+// so their clickable box is at least this big around the model.
+const MIN_ITEM_PICK_HALF_SIZE = 0.4;
+
+const tmpMin = Vector3.Zero();
+const tmpMax = Vector3.Zero();
+
+function expandToMinSize(min: Vector3, max: Vector3, halfSize: number) {
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const center = (min[axis] + max[axis]) / 2;
+    const half = Math.max((max[axis] - min[axis]) / 2, halfSize);
+    min[axis] = center - half;
+    max[axis] = center + half;
+  }
+}
+
 export const PointerInputSystem: ISystemFactory = world => {
   const scene = world.scene;
 
@@ -66,11 +82,14 @@ export const PointerInputSystem: ISystemFactory = world => {
 
         modelObject.UpdateBoundings();
         const bb = modelObject.BoundingBoxLocal;
+        tmpMin.copyFrom(bb.minimumWorld);
+        tmpMax.copyFrom(bb.maximumWorld);
 
-        const intersects = tmpCameraRay.intersectsBoxMinMax(
-          bb.minimumWorld,
-          bb.maximumWorld
-        );
+        if (e.droppedItem) {
+          expandToMinSize(tmpMin, tmpMax, MIN_ITEM_PICK_HALF_SIZE);
+        }
+
+        const intersects = tmpCameraRay.intersectsBoxMinMax(tmpMin, tmpMax);
 
         if (intersects) {
           possibleTargets.push(e);

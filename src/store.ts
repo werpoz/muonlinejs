@@ -14,6 +14,7 @@ import {
   WalkRequestPacket,
   HitRequestPacket,
   PickupItemRequestPacket,
+  PublicChatMessagePacket,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -285,6 +286,10 @@ class PlayerData {
 
 export type NotificationType = 'info' | 'error';
 
+export type ChatLine = { sender: string; text: string; system?: boolean };
+
+const MAX_CHAT_LINES = 8;
+
 export type Notification = {
   text: string;
   type: NotificationType;
@@ -325,6 +330,8 @@ export const Store = new (class _Store {
 
   notifications: Notification[] = [];
 
+  chatMessages: ChatLine[] = [];
+
   world: World | null = null;
 
   isOffline = location.href.includes('offline');
@@ -345,6 +352,7 @@ export const Store = new (class _Store {
       focusedChar: observable,
       playerData: observable,
       notifications: observable,
+      chatMessages: observable,
       world: observable,
       characterInfoEnabled: observable,
       inventoryEnabled: observable,
@@ -613,6 +621,23 @@ export const Store = new (class _Store {
     packet.LookingDirection = direction;
 
     this.sendToGS(packet.buffer);
+  }
+
+  sendChatMessage(text: string): void {
+    const name = this.world?.playerEntity?.objectNameInWorld ?? '';
+    // header (3) + character name (10) + message + null terminator
+    const packet = PublicChatMessagePacket.createPacket(13 + text.length + 1);
+    packet.setCharacter(name);
+    packet.setMessage(text);
+
+    this.sendToGS(packet.buffer);
+  }
+
+  addChatLine(line: ChatLine): void {
+    runInAction(() => {
+      this.chatMessages.push(line);
+      if (this.chatMessages.length > MAX_CHAT_LINES) this.chatMessages.shift();
+    });
   }
 
   sendPickupRequest(itemId: number): void {

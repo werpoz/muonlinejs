@@ -11,11 +11,15 @@
 - [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
 - [ ] Estado de muerte en la animación de monstruos
 - [ ] Nombres de algunos NPC (salen como "NPC")
-- [ ] Chat y party
+- [ ] Party
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
 - [ ] Habilidades (Flame y Energy Ball son solo efectos locales)
-- [ ] Recoger objetos del suelo
+- [x] Recoger objetos del suelo (clic o Espacio)
+- [ ] Recoger dinero (implementado, sin probar)
+- [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
+- [ ] Tirar objetos del inventario
+- [ ] Etiquetas de nombre sobre objetos/NPCs (se dibujan fuera de pantalla)
 - [ ] Repartir puntos de nivel
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén

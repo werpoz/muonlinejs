@@ -436,6 +436,7 @@ EventBus.on('ChatMessage', packet => {
     `ChatMessage: ${p.Type}, sender:${p.Sender}, msg: ${p.Message}`,
     p
   );
+  Store.addChatLine({ sender: p.Sender, text: p.Message });
 });
 
 EventBus.on('ObjectAnimation', packet => {
@@ -668,6 +669,8 @@ EventBus.on('ServerMessage', packet => {
       color = '#00ff00';
       break;
   }
+
+  Store.addChatLine({ sender: '', text: p.Message, system: true });
 
   console.log(
     `%cServerMessage: ${p.Message}`,

@@ -33,7 +33,9 @@ try {
 
 //some tricks for scrolling
 window.addEventListener('keydown', ev => {
-  if (['ArrowDown', 'ArrowUp', ' '].includes(ev.key)) {
+  const target = ev.target as HTMLElement | null;
+  const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+  if (!typing && ['ArrowDown', 'ArrowUp', ' '].includes(ev.key)) {
     ev.preventDefault();
   }
 });

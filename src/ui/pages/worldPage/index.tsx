@@ -7,6 +7,7 @@ import { BottomBar } from './components/bottomBar';
 import { CharacterInfo } from './components/characterInfo';
 import { Inventory } from './components/inventory';
 import { Skills } from './components/skills';
+import { Chat } from './components/chat';
 
 const HUD = observer(() => {
   return (
@@ -18,6 +19,7 @@ const HUD = observer(() => {
       </div>
       <Skills />
       <MapsList />
+      <Chat />
     </div>
   );
 });
