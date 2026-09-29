@@ -21,3 +21,5 @@ They are Webzen's assets, like the models and item icons of this repo.
 | money_box.png | newui_item_money |
 | exit_button.png | newui_exit_00 (2 states of 36x29) |
 | textbox.png / level_button.png | newui_cha_textbox02 / newui_chainfo_btn_level (2 states of 16x15) |
+| trade_accept.png / trade_money.png | newui_Bt_accept / newui_Bt_money01 (2 states of 36x29: normal, disabled) |
+| button_ok.png / button_cancel.png | newui_button_ok / newui_button_cancel (3 states of 54x30) |

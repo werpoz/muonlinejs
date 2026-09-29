@@ -119,6 +119,7 @@ const closeInventory = () => {
   Store.inventoryEnabled = false;
   Store.cancelHeldItem();
   Store.closeNpc();
+  Store.cancelTrade();
 };
 
 export const Inventory = observer(() => {

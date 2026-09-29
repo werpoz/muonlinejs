@@ -31,6 +31,11 @@ import {
   SellItemToNpcRequestPacket,
   VaultClosedPacket,
   VaultMoveMoneyRequestPacket,
+  TradeRequestPacket,
+  TradeRequestResponsePacket,
+  TradeCancelPacket,
+  TradeButtonStateChangePacket,
+  SetTradeMoneyPacket,
   VaultMoveMoneyRequestVaultMoneyMoveDirectionEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -306,6 +311,20 @@ export type NotificationType = 'info' | 'error';
 
 export type ChatLine = { sender: string; text: string; system?: boolean };
 
+// trade window of the original client: 8 columns x 4 rows for each side
+export const TRADE_SIZE = 32;
+
+export type TradeState = {
+  partner: string;
+  partnerLevel: number;
+  myItems: (Item | null)[];
+  partnerItems: (Item | null)[];
+  myMoney: number;
+  partnerMoney: number;
+  myAccept: boolean;
+  partnerAccept: boolean;
+};
+
 const MAX_CHAT_LINES = 8;
 
 export type Notification = {
@@ -346,6 +365,16 @@ export const Store = new (class _Store {
 
   // open vault (Baz): 120 slots (8x15) and its money
   vault: { items: (Item | null)[]; money: number } | null = null;
+
+  // open trade with another player: 8x4 slots and money of each side, and
+  // whether each side pressed the accept button
+  trade: TradeState | null = null;
+  // name of the player who asked us to trade (answer dialog)
+  tradeRequestFrom: string | null = null;
+  // money sent with SetTradeMoney, confirmed by TradeMoneySetResponse
+  pendingTradeMoney = 0;
+  // we declined a request: the server answers "not accepted" to us too
+  tradeDeclinedByMe = false;
 
   // learned skills and the one used with the right mouse button
   skills: { index: number; number: number; level: number }[] = [];
@@ -400,6 +429,8 @@ export const Store = new (class _Store {
       heldItemSlot: observable,
       heldItemStorage: observable,
       vault: observable,
+      trade: observable,
+      tradeRequestFrom: observable,
       skills: observable,
       currentSkill: observable,
       npcShop: observable,
@@ -698,9 +729,14 @@ export const Store = new (class _Store {
   // Click on an inventory or equipment slot: pick the item up, or put the
   // held item there.
   itemsOf(storage: ItemStorageKind): (Item | null)[] {
-    return storage === ItemStorageKind.Vault
-      ? (this.vault?.items ?? [])
-      : this.playerData.items;
+    switch (storage) {
+      case ItemStorageKind.Vault:
+        return this.vault?.items ?? [];
+      case ItemStorageKind.Trade:
+        return this.trade?.myItems ?? [];
+      default:
+        return this.playerData.items;
+    }
   }
 
   // the held item, only when it comes from the inventory (drop, sell)
@@ -770,6 +806,94 @@ export const Store = new (class _Store {
       : VaultMoveMoneyRequestVaultMoneyMoveDirectionEnum.VaultToInventory;
     packet.Amount = amount;
     this.sendToGS(packet.buffer);
+  }
+
+  // Trade request to another player in view, by name; without a name, to
+  // the nearest player.
+  requestTrade(name?: string): void {
+    const world = this.world;
+    const me = world?.playerEntity;
+    if (!world || !me) return;
+
+    const players = world.netObjsQuery.entities.filter(
+      e => e.charAppearance && !e.localPlayer && e.netId != null
+    );
+    const distance = (e: (typeof players)[number]) =>
+      Math.hypot(
+        e.transform.pos.x - me.transform.pos.x,
+        e.transform.pos.z - me.transform.pos.z
+      );
+    const target = name
+      ? players.find(
+          e => e.objectNameInWorld?.toLowerCase() === name.toLowerCase()
+        )
+      : players.sort((a, b) => distance(a) - distance(b))[0];
+
+    if (!target) {
+      this.addNotification(
+        name ? `${name} is not near you` : 'There is nobody near you',
+        'error'
+      );
+      return;
+    }
+    if (this.trade) {
+      this.addNotification('You are already trading', 'error');
+      return;
+    }
+
+    const packet = TradeRequestPacket.createPacket();
+    packet.PlayerId = target.netId!;
+    this.sendToGS(packet.buffer);
+    this.addNotification(`Trade requested to ${target.objectNameInWorld}`);
+  }
+
+  answerTradeRequest(accept: boolean): void {
+    runInAction(() => {
+      this.tradeRequestFrom = null;
+    });
+    this.tradeDeclinedByMe = !accept;
+    const packet = TradeRequestResponsePacket.createPacket();
+    packet.TradeAccepted = accept;
+    this.sendToGS(packet.buffer);
+  }
+
+  setTradeMoney(amount: number): void {
+    if (!this.trade) return;
+    // the server only accepts the money while the accept button is released
+    this.setTradeAccept(false);
+
+    this.pendingTradeMoney = amount;
+    const packet = SetTradeMoneyPacket.createPacket();
+    packet.Amount = amount;
+    this.sendToGS(packet.buffer);
+  }
+
+  setTradeAccept(accept: boolean): void {
+    const trade = this.trade;
+    if (!trade || trade.myAccept === accept) return;
+
+    runInAction(() => {
+      trade.myAccept = accept;
+    });
+    const packet = TradeButtonStateChangePacket.createPacket();
+    packet.NewState = accept ? 1 : 0;
+    this.sendToGS(packet.buffer);
+  }
+
+  cancelTrade(): void {
+    if (!this.trade) return;
+    this.sendToGS(TradeCancelPacket.createPacket().buffer);
+  }
+
+  // trade closed by the server (finished or cancelled)
+  closeTrade(): void {
+    runInAction(() => {
+      this.trade = null;
+      this.pendingItemMove = null;
+      if (this.heldItemStorage === ItemStorageKind.Trade) {
+        this.heldItemSlot = null;
+      }
+    });
   }
 
   closeNpc(): void {
@@ -912,6 +1036,12 @@ export const Store = new (class _Store {
   ): void {
     const item = this.itemsOf(fromStorage)[from];
     if (!item?.raw || this.pendingItemMove) return;
+
+    // items can't be moved into / out of the trade while it is accepted
+    const trade = ItemStorageKind.Trade;
+    if (fromStorage === trade || toStorage === trade) {
+      this.setTradeAccept(false);
+    }
 
     const packet = ItemMoveRequestPacket.createPacket();
     packet.FromStorage = fromStorage;

@@ -136,11 +136,15 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
 
     const subCode = packet.getUint8(codeIndex + 1);
 
-    const packetsByCode = packetsCacheByCode[packetCode];
+    // an unknown code must not stop the queue
+    const packetsByCode = packetsCacheByCode[packetCode] ?? [];
     const pDef = findPacketDefinition(packetsByCode, subCode, packet.byteLength);
 
     if (!pDef) {
-      console.error(`${LOG_PREFIX}no packet: 0x` + byteToString(packetCode));
+      console.error(
+        `${LOG_PREFIX}no packet: 0x${byteToString(packetType)} 0x${byteToString(packetCode)} lng:${length}`,
+        Array.from(new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength))
+      );
       removePacketAndGoNext(length);
 
       return;

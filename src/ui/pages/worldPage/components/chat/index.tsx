@@ -45,7 +45,10 @@ export const Chat = observer(() => {
             if (e.key !== 'Enter') return;
 
             const message = text.trim();
-            if (message) Store.sendChatMessage(message);
+            // /trade [name]: trade with that player (or the nearest one)
+            const trade = /^\/trade(?:\s+(\S+))?$/i.exec(message);
+            if (trade) Store.requestTrade(trade[1]);
+            else if (message) Store.sendChatMessage(message);
             close();
           }}
         />

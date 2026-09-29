@@ -32,7 +32,7 @@
 - [ ] Modelos para monstruos de otros mapas
 - [x] Tiendas de NPC: hablar (clic), comprar (clic en la tienda), vender (coger objeto + clic en la tienda)
 - [x] Almacén (Baz): 120 huecos, mover objetos y zen
-- [ ] Trade entre jugadores
+- [x] Comercio entre jugadores (`/trade [nombre]`)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
 - [x] Haces de luz de Noria (se veían como placas negras enormes)

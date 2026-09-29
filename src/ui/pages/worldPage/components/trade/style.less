@@ -1,0 +1,173 @@
+.mu-window-slot.trade .mu-window {
+  .trade-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 20px);
+    grid-template-rows: repeat(4, 20px);
+  }
+
+  .trade-cell {
+    background: url('/interface/item_box.png');
+
+    &.mine {
+      cursor: pointer;
+    }
+  }
+
+  .trade-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    box-sizing: border-box;
+    background-color: #7a1a1a60;
+
+    &.mine {
+      background-color: #1a3c7a60;
+      cursor: pointer;
+
+      &:hover {
+        outline: 1px solid #ffd24a;
+        outline-offset: -1px;
+      }
+    }
+
+    &.held {
+      outline: 1px solid #ffd24a;
+      opacity: 0.5;
+    }
+  }
+
+  .trade-money {
+    left: 15px;
+    width: 160px;
+    color: #ffd24a;
+    text-align: right;
+
+    &.partner {
+      top: 136px;
+    }
+
+    &.mine {
+      top: 264px;
+    }
+  }
+
+  .trade-state {
+    left: 15px;
+    width: 160px;
+    color: #999;
+    text-align: center;
+
+    &.accepted {
+      color: #6f6;
+    }
+  }
+
+  .trade-divider {
+    left: 15px;
+    top: 164px;
+    width: 160px;
+    color: #f0e0b0;
+    text-align: center;
+    border-top: 1px solid #6a5a3a;
+    padding-top: 2px;
+  }
+
+  .trade-money-input {
+    left: 15px;
+    top: 292px;
+    width: 64px;
+    height: 12px;
+    padding: 0 2px;
+    font-size: 8px;
+    color: #fff;
+    background: #000;
+    border: 1px solid #666;
+  }
+
+  // 2 states of 36x29: normal, disabled
+  .trade-button {
+    top: 285px;
+    width: 36px;
+    height: 29px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    background-repeat: no-repeat;
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+
+    &.money {
+      left: 94px;
+      background-image: url('/interface/trade_money.png');
+    }
+
+    &.accept {
+      left: 139px;
+      background-image: url('/interface/trade_accept.png');
+
+      &.pressed {
+        background-position: 0 -29px;
+        outline: 1px solid #6f6;
+      }
+    }
+  }
+}
+
+.trade-request {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 12px 10px 8px;
+  background: #000 url('/interface/window_back.png');
+  border: 1px solid #6a5a3a;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  pointer-events: auto;
+  image-rendering: pixelated;
+  z-index: 10;
+
+  b {
+    color: #ffd24a;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  // 3 states of 54x30: normal, hover, pressed
+  .dialog-button {
+    width: 54px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    background-repeat: no-repeat;
+
+    &:hover {
+      background-position: 0 -30px;
+    }
+
+    &:active {
+      background-position: 0 -60px;
+    }
+
+    &.ok {
+      background-image: url('/interface/button_ok.png');
+    }
+
+    &.cancel {
+      background-image: url('/interface/button_cancel.png');
+    }
+  }
+}

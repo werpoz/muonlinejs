@@ -102,6 +102,7 @@ const toggleInventory = () => {
   if (!Store.inventoryEnabled) {
     Store.cancelHeldItem();
     Store.closeNpc();
+    Store.cancelTrade();
   }
 };
 

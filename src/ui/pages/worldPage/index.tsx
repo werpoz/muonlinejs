@@ -10,6 +10,7 @@ import { Inventory } from './components/inventory';
 import { Chat } from './components/chat';
 import { NpcShop } from './components/npcShop';
 import { Vault } from './components/vault';
+import { Trade, TradeRequestDialog } from './components/trade';
 
 const HUD = observer(() => {
   return (
@@ -18,11 +19,13 @@ const HUD = observer(() => {
       <div className="panels-stack">
         <NpcShop />
         <Vault />
+        <Trade />
         <Inventory />
         <CharacterInfo />
       </div>
       <MapsList />
       <Chat />
+      <TradeRequestDialog />
     </div>
   );
 });

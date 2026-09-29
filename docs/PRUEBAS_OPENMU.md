@@ -31,6 +31,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Tienda de NPC (Amy, Noria) | ✅ | `TalkToNpcRequest` → `NpcWindowResponse` + `StoreItemList` (32 objetos); comprar → `InventoryMoneyUpdate` (-330 zen); vender → `NpcItemSellResult` (+20 zen) |
 | Habilidad de área (Flame) | ✅ | `AreaSkill` → `AreaSkillAnimation`; `AreaSkillHit` con la araña → `ObjectHit` (84 de daño), muere |
 | Almacén (Baz) | ✅ | `TalkToNpcRequest` → `NpcWindowResponse` (VaultStorage) + `StoreItemList` (17 objetos); mover poción inventario↔almacén (`ItemMoveRequest` storage 2) → `ItemMoved`; depositar zen → `VaultMoneyUpdate`; cerrar → `VaultClosed` |
+| Comercio entre jugadores | ✅ | Dos clientes: `/trade test1Elf` → `TradeRequest` → OK → `TradeRequestAnswer` a ambos; objeto (`ItemMoveRequest` storage 1) → `TradeItemAdded` al otro; zen → `TradeMoneySetResponse`/`TradeMoneyUpdate`; los dos aceptan → `TradeFinished: Success` e inventarios intercambiados. Rechazar y cancelar devuelven el objeto |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:
@@ -43,6 +44,9 @@ Detalles observados:
   que el cliente considera transitables y los del servidor.
 - Muchos avisos de MobX en modo estricto (se modifica estado fuera de `action`).
 - Dos NPC de Lorencia aparecen con la etiqueta "NPC" en lugar de su nombre.
+- La definición XML de `TradeButtonStateChanged` tenía el código `C3`; OpenMU
+  envía `C1 04 3C <estado>`. Corregido a `3C`. Además OpenMU manda `Checked`
+  también cuando el otro suelta el botón, así que el cliente lo alterna.
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
 
@@ -70,6 +74,15 @@ y usa `/item <grupo> <número>` en el chat (Enter), que tira el objeto al suelo:
 
 ```sql
 update data."Character" set "CharacterStatus"=32 where "Name"='test0Dk';
+```
+
+Para probar el comercio, abre dos pestañas con cuentas distintas y pon a los
+dos personajes juntos (desconectados); luego escribe `/trade <nombre>` en el chat:
+
+```sql
+update data."Character" set "PositionX"=172, "PositionY"=100 where "Name"='test0Dk';
+update data."Character" set "PositionX"=174, "PositionY"=100,
+  "CurrentMapId"='00000300-0003-0000-0000-000000000000' where "Name"='test1Elf';
 ```
 
 Cuentas de prueba: `test0`…`test9` (contraseña igual al usuario).

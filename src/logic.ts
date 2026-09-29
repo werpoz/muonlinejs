@@ -36,6 +36,15 @@ import {
   ItemBoughtPacket,
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
+  TradeRequestPacket,
+  TradeRequestAnswerPacket,
+  TradeItemAddedPacket,
+  TradeItemRemovedPacket,
+  TradeMoneyUpdatePacket,
+  TradeButtonStateChangedPacket,
+  TradeButtonStateChangedTradeButtonStateEnum,
+  TradeFinishedPacket,
+  TradeFinishedTradeResultEnum,
   SkillAnimationPacket,
   AreaSkillAnimationPacket,
   SkillListUpdatePacket,
@@ -70,7 +79,7 @@ import { Entity, Item, World } from './ecs/world';
 import { createAttributeSystem } from './libs/attributeSystem';
 import { Vector3 } from './libs/babylon/exports';
 import { EventBus } from './libs/eventBus';
-import { Store, UIState } from './store';
+import { Store, TRADE_SIZE, UIState } from './store';
 
 const ONE_SHOT_ANIMATION_TIME = 0.6;
 const NO_TERRAIN_HEIGHT = -9999;
@@ -224,6 +233,10 @@ EventBus.on('CharacterInformation', packet => {
 EventBus.on('CharacterInventory', packet => {
   const items = Store.playerData.items;
   const p = new CharacterInventoryPacket(packet);
+
+  // it's the whole inventory (also sent again after a trade): empty slots
+  // are not in the list
+  items.fill(null as any);
 
   p.getItems(p.ItemCount).forEach(item => {
     const itemSlot = item.ItemSlot;
@@ -941,7 +954,7 @@ EventBus.on('ItemMoved', packet => {
   if (!move) return;
 
   const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
-  // TargetStorageType: 0 inventory, 1 vault
+  // TargetStorageType: an ItemStorageKind (inventory, trade, vault...)
   const targetStorage = p.TargetStorageType as ItemStorageKind;
   runInAction(() => {
     Store.itemsOf(move.fromStorage)[move.from] = null;
@@ -1200,4 +1213,152 @@ EventBus.on('VaultMoneyUpdate', packet => {
     if (Store.vault) Store.vault.money = p.VaultMoney;
     Store.playerData.money = p.InventoryMoney;
   });
+});
+
+EventBus.on('TradeRequest', packet => {
+  const p = new TradeRequestPacket(packet);
+  console.log(`TradeRequest from ${p.Name}`);
+
+  runInAction(() => {
+    Store.tradeRequestFrom = p.Name;
+  });
+});
+
+EventBus.on('TradeRequestAnswer', packet => {
+  const p = new TradeRequestAnswerPacket(packet);
+  console.log(`TradeRequestAnswer: ${p.Accepted} ${p.Name} (${p.TradePartnerLevel})`);
+
+  if (!p.Accepted) {
+    runInAction(() => {
+      Store.tradeRequestFrom = null;
+    });
+    Store.closeTrade();
+    if (!Store.tradeDeclinedByMe) {
+      Store.addNotification('The trade was declined', 'error');
+    }
+    Store.tradeDeclinedByMe = false;
+    return;
+  }
+
+  // vault and shop can't be open while trading
+  Store.closeNpc();
+  runInAction(() => {
+    Store.trade = {
+      partner: p.Name,
+      partnerLevel: p.TradePartnerLevel,
+      myItems: new Array(TRADE_SIZE).fill(null),
+      partnerItems: new Array(TRADE_SIZE).fill(null),
+      myMoney: 0,
+      partnerMoney: 0,
+      myAccept: false,
+      partnerAccept: false,
+    };
+    Store.inventoryEnabled = true;
+  });
+});
+
+// The partner changed the offer: release our accept button, so the trade
+// is not finished with an offer we didn't see.
+function onPartnerOfferChanged() {
+  Store.setTradeAccept(false);
+  runInAction(() => {
+    if (Store.trade) Store.trade.partnerAccept = false;
+  });
+}
+
+// ToSlot at byte 3, then the 12 bytes of the item
+const TRADE_ITEM_OFFSET = 4;
+const TRADE_ITEM_SIZE = 12;
+
+EventBus.on('TradeItemAdded', packet => {
+  const p = new TradeItemAddedPacket(packet);
+  const bytes = new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength);
+  const item = ItemSerializer.DeserializeItem(
+    bytes.slice(TRADE_ITEM_OFFSET, TRADE_ITEM_OFFSET + TRADE_ITEM_SIZE)
+  );
+  console.log(`TradeItemAdded: slot ${p.ToSlot}`, item);
+
+  runInAction(() => {
+    if (Store.trade) Store.trade.partnerItems[p.ToSlot] = item;
+  });
+  onPartnerOfferChanged();
+});
+
+EventBus.on('TradeItemRemoved', packet => {
+  const p = new TradeItemRemovedPacket(packet);
+  console.log(`TradeItemRemoved: slot ${p.Slot}`);
+
+  runInAction(() => {
+    if (Store.trade) Store.trade.partnerItems[p.Slot] = null;
+  });
+  onPartnerOfferChanged();
+});
+
+EventBus.on('TradeMoneyUpdate', packet => {
+  const p = new TradeMoneyUpdatePacket(packet);
+  console.log(`TradeMoneyUpdate: ${p.MoneyAmount}`);
+
+  runInAction(() => {
+    if (Store.trade) Store.trade.partnerMoney = p.MoneyAmount;
+  });
+  onPartnerOfferChanged();
+});
+
+EventBus.on('TradeMoneySetResponse', () => {
+  console.log(`TradeMoneySetResponse: ${Store.pendingTradeMoney}`);
+
+  runInAction(() => {
+    if (Store.trade) Store.trade.myMoney = Store.pendingTradeMoney;
+  });
+});
+
+EventBus.on('TradeButtonStateChanged', packet => {
+  const p = new TradeButtonStateChangedPacket(packet);
+  const trade = Store.trade;
+  console.log(
+    `TradeButtonStateChanged: ${TradeButtonStateChangedTradeButtonStateEnum[p.State]}`
+  );
+  if (!trade) return;
+
+  runInAction(() => {
+    switch (p.State) {
+      case TradeButtonStateChangedTradeButtonStateEnum.Red:
+        // the money changed: both buttons are released
+        trade.myAccept = false;
+        trade.partnerAccept = false;
+        break;
+      case TradeButtonStateChangedTradeButtonStateEnum.Checked:
+        // OpenMU sends Checked also when the partner releases the button
+        // (TradeButtonAction), so each one toggles the state
+        trade.partnerAccept = !trade.partnerAccept;
+        break;
+      default:
+        trade.partnerAccept = false;
+    }
+  });
+});
+
+const TRADE_RESULT_MESSAGES: Record<TradeFinishedTradeResultEnum, string> = {
+  [TradeFinishedTradeResultEnum.Cancelled]: 'The trade was cancelled',
+  [TradeFinishedTradeResultEnum.Success]: 'Trade completed',
+  [TradeFinishedTradeResultEnum.FailedByFullInventory]:
+    'The trade failed: the inventory is full',
+  [TradeFinishedTradeResultEnum.TimedOut]: 'The trade timed out',
+  [TradeFinishedTradeResultEnum.FailedByItemsNotAllowedToTrade]:
+    'The trade failed: some items cannot be traded',
+};
+
+// the server sends the whole inventory and the money after this
+EventBus.on('TradeFinished', packet => {
+  const p = new TradeFinishedPacket(packet);
+  console.log(`TradeFinished: ${TradeFinishedTradeResultEnum[p.Result]}`);
+
+  Store.closeTrade();
+  runInAction(() => {
+    Store.tradeRequestFrom = null;
+  });
+  Store.addNotification(
+    TRADE_RESULT_MESSAGES[p.Result] ?? 'The trade was closed',
+    p.Result === TradeFinishedTradeResultEnum.Success ? 'info' : 'error'
+  );
 });
