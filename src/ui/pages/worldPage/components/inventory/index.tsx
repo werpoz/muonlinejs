@@ -97,6 +97,7 @@ export const Inventory = observer(() => {
   useEventBus('keyPressed', key => {
     if (HOT_KEYS.includes(key)) {
       Store.inventoryEnabled = !Store.inventoryEnabled;
+      if (!Store.inventoryEnabled) Store.cancelHeldItem();
     }
   });
 

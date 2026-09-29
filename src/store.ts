@@ -18,6 +18,7 @@ import {
   ConsumeItemRequestPacket,
   IncreaseCharacterStatPointPacket,
   ItemMoveRequestPacket,
+  DropItemRequestPacket,
   StorageTypeEnum,
 } from './common/packets/ClientToServerPackets';
 import {
@@ -671,6 +672,24 @@ export const Store = new (class _Store {
       this.heldItemSlot = null;
       if (held !== slot) this.moveItem(held, slot);
     });
+  }
+
+  cancelHeldItem(): void {
+    runInAction(() => {
+      this.heldItemSlot = null;
+    });
+  }
+
+  // Drop the item of an inventory slot on the ground tile (x, y).
+  dropItem(slot: number, x: number, y: number): void {
+    this.cancelHeldItem();
+
+    const packet = DropItemRequestPacket.createPacket();
+    packet.ItemSlot = slot;
+    packet.TargetX = x;
+    packet.TargetY = y;
+
+    this.sendToGS(packet.buffer);
   }
 
   moveItem(from: number, to: number): void {

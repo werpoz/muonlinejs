@@ -24,6 +24,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Repartir puntos (panel C) | ✅ | `IncreaseCharacterStatPoint` → `CharacterStatIncreaseResponse` (VIT 25 → 26, vida máx. 112 → 115) |
 | Morir y reaparecer | ✅ | `ObjectGotKilled` → `RespawnAfterDeath` (pueblo, vida llena, se puede volver a caminar) |
 | Mover/equipar objetos | ✅ | `ItemMoveRequest` → `ItemMoved` (hacha: equipo ↔ inventario, el modelo la suelta/recoge); movimiento inválido → `ItemMoveRequestFailed` |
+| Tirar objeto al suelo | ✅ | `DropItemRequest` → `ItemDropResponse`, `ItemsDropped` (el personaje no se mueve con ese clic) |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

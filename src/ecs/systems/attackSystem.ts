@@ -95,7 +95,7 @@ export const AttackSystem: ISystemFactory = world => {
       const player = world.playerEntity;
       if (!player || player.dead) return;
 
-      const pressed = world.pointerPressed;
+      const pressed = world.pointerPressed && !world.pointerConsumed;
       const hovered = world.currentPointerTarget;
 
       if (pressed && !wasPressed) {

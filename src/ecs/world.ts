@@ -166,6 +166,10 @@ export class World extends ECSWorld<Entity> {
 
   pointerPressed = false;
 
+  // the current click was used by the UI logic (e.g. dropping an item) and
+  // must not also walk/attack/pick up, until the button is released
+  pointerConsumed = false;
+
   constructor(readonly scene: TestScene) {
     super();
 

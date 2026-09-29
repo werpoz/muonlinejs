@@ -79,7 +79,10 @@ export const PlayerControllerSystem: ISystemFactory = world => {
       // clicks on monsters and dropped items have their own systems
       const hovered = world.currentPointerTarget;
       const busy =
-        world.attackTarget || isAttackable(hovered) || isPickable(hovered);
+        world.pointerConsumed ||
+        world.attackTarget ||
+        isAttackable(hovered) ||
+        isPickable(hovered);
 
       if (world.pointerPressed && !busy) {
         if (delay <= 0) {

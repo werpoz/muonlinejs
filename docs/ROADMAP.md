@@ -19,7 +19,7 @@
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
 - [x] Mover y equipar/desequipar objetos (clic para coger, clic para soltar)
-- [ ] Tirar objetos del inventario al suelo
+- [x] Tirar objetos al suelo (objeto cogido + clic en el mundo; Escape cancela)
 - [x] Etiquetas de nombre sobre personajes, NPCs y objetos
 - [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
 - [x] Repartir puntos de nivel (panel C)

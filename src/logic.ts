@@ -30,6 +30,7 @@ import {
   ItemDurabilityChangedPacket,
   ItemRemovedPacket,
   ItemMovedPacket,
+  ItemDropResponsePacket,
   ItemMoveRequestFailedPacket,
   ItemAddedToInventoryPacket,
   ItemPickUpRequestFailedPacket,
@@ -925,4 +926,22 @@ EventBus.on('ItemMoved', packet => {
 EventBus.on('ItemMoveRequestFailed', () => {
   Store.pendingItemMove = null;
   Store.addNotification('Cannot move the item there', 'error');
+});
+
+EventBus.on('ItemDropResponse', packet => {
+  const p = new ItemDropResponsePacket(packet);
+  console.log(`ItemDropResponse: ${p.Success}, slot ${p.InventorySlot}`);
+
+  if (!p.Success) {
+    Store.addNotification('Cannot drop the item here', 'error');
+    return;
+  }
+
+  runInAction(() => {
+    Store.playerData.items[p.InventorySlot] = null as any;
+  });
+
+  if (p.InventorySlot <= InventoryConstants.LastEquippableItemSlotIndex) {
+    Store.syncPlayerAppearance();
+  }
 });

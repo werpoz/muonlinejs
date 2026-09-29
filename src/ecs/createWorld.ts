@@ -21,12 +21,14 @@ import { InteractiveAreaSystem } from './systems/interactiveAreaSystem';
 import { WalkSfxSystem } from './systems/walkSfxSystem';
 import { AttackSystem } from './systems/attackSystem';
 import { PickupSystem } from './systems/pickupSystem';
+import { DropItemSystem } from './systems/dropItemSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
   PointerInputSystem,
   KeyboardInputSystem,
   InteractiveAreaSystem,
+  DropItemSystem,
   AttackSystem,
   PickupSystem,
   PlayerControllerSystem,
