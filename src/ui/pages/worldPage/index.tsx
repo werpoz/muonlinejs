@@ -11,6 +11,7 @@ import { Inventory } from './components/inventory';
 import { Chat } from './components/chat';
 import { NpcShop } from './components/npcShop';
 import { Vault } from './components/vault';
+import { ChaosMachine } from './components/chaosMachine';
 import { Trade, TradeRequestDialog } from './components/trade';
 import { PartyFrame, PartyRequestDialog } from './components/party';
 
@@ -21,6 +22,7 @@ const HUD = observer(() => {
       <div className="panels-stack">
         <NpcShop />
         <Vault />
+        <ChaosMachine />
         <Trade />
         <Inventory />
         <CharacterInfo />

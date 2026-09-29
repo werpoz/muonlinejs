@@ -31,6 +31,7 @@ import {
   SellItemToNpcRequestPacket,
   VaultClosedPacket,
   VaultMoveMoneyRequestPacket,
+  ChaosMachineMixRequestPacket,
   TradeRequestPacket,
   PartyInviteRequestPacket,
   PartyInviteResponsePacket,
@@ -382,6 +383,9 @@ export const Store = new (class _Store {
   // storage of the held item: inventory or vault
   heldItemStorage: ItemStorageKind = ItemStorageKind.Inventory;
 
+  // open chaos machine (Chaos Goblin): 8x4 slots
+  chaosMachine: { items: (Item | null)[] } | null = null;
+
   // open vault (Baz): 120 slots (8x15) and its money
   vault: { items: (Item | null)[]; money: number } | null = null;
 
@@ -453,6 +457,7 @@ export const Store = new (class _Store {
       heldItemSlot: observable,
       heldItemStorage: observable,
       vault: observable,
+      chaosMachine: observable,
       trade: observable,
       party: observable,
       partyRequestFrom: observable,
@@ -760,6 +765,8 @@ export const Store = new (class _Store {
         return this.vault?.items ?? [];
       case ItemStorageKind.Trade:
         return this.trade?.myItems ?? [];
+      case ItemStorageKind.ChaosMachine:
+        return this.chaosMachine?.items ?? [];
       default:
         return this.playerData.items;
     }
@@ -1012,7 +1019,35 @@ export const Store = new (class _Store {
     });
   }
 
-  closeNpc(): void {
+  // Mix the items of the chaos machine. Without a mix type (3 bytes packet)
+  // OpenMU finds the crafting that matches the items.
+  mixChaosMachine(): void {
+    if (!this.chaosMachine?.items.some(Boolean)) {
+      this.addNotification('Put the items to combine in the Chaos Machine', 'error');
+      return;
+    }
+    const packet = ChaosMachineMixRequestPacket.createPacket(3);
+    packet.writeLength(3);
+    this.sendToGS(packet.buffer);
+  }
+
+  // Closes the open NPC window. The chaos machine can't be closed with items
+  // inside (OpenMU would keep them there); returns false then.
+  closeNpc(quiet = false): boolean {
+    if (this.chaosMachine) {
+      if (this.chaosMachine.items.some(Boolean)) {
+        if (!quiet) {
+          this.addNotification('Take the items out of the Chaos Machine first', 'error');
+        }
+        return false;
+      }
+      runInAction(() => {
+        this.chaosMachine = null;
+      });
+      this.sendCloseNpcRequest();
+      return true;
+    }
+
     if (this.vault) {
       runInAction(() => {
         this.vault = null;
@@ -1022,14 +1057,15 @@ export const Store = new (class _Store {
       });
       this.talkingToNpc = null;
       this.sendToGS(VaultClosedPacket.createPacket().buffer);
-      return;
+      return true;
     }
 
-    if (!this.npcShop) return;
+    if (!this.npcShop) return true;
     runInAction(() => {
       this.npcShop = null;
     });
     this.sendCloseNpcRequest();
+    return true;
   }
 
   buyItem(storeSlot: number): void {

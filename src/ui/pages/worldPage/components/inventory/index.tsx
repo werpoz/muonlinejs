@@ -119,9 +119,10 @@ const GridItem = observer(({ item, slot }: { item: Item; slot: number }) => {
 const HOT_KEYS = ['KeyI', 'KeyV'];
 
 const closeInventory = () => {
-  Store.inventoryEnabled = false;
   Store.cancelHeldItem();
-  Store.closeNpc();
+  // the chaos machine can't be closed with items inside
+  if (!Store.closeNpc()) return;
+  Store.inventoryEnabled = false;
   Store.cancelTrade();
 };
 

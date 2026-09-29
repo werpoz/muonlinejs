@@ -35,6 +35,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Joyas (Bless/Soul/Life) | ✅ | `ConsumeItemRequest` con `TargetSlot` → `InventoryItemUpgraded` + `ItemRemoved`. Leather Helm +0 → +1 → +2 (Bless); Soul falló (+1) y acertó (+2); Life añadió y luego quitó la opción. Sobre el Horn of Dinorant, Bless/Soul → `ItemConsumptionFailed` |
 | Tooltips | ✅ | Requisito de fuerza del Leather Helm +2 = 48, igual que OpenMU (rechazó equiparlo con 29 de fuerza) |
 | Party | ✅ | Dos clientes: `/party test1Elf` → `PartyRequest` → rechazar (sin party) / aceptar (`PartyInviteResponse`) → `PartyList` a ambos; `PartyHealthUpdate` (test1Elf con 20 de vida → 3/10); el líder expulsa y el miembro sale → `RemovePartyMember` y la party de 2 se disuelve |
+| Máquina del Caos | ✅ | Chaos Goblin → `NpcWindowResponse: ChaosMachine`; objetos con `ItemMoveRequest` (storage 3); `ChaosMachineMixRequest` de 3 bytes (OpenMU busca la receta) → poción sola: `IncorrectMixItems`; Jewel of Creation + Jewel of Chaos: `Success`, `StoreItemList` con la fruta y -3.000.000 zen. No deja cerrar con objetos dentro |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

@@ -98,12 +98,15 @@ const VerticalBar = ({
 );
 
 const toggleInventory = () => {
-  Store.inventoryEnabled = !Store.inventoryEnabled;
   if (!Store.inventoryEnabled) {
-    Store.cancelHeldItem();
-    Store.closeNpc();
-    Store.cancelTrade();
+    Store.inventoryEnabled = true;
+    return;
   }
+  Store.cancelHeldItem();
+  // the chaos machine can't be closed with items inside
+  if (!Store.closeNpc()) return;
+  Store.inventoryEnabled = false;
+  Store.cancelTrade();
 };
 
 // buttons at the right: character, inventory, friends, menu

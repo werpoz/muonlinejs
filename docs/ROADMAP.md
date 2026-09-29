@@ -35,7 +35,7 @@
 - [x] Comercio entre jugadores (`/trade [nombre]`)
 - [x] Tooltips de objetos: daño/defensa por nivel, durabilidad, requisitos (en rojo si no se cumplen), clases, habilidad, suerte, opción adicional y opciones excelentes
 - [x] Joyas de Bless / Soul / Life: coger la joya y hacer clic en un objeto del inventario
-- [ ] Máquina del Caos (combinaciones, alas, +10 en adelante)
+- [x] Máquina del Caos (Chaos Goblin): poner objetos, combinar (el servidor deduce la receta) y resultado
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
 - [x] Haces de luz de Noria (se veían como placas negras enormes)

@@ -58,6 +58,8 @@ import {
   ExperienceGainedPacket,
   InventoryMoneyUpdatePacket,
   ItemConsumptionFailedPacket,
+  ItemCraftingResultPacket,
+  ItemCraftingResultCraftingResultEnum,
   InventoryItemUpgradedPacket,
   ItemDurabilityChangedPacket,
   ItemRemovedPacket,
@@ -1118,6 +1120,8 @@ EventBus.on('SkillAnimation', packet => {
 
 // vault of the original client: 8 columns x 15 rows
 const VAULT_SIZE = 120;
+// chaos machine: 8 columns x 4 rows
+const CHAOS_MACHINE_SIZE = 32;
 
 const MERCHANT_WINDOWS = [
   NpcWindowResponseNpcWindowEnum.Merchant,
@@ -1127,6 +1131,14 @@ const MERCHANT_WINDOWS = [
 EventBus.on('NpcWindowResponse', packet => {
   const p = new NpcWindowResponsePacket(packet);
   console.log(`NpcWindowResponse: ${NpcWindowResponseNpcWindowEnum[p.Window]}`);
+
+  if (p.Window === NpcWindowResponseNpcWindowEnum.ChaosMachine) {
+    runInAction(() => {
+      Store.chaosMachine = { items: new Array(CHAOS_MACHINE_SIZE).fill(null) };
+      Store.inventoryEnabled = true;
+    });
+    return;
+  }
 
   if (p.Window === NpcWindowResponseNpcWindowEnum.VaultStorage) {
     runInAction(() => {
@@ -1172,7 +1184,15 @@ EventBus.on('StoreItemList', packet => {
   console.log(`StoreItemList: ${items.length} items`);
 
   runInAction(() => {
-    if (Store.vault) {
+    // after a mix: the items left in the chaos machine
+    if (Store.chaosMachine) {
+      const chaosItems = new Array(CHAOS_MACHINE_SIZE).fill(null);
+      items.forEach(({ slot, item }) => (chaosItems[slot] = item));
+      Store.chaosMachine.items = chaosItems;
+      if (Store.heldItemStorage === ItemStorageKind.ChaosMachine) {
+        Store.heldItemSlot = null;
+      }
+    } else if (Store.vault) {
       const vaultItems = new Array(VAULT_SIZE).fill(null);
       items.forEach(({ slot, item }) => (vaultItems[slot] = item));
       Store.vault.items = vaultItems;
@@ -1466,4 +1486,36 @@ EventBus.on('PartyHealthUpdate', packet => {
       if (member) member.health = Value;
     }
   });
+});
+
+const CRAFTING_RESULT_MESSAGES: Partial<
+  Record<ItemCraftingResultCraftingResultEnum, string>
+> = {
+  [ItemCraftingResultCraftingResultEnum.Failed]: 'The combination failed',
+  [ItemCraftingResultCraftingResultEnum.Success]: 'The combination succeeded',
+  [ItemCraftingResultCraftingResultEnum.NotEnoughMoney]: 'Not enough zen',
+  [ItemCraftingResultCraftingResultEnum.TooManyItems]: 'Too many items',
+  [ItemCraftingResultCraftingResultEnum.CharacterLevelTooLow]:
+    'Your level is too low',
+  [ItemCraftingResultCraftingResultEnum.LackingMixItems]:
+    'Some items are missing for this combination',
+  [ItemCraftingResultCraftingResultEnum.IncorrectMixItems]:
+    'These items cannot be combined',
+  [ItemCraftingResultCraftingResultEnum.InvalidItemLevel]:
+    'The item level is not valid for this combination',
+  [ItemCraftingResultCraftingResultEnum.CharacterClassTooLow]:
+    'Your class cannot do this combination',
+};
+
+// the items left in the chaos machine come after it with StoreItemList
+EventBus.on('ItemCraftingResult', packet => {
+  const p = new ItemCraftingResultPacket(packet);
+  console.log(
+    `ItemCraftingResult: ${ItemCraftingResultCraftingResultEnum[p.Result]}`
+  );
+
+  Store.addNotification(
+    CRAFTING_RESULT_MESSAGES[p.Result] ?? 'The combination failed',
+    p.Result === ItemCraftingResultCraftingResultEnum.Success ? 'info' : 'error'
+  );
 });

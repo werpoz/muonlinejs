@@ -99,6 +99,7 @@ Store.world = world;
 
 (window as any).__scene = scene;
 (window as any).__world = world;
+(window as any).__store = Store;
 
 let lastTime = performance.now();
 engine.runRenderLoop(() => {

@@ -108,9 +108,16 @@ export const UPGRADE_JEWELS: Record<string, string> = {
 export const isUpgradeJewel = (item: Item | null | undefined) =>
   !!item && `${item.group}/${item.num}` in UPGRADE_JEWELS;
 
+// the level of a fruit is the stat it adds
+const FRUIT = '13/15';
+const FRUIT_STATS = ['Energy', 'Vitality', 'Agility', 'Strength', 'Command'];
+
 export function getItemName(item: Item) {
   const config = ItemsDatabase.getItem(item.group, item.num);
   const name = config?.ItemName ?? `Item ${item.group}/${item.num}`;
+  if (`${item.group}/${item.num}` === FRUIT) {
+    return `${name} (${FRUIT_STATS[item.lvl ?? 0] ?? item.lvl})`;
+  }
   const prefix = item.isAncient ? 'Ancient ' : item.isExcellent ? 'Excellent ' : '';
   const level = item.lvl && isWearable(item.group) ? ` +${item.lvl}` : '';
   return prefix + name + level;

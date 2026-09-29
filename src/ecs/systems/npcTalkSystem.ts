@@ -43,7 +43,7 @@ export const NpcTalkSystem: ISystemFactory = world => {
         target = isTalkable(hovered) ? hovered : null;
         walking = false;
         // walking away closes an open shop, like in the original client
-        if (!target) Store.closeNpc();
+        if (!target) Store.closeNpc(true);
       }
       wasPressed = pressed;
 
@@ -73,8 +73,8 @@ export const NpcTalkSystem: ISystemFactory = world => {
 
       if (isMoving) return;
 
-      Store.closeNpc();
-      Store.talkToNpc(target.netId!);
+      // the chaos machine may refuse to close (items inside)
+      if (Store.closeNpc()) Store.talkToNpc(target.netId!);
       target = null;
     },
   };

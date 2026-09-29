@@ -1,0 +1,76 @@
+.mu-window-slot.chaos-machine .mu-window {
+  .chaos-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 20px);
+    grid-template-rows: repeat(4, 20px);
+  }
+
+  .chaos-cell {
+    background: url('/interface/item_box.png');
+    cursor: pointer;
+  }
+
+  .chaos-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    box-sizing: border-box;
+    background-color: #5a1a7a60;
+    cursor: pointer;
+
+    &:hover {
+      outline: 1px solid #ffd24a;
+      outline-offset: -1px;
+    }
+
+    &.held {
+      outline: 1px solid #ffd24a;
+      opacity: 0.5;
+    }
+  }
+
+  .chaos-help {
+    left: 15px;
+    top: 142px;
+    width: 160px;
+    color: #c8c8c8;
+    line-height: 11px;
+
+    .caption {
+      margin-bottom: 4px;
+      color: #f0e0b0;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .recipe {
+      margin-bottom: 5px;
+    }
+
+    .warning {
+      margin-top: 6px;
+      color: #ff7050;
+    }
+  }
+
+  // 2 states of 44x35: normal, disabled
+  .chaos-mix {
+    left: 73px;
+    top: 340px;
+    width: 44px;
+    height: 35px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: url('/interface/chaos_mix.png') no-repeat 0 0;
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+
+    &:active {
+      background-position: 0 -35px;
+    }
+  }
+}
