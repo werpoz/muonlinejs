@@ -27,6 +27,38 @@ STCPackets.forEach(p => {
   }
 });
 
+// Several packets can share a code (e.g. 0x22: item added to inventory,
+// pick up failed, money update). Prefer a matching sub code, then a
+// matching fixed length; fall back to the first packet without sub code.
+function findPacketDefinition(
+  candidates: STCPacket[],
+  subCode: number,
+  length: number
+): STCPacket | undefined {
+  let best: STCPacket | undefined;
+  let bestScore = -1;
+
+  for (const p of candidates) {
+    const sc = getSubCode(p);
+    if (sc != null && sc !== subCode) continue;
+    if (p.Length != null && p.Length !== length) continue;
+
+    const score = (sc != null ? 2 : 0) + (p.Length != null ? 1 : 0);
+    if (score > bestScore) {
+      best = p;
+      bestScore = score;
+    }
+  }
+
+  return (
+    best ??
+    candidates.find(p => {
+      const sc = getSubCode(p);
+      return sc == null || sc === subCode;
+    })
+  );
+}
+
 const HEADERS = new Set<number>([0xc1, 0xc2, 0xc3, 0xc4]);
 
 const DEBUG_LOG = false;
@@ -98,10 +130,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     const subCode = packet.getUint8(codeIndex + 1);
 
     const packetsByCode = packetsCacheByCode[packetCode];
-    const pDef = packetsByCode.find(p => {
-      const sc = getSubCode(p);
-      return sc == null || sc === subCode;
-    });
+    const pDef = findPacketDefinition(packetsByCode, subCode, packet.byteLength);
 
     if (!pDef) {
       console.error(`${LOG_PREFIX}no packet: 0x` + byteToString(packetCode));

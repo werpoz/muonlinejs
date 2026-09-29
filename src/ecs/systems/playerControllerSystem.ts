@@ -5,6 +5,7 @@ import {
 } from '../../libs/babylon/exports';
 import type { ISystemFactory } from '../world';
 import { isAttackable } from './attackSystem';
+import { isPickable } from './pickupSystem';
 
 const MOVE_DELAY = 0.25;
 
@@ -75,11 +76,12 @@ export const PlayerControllerSystem: ISystemFactory = world => {
     update: dt => {
       delay -= dt;
 
-      // clicks on monsters are handled by AttackSystem
-      const attacking =
-        world.attackTarget || isAttackable(world.currentPointerTarget);
+      // clicks on monsters and dropped items have their own systems
+      const hovered = world.currentPointerTarget;
+      const busy =
+        world.attackTarget || isAttackable(hovered) || isPickable(hovered);
 
-      if (world.pointerPressed && !attacking) {
+      if (world.pointerPressed && !busy) {
         if (delay <= 0) {
           delay = MOVE_DELAY;
           tryMove();

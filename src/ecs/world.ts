@@ -67,6 +67,7 @@ export type Entity = Partial<{
   // attackable monster (NPCs and players don't have it)
   monster: true;
   dead: true;
+  droppedItem: { isMoney: boolean };
   attributeSystem: MUAttributeSystem;
   visibility: {
     state: 'visible' | 'nearby' | 'hidden';

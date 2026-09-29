@@ -3,6 +3,7 @@ import { CharacterClassNumber, ENUM_WORLD } from './common';
 import { deserializeAppearance } from './common/deserializeAppearance';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
+import { InventoryConstants } from './common/inventoryConstants';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -21,6 +22,10 @@ import {
   ChatMessagePacket,
   CharacterLevelUpdatePacket,
   ExperienceGainedPacket,
+  InventoryMoneyUpdatePacket,
+  ItemAddedToInventoryPacket,
+  ItemPickUpRequestFailedPacket,
+  ItemPickUpRequestFailedItemPickUpFailReasonEnum,
   ObjectHitPacket,
   CurrentHealthAndShieldPacket,
   CurrentManaAndAbilityPacket,
@@ -501,8 +506,13 @@ EventBus.on('ItemsDropped', packet => {
     console.log(item);
     const data = item.ItemData;
 
-    const id = data.getUint8(0); //[9]
-    const group = data.getUint8(5) >> 4;
+    const {
+      num: id,
+      group,
+      lvl,
+    } = ItemSerializer.DeserializeItem(
+      new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+    );
 
     const isMoney = data.byteLength >= 6 && id === 15 && group === 14; // Money is ItemGroup 14, ItemId 15
 
@@ -510,11 +520,20 @@ EventBus.on('ItemsDropped', packet => {
 
     console.log(itemConfig);
 
+    const amount = isMoney
+      ? (data.getUint8(1) << 16) | (data.getUint8(2) << 8) | data.getUint8(4)
+      : 0;
+
+    let name = `Item ${group}/${id}`;
+    if (isMoney) {
+      name = `${amount} Zen`;
+    } else if (itemConfig) {
+      name = itemConfig.ItemName + (lvl ? ` +${lvl}` : '');
+    }
+
     let dropObj;
 
     if (isMoney) {
-      const amount =
-        (data.getUint8(1) << 16) | (data.getUint8(2) << 8) | data.getUint8(4);
       // const amount = data.byteLength >= 5 ? data.getUint8(4) : 0;
 
       // dropObj = new MoneyScopeObject(maskedId, rawId, x, y, amount);
@@ -592,8 +611,23 @@ EventBus.on('ItemsDropped', packet => {
         rot: Vector3.Zero(),
         scale: 1,
       },
+      worldIndex: world.mapIndex,
       modelFactory: ModelObject,
-      modelFilePath: itemConfig.szModelFolder + itemConfig.szModelName,
+      modelFilePath: itemConfig
+        ? itemConfig.szModelFolder + itemConfig.szModelName
+        : undefined,
+      visibility: {
+        state: 'hidden',
+        lastChecked: 0,
+      },
+      screenPosition: {
+        worldOffsetZ: 0.5,
+        x: 0,
+        y: 0,
+      },
+      objectNameInWorld: name,
+      interactable: true,
+      droppedItem: { isMoney },
     });
   });
 });
@@ -692,4 +726,50 @@ EventBus.on('CharacterLevelUpdate', packet => {
     playerData.expToNextLvl = experienceForLevel(p.Level + 1);
   });
   console.log(`Level up: ${p.Level}`);
+});
+
+EventBus.on('ItemAddedToInventory', packet => {
+  const p = new ItemAddedToInventoryPacket(packet);
+  const slot = p.InventorySlot;
+  const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+
+  runInAction(() => {
+    Store.playerData.items[slot] = item;
+  });
+
+  if (slot <= InventoryConstants.LastEquippableItemSlotIndex) {
+    Store.syncPlayerAppearance();
+  }
+
+  const name = ItemsDatabase.getItem(item.group, item.num)?.ItemName ?? 'item';
+  Store.addNotification(`Obtained ${name}${item.lvl ? ` +${item.lvl}` : ''}`);
+  console.log(`ItemAddedToInventory: slot ${slot}`, item);
+});
+
+EventBus.on('ItemPickUpRequestFailed', packet => {
+  const p = new ItemPickUpRequestFailedPacket(packet);
+  console.log(`ItemPickUpRequestFailed: ${p.FailReason}`);
+
+  if (
+    p.FailReason ===
+    ItemPickUpRequestFailedItemPickUpFailReasonEnum.__MaximumInventoryMoneyReached
+  ) {
+    Store.addNotification('Maximum money reached', 'error');
+  } else if (
+    p.FailReason === ItemPickUpRequestFailedItemPickUpFailReasonEnum.General
+  ) {
+    Store.addNotification('Cannot pick up the item', 'error');
+  }
+});
+
+EventBus.on('InventoryMoneyUpdate', packet => {
+  const p = new InventoryMoneyUpdatePacket(packet);
+  const diff = p.Money - Store.playerData.money;
+
+  runInAction(() => {
+    Store.playerData.money = p.Money;
+  });
+
+  if (diff > 0) Store.addNotification(`Obtained ${diff} Zen`);
+  console.log(`InventoryMoneyUpdate: ${p.Money}`);
 });

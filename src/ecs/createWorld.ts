@@ -20,6 +20,7 @@ import { BackgroundMusicSystem } from './systems/backgroundMusicSystem';
 import { InteractiveAreaSystem } from './systems/interactiveAreaSystem';
 import { WalkSfxSystem } from './systems/walkSfxSystem';
 import { AttackSystem } from './systems/attackSystem';
+import { PickupSystem } from './systems/pickupSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
@@ -27,6 +28,7 @@ const factories: ISystemFactory[] = [
   KeyboardInputSystem,
   InteractiveAreaSystem,
   AttackSystem,
+  PickupSystem,
   PlayerControllerSystem,
   PathfindingSystem,
   CalculateVisibilitySystem,

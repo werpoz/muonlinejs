@@ -61,7 +61,7 @@ export const PointerInputSystem: ISystemFactory = world => {
         const { modelObject, visibility, attributeSystem, highlighted } = e;
 
         if (!modelObject.Ready) continue;
-        if (!attributeSystem) continue;
+        if (!attributeSystem && !e.droppedItem) continue;
         if (visibility.state === 'hidden') continue;
 
         modelObject.UpdateBoundings();

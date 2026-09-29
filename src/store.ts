@@ -13,6 +13,7 @@ import {
   SelectCharacterPacket,
   WalkRequestPacket,
   HitRequestPacket,
+  PickupItemRequestPacket,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -610,6 +611,13 @@ export const Store = new (class _Store {
     packet.TargetId = targetId;
     packet.AttackAnimation = animation;
     packet.LookingDirection = direction;
+
+    this.sendToGS(packet.buffer);
+  }
+
+  sendPickupRequest(itemId: number): void {
+    const packet = PickupItemRequestPacket.createPacket();
+    packet.ItemId = itemId;
 
     this.sendToGS(packet.buffer);
   }

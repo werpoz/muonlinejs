@@ -99,7 +99,7 @@ export class ItemSerializer {
 
   /// <inheritdoc />
   static DeserializeItem(array: Uint8Array): Item {
-    const itemNumber = array[0] + ((array[0] & 0x80) << 1);
+    const itemNumber = array[0] + ((array[3] & 0x80) << 1);
     const itemGroup = (array[5] & 0xf0) >> 4;
     // var definition = gameConfiguration.Items.FirstOrDefault(def => def.Number == itemNumber && def.Group == itemGroup)
     //                  ?? throw new ArgumentException($"Couldn't find the item definition for the given byte array. Extracted item number and group: {itemNumber}, {itemGroup}");
