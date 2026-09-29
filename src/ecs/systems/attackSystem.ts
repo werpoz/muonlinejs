@@ -4,6 +4,7 @@ import { Store } from '../../store';
 import type { Entity, ISystemFactory, World } from '../world';
 import { getLookingDirection } from './networkSystem';
 import { getSkillInfo } from '../../common/skills';
+import { playSwingSound } from '../../libs/gameSounds';
 
 const MELEE_RANGE = 2; // tiles
 const BOW_RANGE = 6;
@@ -246,6 +247,7 @@ export const AttackSystem: ISystemFactory = world => {
           ServerPlayerActionType.Attack1,
           getLookingDirection(playerTile, targetTile)
         );
+        playSwingSound(player);
       }
 
       // single click = single hit, holding the button keeps attacking

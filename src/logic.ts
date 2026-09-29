@@ -4,6 +4,14 @@ import { deserializeAppearance } from './common/deserializeAppearance';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
 import { getItemName } from './common/itemInfo';
+import {
+  playHitSound,
+  playMonsterSound,
+  playPlayerDeath,
+  playPlayerHurt,
+  playSkillSound,
+  playSound,
+} from './libs/gameSounds';
 import { InventoryConstants } from './common/inventoryConstants';
 import { ItemStorageKind } from './common/itemStorageKind';
 import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
@@ -520,7 +528,10 @@ EventBus.on('ChatMessage', packet => {
     p
   );
   const whisper = p.Type === ChatMessageChatMessageTypeEnum.Whisper;
-  if (whisper) Store.lastWhisperFrom = p.Sender;
+  if (whisper) {
+    Store.lastWhisperFrom = p.Sender;
+    playSound('Sound/iWhisper');
+  }
 
   // guild and party messages come as normal ones with their prefix
   const prefix = p.Message[0];
@@ -528,6 +539,13 @@ EventBus.on('ChatMessage', packet => {
   const text = channel ? p.Message.slice(1) : p.Message;
   Store.addChatLine({ sender: p.Sender, text, whisper, channel });
 });
+
+const MONSTER_ATTACKS: number[] = [
+  MonsterActionType.Attack1,
+  MonsterActionType.Attack2,
+  MonsterActionType.Attack3,
+  MonsterActionType.Attack4,
+];
 
 EventBus.on('ObjectAnimation', packet => {
   const p = new ObjectAnimationPacket(packet);
@@ -553,6 +571,9 @@ EventBus.on('ObjectAnimation', packet => {
   if (obj.monsterAnimation) {
     obj.monsterAnimation.action = clientActionToPlay as any;
     obj.monsterAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
+    if (MONSTER_ATTACKS.includes(clientActionToPlay)) {
+      playMonsterSound(obj, 'attack');
+    }
   } else if (obj.playerAnimation) {
     const action = ServerToClientActionMap[clientActionToPlay];
     if (action !== undefined) {
@@ -644,11 +665,14 @@ EventBus.on('ObjectGotKilled', packet => {
     // the server respawns the player with MapChanged a few seconds later
     obj.playerAnimation.action = PlayerAction.PLAYER_DIE1;
     stopLocalPlayer(obj);
+    playPlayerDeath(obj);
     Store.addNotification('You died', 'error');
   } else if (obj.monsterAnimation) {
     obj.monsterAnimation.action = MonsterActionType.Die;
+    playMonsterSound(obj, 'death');
   } else if (obj.playerAnimation) {
     obj.playerAnimation.action = PlayerAction.PLAYER_DIE1;
+    playPlayerDeath(obj);
   }
 });
 
@@ -857,6 +881,12 @@ EventBus.on('ObjectHit', packet => {
     obj.monsterAnimation.action = MonsterActionType.Shock;
     obj.monsterAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
   }
+
+  if (damage > 0) {
+    playHitSound(obj);
+    if (obj.monsterAnimation) playMonsterSound(obj, 'damage');
+    else if (obj.playerAnimation) playPlayerHurt(obj);
+  }
 });
 
 EventBus.on('ExperienceGained', packet => {
@@ -875,6 +905,7 @@ function experienceForLevel(level: number) {
 
 EventBus.on('CharacterLevelUpdate', packet => {
   const p = new CharacterLevelUpdatePacket(packet);
+  playSound('Sound/pLevelUp');
 
   runInAction(() => {
     const playerData = Store.playerData;
@@ -893,6 +924,7 @@ EventBus.on('ItemAddedToInventory', packet => {
   const p = new ItemAddedToInventoryPacket(packet);
   const slot = p.InventorySlot;
   const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+  playSound('Sound/pGetItem');
 
   runInAction(() => {
     Store.playerData.items[slot] = item;
@@ -996,6 +1028,7 @@ EventBus.on('InventoryItemUpgraded', packet => {
     (item.lvl ?? 0) < (before.lvl ?? 0) ||
     (item.optionLevel ?? 0) < (before.optionLevel ?? 0);
 
+  if (better) playSound('Sound/eGem');
   if (better) Store.addNotification(`${upgrade.jewel}: success, ${name}`);
   else if (worse) Store.addNotification(`${upgrade.jewel} failed: ${name}`, 'error');
   else Store.addNotification(`${upgrade.jewel} failed`, 'error');
@@ -1066,6 +1099,7 @@ EventBus.on('ItemDropResponse', packet => {
     Store.addNotification('Cannot drop the item here', 'error');
     return;
   }
+  playSound('Sound/pDropItem');
 
   runInAction(() => {
     Store.playerData.items[p.InventorySlot] = null as any;
@@ -1133,6 +1167,7 @@ EventBus.on('SkillAnimation', packet => {
   const caster = find(p.PlayerId);
   const target = find(p.TargetId);
   console.log(`SkillAnimation: skill ${p.SkillId}, ${p.PlayerId} -> ${p.TargetId}`);
+  playSkillSound(p.SkillId, caster);
 
   // the local player already started its animation when casting
   if (caster && !caster.localPlayer) {
@@ -1288,6 +1323,7 @@ EventBus.on('AreaSkillAnimation', packet => {
   const caster = world.netObjsQuery.entities.find(
     e => e.netId === (p.PlayerId & 0x7fff)
   );
+  playSkillSound(p.SkillId, caster);
   // the local player already started its animation when casting
   if (caster && !caster.localPlayer && caster.playerAnimation) {
     caster.playerAnimation.action = PlayerAction.PLAYER_SKILL_HAND1;
@@ -1552,6 +1588,9 @@ EventBus.on('ItemCraftingResult', packet => {
     `ItemCraftingResult: ${ItemCraftingResultCraftingResultEnum[p.Result]}`
   );
 
+  if (p.Result === ItemCraftingResultCraftingResultEnum.Success) {
+    playSound('Sound/eMix');
+  }
   Store.addNotification(
     CRAFTING_RESULT_MESSAGES[p.Result] ?? 'The combination failed',
     p.Result === ItemCraftingResultCraftingResultEnum.Success ? 'info' : 'error'

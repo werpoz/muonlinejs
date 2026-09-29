@@ -2,6 +2,7 @@ import { ENUM_WORLD } from '../../common';
 import { ENABLE_BG_MUSIC } from '../../consts';
 import { EventBus } from '../../libs/eventBus';
 import { Sounds, SoundsManager } from '../../libs/soundsManager';
+import { applyAudioSettings, loadAudioSettings } from '../../libs/gameSounds';
 import type { ISystemFactory } from '../world';
 
 const MUSIC_DELAY = 1;
@@ -57,12 +58,15 @@ export const BackgroundMusicSystem: ISystemFactory = world => {
           break;
       }
 
-      SoundsManager.loadAndPlaySoundEffect(sound);
+      const music = SoundsManager.loadAndPlaySoundEffect(sound);
+      if (music) music.loop = true;
 
-      SoundsManager.musicTrack!.setVolume(
-        ENABLE_BG_MUSIC ? SoundsManager.musicVolume : 0
-      );
-      SoundsManager.effectsTrack!.setVolume(SoundsManager.effectsVolume);
+      // volumes of the Options window
+      const settings = loadAudioSettings();
+      applyAudioSettings({
+        ...settings,
+        music: ENABLE_BG_MUSIC ? settings.music : 0,
+      });
     },
   };
 };

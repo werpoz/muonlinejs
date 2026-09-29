@@ -90,6 +90,8 @@ import { InventoryConstants } from './common/inventoryConstants';
 import { ItemGroups } from './common/objects/enum';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemStorageKind } from './common/itemStorageKind';
+import { playSound } from './libs/gameSounds';
+import { isConsumable } from './common/consumables';
 import {
   UPGRADE_JEWELS,
   isUpgradeJewel,
@@ -352,6 +354,9 @@ export type Friend = {
 
 export const OFFLINE_SERVER = 0xff;
 
+// potion group item 0
+const APPLE = 0;
+
 export type GuildMember = {
   name: string;
   // 0xFF when offline
@@ -454,6 +459,7 @@ export const Store = new (class _Store {
 
   characterInfoEnabled = false;
   inventoryEnabled = false;
+  optionsEnabled = false;
 
   // inventory slot of the item picked up with the mouse
   heldItemSlot: number | null = null;
@@ -554,6 +560,7 @@ export const Store = new (class _Store {
       world: observable,
       characterInfoEnabled: observable,
       inventoryEnabled: observable,
+      optionsEnabled: observable,
       heldItemSlot: observable,
       heldItemStorage: observable,
       vault: observable,
@@ -702,6 +709,7 @@ export const Store = new (class _Store {
 
   addNotification(text: string, type: NotificationType = 'info', delay = 3000) {
     const newNotification: Notification = { text, type };
+    if (type === 'error') playSound('Sound/iButtonError');
 
     this.notifications.push(newNotification);
 
@@ -1485,6 +1493,11 @@ export const Store = new (class _Store {
 
   // targetSlot: the item a jewel is used on
   consumeItem(slot: number, targetSlot = 0): void {
+    const item = this.playerData.items[slot];
+    if (isConsumable(item)) {
+      playSound(item.num === APPLE ? 'Sound/pEatApple' : 'Sound/pDrink');
+    }
+
     const packet = ConsumeItemRequestPacket.createPacket();
     packet.ItemSlot = slot;
     packet.TargetSlot = targetSlot;

@@ -19,6 +19,7 @@ import { KeyboardInputSystem } from './systems/keyboardInputSystem';
 import { BackgroundMusicSystem } from './systems/backgroundMusicSystem';
 import { InteractiveAreaSystem } from './systems/interactiveAreaSystem';
 import { WalkSfxSystem } from './systems/walkSfxSystem';
+import { MonsterIdleSoundSystem } from './systems/monsterIdleSoundSystem';
 import { AttackSystem } from './systems/attackSystem';
 import { PickupSystem } from './systems/pickupSystem';
 import { DropItemSystem } from './systems/dropItemSystem';
@@ -47,6 +48,7 @@ const factories: ISystemFactory[] = [
   AnimationSystem,
   AppearanceSystem,
   WalkSfxSystem,
+  MonsterIdleSoundSystem,
   CameraFollowSystem,
   OutOfScopeSystem,
   BackgroundMusicSystem,

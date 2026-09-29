@@ -39,6 +39,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Susurros y amigos | ✅ | Dos clientes: `/w test1Elf …` → B recibe `ChatMessage` tipo 2 (llega con código 0x02); `/r` responde. Añadir amigo → `FriendRequest` → aceptar (`FriendAddResponse`) → `FriendAdded` + `FriendOnlineStateUpdate` (en línea); borrar → `FriendDeleted` |
 | Guild | ✅ | Guild Master (Devias, nivel 100) → `ShowGuildMasterDialog` → `GuildMasterAnswer` → `GuildCreateRequest` (nombre + emblema) → `GuildCreationResult`, `AssignCharacterToGuild`, `GuildInformation`. Con dos clientes: `/guild test0Dk` → `GuildJoinRequest` → aceptar → `GuildJoinResponse: Accepted`, `GuildList` con los dos; `[Testers]` sobre ambos; `@hola guild` llega a los dos; expulsar y disolver → `GuildKickResponse` |
 | Minimapa | ✅ | Tab en Noria y Lorencia: mapa generado del terreno, NPC, portales y jugador |
+| Sonido | ✅ | Lorencia (190,130), 25 s atacando: `Music/main_theme`, `eSwingWeapon1/2`, `eMeleeHit1-4`, `mBudge1`/`mBudgeAttack1`/`mBudgeDie`, `pMaleScream`, `pWalk(Grass)`, `pDrink` (Q), `iButtonClick`; el volumen de música de Opciones se aplica (0,2) y se guarda |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

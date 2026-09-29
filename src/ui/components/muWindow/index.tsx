@@ -1,5 +1,6 @@
 import './style.less';
 import type { ReactNode } from 'react';
+import { playSound } from '../../../libs/gameSounds';
 
 // Window of the original client: 190x429 px with the frame images of
 // public/interface; children are positioned in those coordinates. The window
@@ -37,6 +38,7 @@ export const MuWindow = ({
           title="Close"
           onClick={e => {
             e.stopPropagation();
+            playSound('Sound/iButtonClick');
             onClose();
           }}
         />

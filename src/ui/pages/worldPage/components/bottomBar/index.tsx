@@ -5,6 +5,8 @@ import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { SkillBar } from '../skillBar';
 import { toggleFriends } from '../friends';
+import { toggleOptions } from '../options';
+import { playSound } from '../../../../../libs/gameSounds';
 import { WINDOW_HEIGHT } from '../../../../components/muWindow';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
@@ -121,7 +123,7 @@ const BUTTONS: { className: string; title: string; onClick?: () => void }[] = [
   },
   { className: 'bt02', title: 'Inventory (I)', onClick: toggleInventory },
   { className: 'bt03', title: 'Friends (F)', onClick: toggleFriends },
-  { className: 'bt04', title: 'Menu' },
+  { className: 'bt04', title: 'Options', onClick: toggleOptions },
 ];
 
 function useFrameScale() {
@@ -216,7 +218,10 @@ export const BottomBar = observer(() => {
             className={`menu-button ${b.className}`}
             style={box(489 + i * 38, 0, 38, 42)}
             title={b.title}
-            onClick={b.onClick}
+            onClick={() => {
+              playSound('Sound/iButtonClick');
+              b.onClick?.();
+            }}
           />
         ))}
 
