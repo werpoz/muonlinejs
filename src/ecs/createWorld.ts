@@ -19,12 +19,14 @@ import { KeyboardInputSystem } from './systems/keyboardInputSystem';
 import { BackgroundMusicSystem } from './systems/backgroundMusicSystem';
 import { InteractiveAreaSystem } from './systems/interactiveAreaSystem';
 import { WalkSfxSystem } from './systems/walkSfxSystem';
+import { AttackSystem } from './systems/attackSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
   PointerInputSystem,
   KeyboardInputSystem,
   InteractiveAreaSystem,
+  AttackSystem,
   PlayerControllerSystem,
   PathfindingSystem,
   CalculateVisibilitySystem,

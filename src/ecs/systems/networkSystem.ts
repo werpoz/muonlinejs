@@ -20,6 +20,18 @@ function GetClientDirectionCode(from: IVector2Like, to: IVector2Like): number {
   return 0xff; // Invalid direction
 }
 
+// Direction code (0-7) the object at `from` has to face to look at `to`.
+export function getLookingDirection(
+  from: IVector2Like,
+  to: IVector2Like
+): number {
+  const dir = GetClientDirectionCode(
+    { x: 0, y: 0 },
+    { x: Math.sign(~~to.x - ~~from.x), y: Math.sign(~~to.y - ~~from.y) }
+  );
+  return dir > 7 ? 0 : dir;
+}
+
 function mapToServerDirectionCode(clientDir: number): number {
   return clientDir;
   // return 7 - clientDir;

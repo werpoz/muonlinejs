@@ -5,6 +5,7 @@ import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
+import { MonsterObject } from './common/monsterObject';
 import { MonstersDatabase } from './common/monstersDatabase';
 import {
   MonsterActionType,
@@ -18,6 +19,9 @@ import {
   CharacterInformationPacket,
   CharacterInventoryPacket,
   ChatMessagePacket,
+  CharacterLevelUpdatePacket,
+  ExperienceGainedPacket,
+  ObjectHitPacket,
   CurrentHealthAndShieldPacket,
   CurrentManaAndAbilityPacket,
   GameServerEnteredPacket,
@@ -36,6 +40,9 @@ import { createAttributeSystem } from './libs/attributeSystem';
 import { Vector3 } from './libs/babylon/exports';
 import { EventBus } from './libs/eventBus';
 import { Store, UIState } from './store';
+
+const ONE_SHOT_ANIMATION_TIME = 0.6;
+const NO_TERRAIN_HEIGHT = -9999;
 
 function convertDirectionToAngle(direction: number): number {
   // Convert the direction (0-7) to an angle in radians
@@ -222,6 +229,18 @@ EventBus.on('CurrentManaAndAbility', packet => {
   Store.playerData.currentAG = Math.floor(p.Ability);
 });
 
+// Objects that arrive before the terrain is loaded get the "no terrain"
+// height (-9999) and end up far below the map: put them on the ground.
+EventBus.on('warpCompleted', () => {
+  const world = Store.world;
+  if (!world) return;
+
+  for (const { transform } of world.netObjsQuery) {
+    if (transform.pos.y > NO_TERRAIN_HEIGHT) continue;
+    transform.pos.y = world.getTerrainHeight(transform.pos.x, transform.pos.z);
+  }
+});
+
 EventBus.on('AddNpcsToScope', packet => {
   const p = new AddNpcsToScopePacket(packet);
   const npcs = p.getNPCs();
@@ -286,6 +305,10 @@ EventBus.on('AddNpcsToScope', packet => {
       objectNameInWorld: MonstersDatabase.get(npc.TypeNumber)?.Name || 'NPC',
       interactable: true,
     });
+
+    if (modelFactory.prototype instanceof MonsterObject) {
+      world.addComponent(npcEntity, 'monster', true);
+    }
 
     npcEntity.attributeSystem.setValue('isFemale', 0);
     npcEntity.attributeSystem.setValue('isFlying', 0);
@@ -433,10 +456,12 @@ EventBus.on('ObjectAnimation', packet => {
 
   if (obj.monsterAnimation) {
     obj.monsterAnimation.action = clientActionToPlay as any;
+    obj.monsterAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
   } else if (obj.playerAnimation) {
     const action = ServerToClientActionMap[clientActionToPlay];
     if (action !== undefined) {
       obj.playerAnimation.action = action;
+      obj.playerAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
     }
   }
 
@@ -452,6 +477,8 @@ EventBus.on('ObjectGotKilled', packet => {
   );
 
   if (!obj) return;
+
+  if (!obj.dead) Store.world?.addComponent(obj, 'dead', true);
 
   if (obj.localPlayer) {
   } else if (obj.monsterAnimation) {
@@ -612,4 +639,57 @@ EventBus.on('ServerMessage', packet => {
     `%cServerMessage: ${p.Message}`,
     `color: ${color}; font-weight: bold; font-size: 1em;`
   ); // print message with color
+});
+
+EventBus.on('ObjectHit', packet => {
+  const p = new ObjectHitPacket(packet);
+
+  const maskedId = p.ObjectId & 0x7fff;
+  const obj = Store.world?.netObjsQuery.entities.find(
+    e => e.netId === maskedId
+  );
+  if (!obj) return;
+
+  const damage = p.HealthDamage + p.ShieldDamage;
+  console.log(`ObjectHit: ${maskedId}, damage: ${damage}`);
+  EventBus.emit('damageShown', {
+    entity: obj,
+    damage,
+    isLocalPlayer: !!obj.localPlayer,
+  });
+
+  if (obj.monsterAnimation && !obj.dead && damage > 0) {
+    obj.monsterAnimation.action = MonsterActionType.Shock;
+    obj.monsterAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
+  }
+});
+
+EventBus.on('ExperienceGained', packet => {
+  const p = new ExperienceGainedPacket(packet);
+
+  runInAction(() => {
+    Store.playerData.exp += p.AddedExperience;
+  });
+  console.log(`Experience gained: ${p.AddedExperience}`);
+});
+
+// Total experience required to reach `level` (classic MU formula, levels <= 255).
+function experienceForLevel(level: number) {
+  return 10 * (level + 8) * (level - 1) ** 2;
+}
+
+EventBus.on('CharacterLevelUpdate', packet => {
+  const p = new CharacterLevelUpdatePacket(packet);
+
+  runInAction(() => {
+    const playerData = Store.playerData;
+    playerData.level = p.Level;
+    playerData.points = p.LevelUpPoints;
+    playerData.maxHP = p.MaximumHealth;
+    playerData.maxMP = p.MaximumMana;
+    playerData.maxSD = p.MaximumShield;
+    playerData.maxAG = p.MaximumAbility;
+    playerData.expToNextLvl = experienceForLevel(p.Level + 1);
+  });
+  console.log(`Level up: ${p.Level}`);
 });

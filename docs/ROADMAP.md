@@ -12,8 +12,12 @@
 - [ ] Estado de muerte en la animación de monstruos
 - [ ] Nombres de algunos NPC (salen como "NPC")
 - [ ] Chat y party
-- [ ] Combate y habilidades (efectos: energy ball, flame ya iniciados)
-- [ ] Monstruos y NPCs con IA desde el servidor
+- [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
+- [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
+- [ ] Habilidades (Flame y Energy Ball son solo efectos locales)
+- [ ] Recoger objetos del suelo
+- [ ] Repartir puntos de nivel
+- [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén
 - [ ] Más mapas
 - [ ] Tests de paquetes y cifrado en CI

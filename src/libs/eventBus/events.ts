@@ -28,4 +28,5 @@ export type Events = CSEvents &
     keyPressed: string;
     keyReleased: string;
     pageVisibilityChanged: boolean;
+    damageShown: { entity: Entity; damage: number; isLocalPlayer: boolean };
   };

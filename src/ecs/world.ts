@@ -57,10 +57,16 @@ export type Entity = Partial<{
   };
   playerAnimation: {
     action: PlayerAction;
+    // seconds left of a one-shot action (attack, hit) before idle/walk resumes
+    oneShotTime?: number;
   };
   monsterAnimation: {
     action: MonsterActionType;
+    oneShotTime?: number;
   };
+  // attackable monster (NPCs and players don't have it)
+  monster: true;
+  dead: true;
   attributeSystem: MUAttributeSystem;
   visibility: {
     state: 'visible' | 'nearby' | 'hidden';
@@ -149,6 +155,9 @@ export class World extends ECSWorld<Entity> {
   readonly assetsManager: AssetsManager;
 
   currentPointerTarget: Entity | null = null;
+
+  // monster the local player is walking to / hitting
+  attackTarget: Entity | null = null;
 
   pointerPressed = false;
 

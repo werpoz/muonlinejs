@@ -1,6 +1,7 @@
 import './style.less';
 import { observer } from 'mobx-react-lite';
 import { WorldObjects } from '../../components/worldObjects';
+import { DamageNumbers } from '../../components/damageNumbers';
 import { MapsList } from './components/mapsList';
 import { BottomBar } from './components/bottomBar';
 import { CharacterInfo } from './components/characterInfo';
@@ -25,6 +26,7 @@ export const WorldPage = observer(() => {
   return (
     <div className="world-page">
       <WorldObjects />
+      <DamageNumbers />
       <HUD />
     </div>
   );

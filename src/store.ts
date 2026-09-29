@@ -12,6 +12,7 @@ import {
   RequestCharacterListPacket,
   SelectCharacterPacket,
   WalkRequestPacket,
+  HitRequestPacket,
 } from './common/packets/ClientToServerPackets';
 import {
   ConnectionInfoRequestPacket,
@@ -585,6 +586,13 @@ export const Store = new (class _Store {
     const selectCharacterPacket = SelectCharacterPacket.createPacket();
     selectCharacterPacket.setName(name);
 
+    const character = this.charactersList.find(c => c.Name === name);
+    if (character) {
+      runInAction(() => {
+        this.playerData.level = character.Level;
+      });
+    }
+
     console.log(`select character [${name}]`);
     this.sendToGS(selectCharacterPacket.buffer);
   }
@@ -593,6 +601,15 @@ export const Store = new (class _Store {
     const packet = CreateCharacterPacket.createPacket();
     packet.setName(name);
     packet.Class = charClass;
+
+    this.sendToGS(packet.buffer);
+  }
+
+  sendHitRequest(targetId: number, animation: number, direction: number): void {
+    const packet = HitRequestPacket.createPacket();
+    packet.TargetId = targetId;
+    packet.AttackAnimation = animation;
+    packet.LookingDirection = direction;
 
     this.sendToGS(packet.buffer);
   }

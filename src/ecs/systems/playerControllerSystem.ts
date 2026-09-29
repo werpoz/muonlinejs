@@ -4,6 +4,7 @@ import {
   StandardMaterial,
 } from '../../libs/babylon/exports';
 import type { ISystemFactory } from '../world';
+import { isAttackable } from './attackSystem';
 
 const MOVE_DELAY = 0.25;
 
@@ -74,7 +75,11 @@ export const PlayerControllerSystem: ISystemFactory = world => {
     update: dt => {
       delay -= dt;
 
-      if (world.pointerPressed) {
+      // clicks on monsters are handled by AttackSystem
+      const attacking =
+        world.attackTarget || isAttackable(world.currentPointerTarget);
+
+      if (world.pointerPressed && !attacking) {
         if (delay <= 0) {
           delay = MOVE_DELAY;
           tryMove();

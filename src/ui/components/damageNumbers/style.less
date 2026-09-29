@@ -1,0 +1,35 @@
+.damage-numbers {
+  pointer-events: none;
+}
+
+.damage-number {
+  display: flex;
+  position: absolute;
+  transform: translate(-10000px, -10000px);
+  contain: layout;
+  pointer-events: none;
+
+  .text {
+    color: #ffd24a;
+    font-size: 1rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+    white-space: nowrap;
+    animation: damage-float 1s ease-out forwards;
+
+    &.received {
+      color: #ff4a4a;
+    }
+  }
+}
+
+@keyframes damage-float {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -40px);
+  }
+}

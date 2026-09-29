@@ -120,17 +120,20 @@ export const AnimationSystem: ISystemFactory = world => {
   }
 
   return {
-    update: () => {
+    update: dt => {
       // calculate current anim
       for (const {
         playerAnimation,
         movement,
         attributeSystem,
       } of playersQuery) {
-        if (
-          playerAnimation.action === PlayerAction.PLAYER_ATTACK_FIST ||
-          playerAnimation.action === PlayerAction.PLAYER_DIE1
-        ) {
+        if (playerAnimation.action === PlayerAction.PLAYER_DIE1) continue;
+
+        if (playerAnimation.oneShotTime) {
+          playerAnimation.oneShotTime = Math.max(
+            0,
+            playerAnimation.oneShotTime - dt
+          );
           continue;
         }
         playerAnimation.action = calculateAnimation(
@@ -176,8 +179,15 @@ export const AnimationSystem: ISystemFactory = world => {
       } of monsterAnimatableQuery) {
         const isMoving = movement.velocity.x !== 0 || movement.velocity.y !== 0;
 
-        if (isMoving) {
-          monsterAnimation.action = MonsterActionType.Walk;
+        if (monsterAnimation.oneShotTime) {
+          monsterAnimation.oneShotTime = Math.max(
+            0,
+            monsterAnimation.oneShotTime - dt
+          );
+        } else if (monsterAnimation.action !== MonsterActionType.Die) {
+          monsterAnimation.action = isMoving
+            ? MonsterActionType.Walk
+            : MonsterActionType.Stop1;
         }
         // monsterAnimation.action = isMoving
         //   ? MonsterActionType.Walk
