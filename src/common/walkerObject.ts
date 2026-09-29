@@ -11,16 +11,18 @@ import {
   Vector3,
   Vector2,
 } from '../libs/babylon/exports';
+import type { World } from '../ecs/world';
 import { Queue } from './queue'; // предполагается, что есть тип Queue
 // import { Constants } from './consts';
 
 type Direction = number;
+type GameTime = World['gameTime'];
 
 export abstract class WalkerObject extends ModelObject {
   // Fields: rotation and movement
-  protected _targetAngle: Vector3;
-  protected _direction: Direction;
-  protected _location: Vector2;
+  protected _targetAngle = Vector3.Zero();
+  protected _direction: Direction = 0;
+  protected _location = Vector2.Zero();
   protected _currentPath: Queue<Vector2> | null = null; // FIFO – cheaper removal than List.RemoveAt(0)
 
   // Camera control
@@ -109,13 +111,13 @@ export abstract class WalkerObject extends ModelObject {
   //   // this._animationController = new AnimationController(this);
   // }
 
-  async load(): Promise<void> {
+  async load(gltf: Parameters<ModelObject['load']>[0]): Promise<void> {
     this.moveTargetPosition = Vector3.Zero();
     // TODO: заменить на актуальное получение значения скролла мыши
     this._previousScrollValue = 0;
     // this._cameraYaw = this._defaultCameraYaw;
     // this._cameraPitch = WalkerObject._defaultCameraPitch;
-    await super.load?.();
+    super.load(gltf);
   }
 
   reset() {
@@ -157,7 +159,7 @@ export abstract class WalkerObject extends ModelObject {
   }
 
   moveTo(targetLocation: Vector2, sendToServer = true) {
-    if (!this.world) return;
+    // TODO: bail out when the object is not attached to a world
     // TODO: реализовать PlayerObject и Pathfinding
     const startPos = new Vector2(this.location.x, this.location.y);
     // const currentWorld = this.world;

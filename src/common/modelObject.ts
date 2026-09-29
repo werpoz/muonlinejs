@@ -61,7 +61,7 @@ export class ModelObject {
   Light = new Vector3(0, 0, 0);
 
   ParentBoneLink = -1;
-  private _node: TransformNode;
+  protected _node: TransformNode;
   gltf: {
     mesh: AbstractMesh;
     skeleton: Skeleton;

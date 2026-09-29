@@ -22,6 +22,8 @@ type PacketFieldType =
   | "Boolean" // how to encode/decode? 1 byte?
   | "Binary" // ?
   | "Enum"
+  | "Structure[]"
+  | `${string}[]`
   | "string";
 
 type PacketHeaderType =
@@ -267,6 +269,7 @@ function generateStructureDefinition(p: Packet, s: Structure): string {
       // enums.push(type);
     } else if (type === 'Structure[]') {
       const s = p.structures.find(s => s.name === typeName) ?? globalStructures.find(s => s.name === typeName);
+      if (!s) throw new Error(`no struct ${typeName}`);
       type = `${generateStructureDefinition(p, s)}[]`;
     } else if (type === 'String') {
       type = 'string';
@@ -574,7 +577,7 @@ ${packetEnum.values.map(v => {
   }
 `);
 
-              writer.write(`  set${name}(data: number[], count = ${Number(length)}){
+              writer.write(`  set${name}(data: ArrayLike<number>, count = ${Number(length)}){
     if (data.length !== count) throw new Error(\`data.length must be \${count}\`);
     const from = ${index};
 

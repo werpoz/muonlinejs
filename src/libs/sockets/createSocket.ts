@@ -10,7 +10,12 @@ type Options = {
 
 const STCPackets = [...ConnectServerPackets, ...ServerToClientPackets].filter(p => p.Direction === 'ServerToClient');
 
-const packetsCacheByCode: (typeof STCPackets)[] = [];
+type STCPacket = (typeof STCPackets)[number];
+
+const getSubCode = (p: STCPacket): number | undefined =>
+  'SubCode' in p ? (p.SubCode as number) : undefined;
+
+const packetsCacheByCode: STCPacket[][] = [];
 
 STCPackets.forEach(p => {
   const code = p.Code;
@@ -69,7 +74,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
 
     const packetHeaderSize = getSizeOfPacketType(packetType);
 
-    let packet = new DataView(bytes.buffer, 0, 3);
+    let packet: DataView<ArrayBufferLike> = new DataView(bytes.buffer, 0, 3);
     const length = getPacketSize(bytes);
 
     packet = new DataView(bytes.buffer, 0, length);
@@ -93,7 +98,10 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     const subCode = packet.getUint8(codeIndex + 1);
 
     const packetsByCode = packetsCacheByCode[packetCode];
-    const pDef = packetsByCode.find(p => p.SubCode == null || p.SubCode === subCode);
+    const pDef = packetsByCode.find(p => {
+      const sc = getSubCode(p);
+      return sc == null || sc === subCode;
+    });
 
     if (!pDef) {
       console.error(`${LOG_PREFIX}no packet: 0x` + byteToString(packetCode));
@@ -103,7 +111,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     }
 
     INFO_LOG && console.log(
-      `${LOG_PREFIX}[${pDef.name}][${pDef.HeaderType}]0x${byteToString(pDef.Code)}${pDef.SubCode != null ? `(0x${byteToString(pDef.SubCode)})` : ""
+      `${LOG_PREFIX}[${pDef.name}][${pDef.HeaderType}]0x${byteToString(pDef.Code)}${getSubCode(pDef) != null ? `(0x${byteToString(getSubCode(pDef)!)})` : ""
       } lng:${length}`
     );
 
@@ -138,7 +146,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
   // error handler
   socket.addEventListener("error", (event) => {
     console.log(`${LOG_PREFIX}error:`, event);
-    EventBus.emit('wsError', { socket, error: event.error });
+    EventBus.emit('wsError', { socket, error: (event as Partial<ErrorEvent>).error });
 
   });
 

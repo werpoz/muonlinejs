@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Store } from '../../../store';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { WorldLabel } from '../worldLabel';
 import { useRenderId } from '../../../hooks';
 
@@ -14,7 +14,7 @@ export const WorldObjects = observer(() => {
     [world]
   );
 
-  useState(() => {
+  useEffect(() => {
     const sub = query.onEntityAdded.subscribe(refresh);
     const sub2 = query.onEntityRemoved.subscribe(refresh);
 

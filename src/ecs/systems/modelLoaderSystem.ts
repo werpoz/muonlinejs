@@ -1,6 +1,6 @@
 import { With } from 'miniplex';
 import { MapPlayerNetClassToModelClass } from '../../common/mapPlayerNetClassToModelClass';
-import { getModel, loadGLTF } from '../../common/modelLoader';
+import { loadGLTF } from '../../common/modelLoader';
 import { ModelObject } from '../../common/modelObject';
 import { PlayerObject } from '../../common/playerObject';
 import { Entity, ISystemFactory, World } from '../world';
@@ -52,11 +52,9 @@ function createModelObject(
     const modelFilePath = entity.modelFilePath;
 
     if (modelId != null) {
-      getModel(modelId).then(gltf => {
-        if (entity.modelObject) {
-          entity.modelObject.load(gltf);
-        }
-      });
+      // TODO: getModel() returns a raw BMD and no model factories are
+      // registered yet, so there is nothing ModelObject.load() can use.
+      console.warn(`No loader for model ID ${modelId}`);
     } else if (modelFilePath) {
       loadGLTF(modelFilePath, world).then(gltf => {
         if (entity.modelObject) {

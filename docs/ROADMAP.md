@@ -7,7 +7,10 @@
 - [x] Inventario básico (serialización compatible con OpenMU)
 - [x] Lista de servidores, login y selección de personaje (probado con OpenMU Season 6)
 - [ ] Creación / borrado de personaje (sin probar)
-- [ ] Arreglar los 44 errores de `tsc` para poder activarlo como obligatorio en CI
+- [x] `tsc` sin errores y obligatorio en CI
+- [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
+- [ ] Estado de muerte en la animación de monstruos
+- [ ] Nombres de algunos NPC (salen como "NPC")
 - [ ] Chat y party
 - [ ] Combate y habilidades (efectos: energy ball, flame ya iniciados)
 - [ ] Monstruos y NPCs con IA desde el servidor
