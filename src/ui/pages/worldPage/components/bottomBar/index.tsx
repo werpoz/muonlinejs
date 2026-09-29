@@ -2,6 +2,7 @@ import './style.less';
 import { observer } from 'mobx-react-lite';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { SkillBar } from '../skillBar';
 import { Item } from '../../../../../ecs/world';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { InventoryConstants } from '../../../../../common/inventoryConstants';
@@ -114,14 +115,7 @@ export const BottomBar = observer(() => {
           maxValue={playerData.maxSD}
           fillAmount={playerData.sdPercent}
         />
-        <div className="skills">
-          <button className="skill-6">6</button>
-          <button className="skill-7">7</button>
-          <button className="skill-8">8</button>
-          <button className="skill-9">9</button>
-          <button className="skill-0">0</button>
-          <button className="skill-current">Current</button>
-        </div>
+        <SkillBar />
         <VerticalBar
           className="ag-bar"
           value={playerData.currentAG}

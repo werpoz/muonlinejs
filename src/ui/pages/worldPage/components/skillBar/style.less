@@ -1,0 +1,59 @@
+.skills {
+  position: relative;
+
+  .skill-slot {
+    position: relative;
+    overflow: hidden;
+
+    &.selected {
+      outline: 2px solid #ffd24a;
+      outline-offset: -2px;
+    }
+
+    .hot-key {
+      position: absolute;
+      top: 1px;
+      left: 2px;
+      color: #ffd700;
+      text-shadow: 0 0 2px #000;
+    }
+
+    .item-icon {
+      pointer-events: none;
+      transform: scale(1.4);
+    }
+
+    .skill-name {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1px;
+      font-size: 8px;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 2px #000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .skill-list {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    max-width: 220px;
+    padding: 4px;
+    background-color: #000000c0;
+    border: 1px solid #666;
+    color: #fff;
+
+    .skill-slot {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}

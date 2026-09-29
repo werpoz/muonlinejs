@@ -7,7 +7,6 @@ import { MapsList } from './components/mapsList';
 import { BottomBar } from './components/bottomBar';
 import { CharacterInfo } from './components/characterInfo';
 import { Inventory } from './components/inventory';
-import { Skills } from './components/skills';
 import { Chat } from './components/chat';
 import { NpcShop } from './components/npcShop';
 
@@ -20,7 +19,6 @@ const HUD = observer(() => {
         <Inventory />
         <CharacterInfo />
       </div>
-      <Skills />
       <MapsList />
       <Chat />
     </div>

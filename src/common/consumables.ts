@@ -1,3 +1,4 @@
+import { SKILL_ICONS } from './skills';
 import type { Item } from '../ecs/world';
 
 const POTIONS_GROUP = 14;
@@ -25,10 +26,10 @@ export function isConsumable(item: Item | null | undefined): item is Item {
   );
 }
 
-const SCROLLS_GROUP = 15; // wizard spells
-const ORBS_GROUP = 12;
-// orbs of skills (12/15 is the Jewel of Chaos, not an orb)
-const SKILL_ORBS = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19];
+// scrolls, orbs and crystals that teach a skill
+const SKILL_ITEMS = new Set(
+  Object.values(SKILL_ICONS).map(({ group, num }) => `${group}/${num}`)
+);
 
 // Items used with a right click in the inventory: potions and the scrolls /
 // orbs that teach a skill.
@@ -37,9 +38,7 @@ export function isUsableFromInventory(
 ): item is Item {
   if (!item) return false;
 
-  const teachesSkill =
-    item.group === SCROLLS_GROUP ||
-    (item.group === ORBS_GROUP && SKILL_ORBS.includes(item.num));
+  const teachesSkill = SKILL_ITEMS.has(`${item.group}/${item.num}`);
 
   return teachesSkill || isConsumable(item);
 }
