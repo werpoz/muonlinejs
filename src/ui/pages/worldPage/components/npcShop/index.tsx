@@ -2,6 +2,7 @@ import './style.less';
 import { observer } from 'mobx-react-lite';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { itemTooltipProps } from '../../../../components/itemTooltip';
 import { MuWindow } from '../../../../components/muWindow';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { useEventBus } from '../../../../../hooks/useEventBus';
@@ -55,7 +56,8 @@ export const NpcShop = observer(() => {
           <div
             key={slot}
             className="shop-item"
-            title={name}
+            aria-label={name}
+            {...itemTooltipProps(item)}
             style={{
               left: GRID_X + (slot % COLUMNS) * CELL,
               top: GRID_Y + Math.floor(slot / COLUMNS) * CELL,

@@ -27,6 +27,12 @@ export type Item = {
   raw?: number[];
   isExcellent?: boolean;
   hasSkill?: boolean;
+  hasLuck?: boolean;
+  // additional option (jewel of life): 0-7, each level adds 4 damage/defense
+  optionLevel?: number;
+  // bits of the 6 excellent options
+  excellentOptions?: number;
+  isAncient?: boolean;
 };
 
 export type Entity = Partial<{

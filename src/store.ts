@@ -71,6 +71,11 @@ import { InventoryConstants } from './common/inventoryConstants';
 import { ItemGroups } from './common/objects/enum';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemStorageKind } from './common/itemStorageKind';
+import {
+  UPGRADE_JEWELS,
+  isUpgradeJewel,
+  isWearable,
+} from './common/itemInfo';
 import { spawnPlayer } from './logic';
 
 const CONFIG_KEY = '_mu_key';
@@ -762,10 +767,42 @@ export const Store = new (class _Store {
 
       const heldStorage = this.heldItemStorage;
       this.heldItemSlot = null;
+
+      const inventory = ItemStorageKind.Inventory;
+      if (heldStorage === inventory && storage === inventory && held !== slot) {
+        if (this.tryUseJewel(held, slot)) return;
+      }
+
       if (held !== slot || heldStorage !== storage) {
         this.moveItem(held, slot, heldStorage, storage);
       }
     });
+  }
+
+  // item upgraded with a jewel, to tell the result with InventoryItemUpgraded
+  pendingUpgrade: { slot: number; before: Item; jewel: string } | null = null;
+
+  // Jewel of Bless / Soul / Life dropped on an item of the inventory (not
+  // equipped, like in OpenMU): use it on that item.
+  tryUseJewel(jewelSlot: number, targetSlot: number): boolean {
+    const items = this.playerData.items;
+    const jewel = items[jewelSlot];
+    const target = items[targetSlot];
+    if (!isUpgradeJewel(jewel) || !target) return false;
+    if (isUpgradeJewel(target) || !isWearable(target.group)) return false;
+
+    if (targetSlot <= InventoryConstants.LastEquippableItemSlotIndex) {
+      this.addNotification('Unequip the item to use a jewel on it', 'error');
+      return true;
+    }
+
+    this.pendingUpgrade = {
+      slot: targetSlot,
+      before: target,
+      jewel: UPGRADE_JEWELS[`${jewel.group}/${jewel.num}`],
+    };
+    this.consumeItem(jewelSlot, targetSlot);
+    return true;
   }
 
   sendTargetedSkill(skill: number, targetId: number): void {
@@ -1054,10 +1091,11 @@ export const Store = new (class _Store {
     this.sendToGS(packet.buffer);
   }
 
-  consumeItem(slot: number): void {
+  // targetSlot: the item a jewel is used on
+  consumeItem(slot: number, targetSlot = 0): void {
     const packet = ConsumeItemRequestPacket.createPacket();
     packet.ItemSlot = slot;
-    packet.TargetSlot = 0;
+    packet.TargetSlot = targetSlot;
 
     this.sendToGS(packet.buffer);
   }

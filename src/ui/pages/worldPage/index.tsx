@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { WorldObjects } from '../../components/worldObjects';
 import { DamageNumbers } from '../../components/damageNumbers';
 import { HeldItem } from '../../components/heldItem';
+import { ItemTooltip } from '../../components/itemTooltip';
 import { MapsList } from './components/mapsList';
 import { BottomBar } from './components/bottomBar';
 import { CharacterInfo } from './components/characterInfo';
@@ -36,6 +37,7 @@ export const WorldPage = observer(() => {
       <WorldObjects />
       <DamageNumbers />
       <HeldItem />
+      <ItemTooltip />
       <HUD />
     </div>
   );

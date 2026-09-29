@@ -120,6 +120,15 @@ export class ItemSerializer {
     item.durability = array[2];
     item.raw = Array.from(array.subarray(0, ItemDataSize));
 
+    item.hasSkill = (array[1] & SkillFlag) !== 0;
+    item.hasLuck = (array[1] & LuckFlag) !== 0;
+    // 2 low bits in the option byte, the highest bit is 0x40 of the exc byte
+    item.optionLevel = (array[1] & 3) + ((array[3] >> 4) & 4);
+    item.excellentOptions = array[3] & 0x3f;
+    // wings use the same bits for their options, they are not excellent
+    item.isExcellent = item.excellentOptions !== 0 && itemGroup !== 12;
+    item.isAncient = (array[4] & AncientDiscriminatorMask) !== 0;
+
     // if (item.Definition.PossibleItemOptions.Any(o =>
     //         o.PossibleOptions.Any(i => i.OptionType == ItemOptionTypes.Excellent)))
     // {

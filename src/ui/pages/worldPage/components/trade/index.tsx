@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { itemTooltipProps } from '../../../../components/itemTooltip';
 import { MuWindow } from '../../../../components/muWindow';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { ItemStorageKind } from '../../../../../common/itemStorageKind';
@@ -73,7 +74,8 @@ const TradeGrid = observer(
             <div
               key={slot}
               className={`trade-item${mine ? ' mine' : ''}${held ? ' held' : ''}`}
-              title={itemName(item)}
+              aria-label={itemName(item)}
+              {...itemTooltipProps(item)}
               style={{
                 left: GRID_X + (slot % COLUMNS) * CELL,
                 top: top + Math.floor(slot / COLUMNS) * CELL,

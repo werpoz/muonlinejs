@@ -3,6 +3,7 @@ import { CharacterClassNumber, ENUM_WORLD } from './common';
 import { deserializeAppearance } from './common/deserializeAppearance';
 import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemSerializer } from './common/itemSerializer';
+import { getItemName } from './common/itemInfo';
 import { InventoryConstants } from './common/inventoryConstants';
 import { ItemStorageKind } from './common/itemStorageKind';
 import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
@@ -53,6 +54,7 @@ import {
   ExperienceGainedPacket,
   InventoryMoneyUpdatePacket,
   ItemConsumptionFailedPacket,
+  InventoryItemUpgradedPacket,
   ItemDurabilityChangedPacket,
   ItemRemovedPacket,
   ItemMovedPacket,
@@ -896,7 +898,10 @@ EventBus.on('ItemDurabilityChanged', packet => {
   if (!item) return;
 
   runInAction(() => {
-    items[p.InventorySlot] = { ...item, durability: p.Durability };
+    // raw is sent back when moving the item: keep its durability byte
+    const raw = item.raw ? [...item.raw] : undefined;
+    if (raw) raw[2] = p.Durability;
+    items[p.InventorySlot] = { ...item, durability: p.Durability, raw };
   });
 });
 
@@ -913,7 +918,43 @@ EventBus.on('ItemRemoved', packet => {
 });
 
 EventBus.on('ItemConsumptionFailed', () => {
-  Store.addNotification('Cannot use the item', 'error');
+  const upgrade = Store.pendingUpgrade;
+  Store.pendingUpgrade = null;
+  Store.addNotification(
+    upgrade
+      ? `The ${upgrade.jewel} can't be used on this item`
+      : 'Cannot use the item',
+    'error'
+  );
+});
+
+// an item changed by a jewel (the jewel is removed with ItemRemoved or
+// ItemDurabilityChanged): tell if it worked
+EventBus.on('InventoryItemUpgraded', packet => {
+  const p = new InventoryItemUpgradedPacket(packet);
+  const bytes = new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength);
+  const item = ItemSerializer.DeserializeItem(bytes.slice(5, 5 + 12));
+  console.log(`InventoryItemUpgraded: slot ${p.InventorySlot}`, item);
+
+  const upgrade = Store.pendingUpgrade;
+  Store.pendingUpgrade = null;
+  runInAction(() => {
+    Store.playerData.items[p.InventorySlot] = item;
+  });
+  if (!upgrade || upgrade.slot !== p.InventorySlot) return;
+
+  const name = getItemName(item);
+  const before = upgrade.before;
+  const better =
+    (item.lvl ?? 0) > (before.lvl ?? 0) ||
+    (item.optionLevel ?? 0) > (before.optionLevel ?? 0);
+  const worse =
+    (item.lvl ?? 0) < (before.lvl ?? 0) ||
+    (item.optionLevel ?? 0) < (before.optionLevel ?? 0);
+
+  if (better) Store.addNotification(`${upgrade.jewel}: success, ${name}`);
+  else if (worse) Store.addNotification(`${upgrade.jewel} failed: ${name}`, 'error');
+  else Store.addNotification(`${upgrade.jewel} failed`, 'error');
 });
 
 EventBus.on('CharacterStatIncreaseResponse', packet => {

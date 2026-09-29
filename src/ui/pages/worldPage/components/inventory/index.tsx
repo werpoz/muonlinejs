@@ -2,6 +2,7 @@ import './style.less';
 import { observer } from 'mobx-react-lite';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { itemTooltipProps } from '../../../../components/itemTooltip';
 import { MuWindow } from '../../../../components/muWindow';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { Item } from '../../../../../ecs/world';
@@ -78,7 +79,8 @@ const EquipmentSlot = observer(
           height: h,
           backgroundImage: `url('/interface/equip_${image}.png')`,
         }}
-        title={item ? itemName(item) : undefined}
+        aria-label={item ? itemName(item) : undefined}
+        {...(item ? itemTooltipProps(item) : {})}
         onClick={() => Store.onItemSlotClick(slot)}
       >
         {!!item && <ItemIcon {...item} />}
@@ -101,7 +103,8 @@ const GridItem = observer(({ item, slot }: { item: Item; slot: number }) => {
         width: (config?.X ?? 1) * CELL,
         height: (config?.Y ?? 1) * CELL,
       }}
-      title={itemName(item)}
+      aria-label={itemName(item)}
+      {...itemTooltipProps(item)}
       onClick={() => Store.onItemSlotClick(slot)}
       onContextMenu={e => onUse(e, item, slot)}
     >

@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { itemTooltipProps } from '../../../../components/itemTooltip';
 import { MuWindow } from '../../../../components/muWindow';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
 import { ItemStorageKind } from '../../../../../common/itemStorageKind';
@@ -60,9 +61,10 @@ export const Vault = observer(() => {
           <div
             key={slot}
             className={`vault-item${held ? ' held' : ''}`}
-            title={
+            aria-label={
               (config?.ItemName ?? 'Item') + (item.lvl ? ` +${item.lvl}` : '')
             }
+            {...itemTooltipProps(item)}
             style={{
               left: GRID_X + (slot % COLUMNS) * CELL,
               top: GRID_Y + Math.floor(slot / COLUMNS) * CELL,
