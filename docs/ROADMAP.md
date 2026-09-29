@@ -19,7 +19,7 @@
 - [ ] Recoger dinero (implementado, sin probar)
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
 - [ ] Tirar objetos del inventario
-- [ ] Etiquetas de nombre sobre objetos/NPCs (se dibujan fuera de pantalla)
+- [x] Etiquetas de nombre sobre personajes, NPCs y objetos
 - [ ] Repartir puntos de nivel
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén

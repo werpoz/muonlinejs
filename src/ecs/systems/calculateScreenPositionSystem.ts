@@ -87,7 +87,9 @@ export const CalculateScreenPositionSystem: ISystemFactory = world => {
         finalPosition.y = position.y;
         finalPosition.z = position.z;
 
-        finalPosition.z += entity.screenPosition.worldOffsetZ;
+        // worldOffsetZ is the height above the object (Z is up in MU terms,
+        // Y is up in the scene)
+        finalPosition.y += entity.screenPosition.worldOffsetZ;
 
         tmp2.copyFrom(finalPosition);
 
@@ -100,7 +102,6 @@ export const CalculateScreenPositionSystem: ISystemFactory = world => {
         // }
 
         if (distSquared < distToCompare) {
-          finalPosition.y = 256 - finalPosition.y;
           Vector3.ProjectToRef(
             finalPosition,
             ZERO_MATRIX,

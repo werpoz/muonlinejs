@@ -5879,7 +5879,7 @@
           <Name>Type</Name>
         </Field>
         <Field>
-          <Index>4</Index>
+          <Index>13</Index>
           <Type>String</Type>
           <Name>Message</Name>
         </Field>

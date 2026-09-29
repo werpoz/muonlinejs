@@ -31,9 +31,6 @@ Detalles observados:
   corrigió la posición con `ObjectMoved`. Parece un desajuste entre los tiles
   que el cliente considera transitables y los del servidor.
 - Muchos avisos de MobX en modo estricto (se modifica estado fuera de `action`).
-- Las etiquetas de nombre se colocan fuera de la pantalla (coordenada Y
-  mal calculada), por eso no se ven sobre NPCs ni objetos.
-- Los mensajes del servidor llegan con un prefijo `000000000`.
 - Dos NPC de Lorencia aparecen con la etiqueta "NPC" en lugar de su nombre.
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
