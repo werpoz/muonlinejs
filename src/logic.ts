@@ -20,6 +20,8 @@ import {
   CharacterInformationPacket,
   CharacterInventoryPacket,
   ChatMessagePacket,
+  MapChangedPacket,
+  RespawnAfterDeathPacket,
   CharacterLevelUpdatePacket,
   CharacterStatIncreaseResponsePacket,
   ExperienceGainedPacket,
@@ -478,6 +480,62 @@ EventBus.on('ObjectAnimation', packet => {
   obj.transform.rot.y = convertDirectionToAngle(p.Direction);
 });
 
+function stopLocalPlayer(player: Entity) {
+  const world = Store.world;
+  if (world) world.attackTarget = null;
+
+  if (player.pathfinding) player.pathfinding.path = [];
+  if (player.playerMoveTo) {
+    player.playerMoveTo.handled = true;
+    player.playerMoveTo.sendToServer = false;
+  }
+}
+
+// The server moved the local player (respawn, warp gate, /move).
+function moveLocalPlayer(map: number, x: number, y: number) {
+  const world = Store.world;
+  const player = world?.playerEntity;
+  if (!world || !player) return;
+
+  stopLocalPlayer(player);
+  if (player.dead) {
+    world.removeComponent(player, 'dead');
+    player.playerAnimation.action = PlayerAction.PLAYER_STOP_MALE;
+  }
+
+  EventBus.emit('requestWarp', { map, pos: { x, y } });
+}
+
+EventBus.on('MapChanged', packet => {
+  const p = new MapChangedPacket(packet);
+  console.log(
+    `MapChanged: map ${p.MapNumber} (${p.PositionX}, ${p.PositionY}), change: ${p.IsMapChange}`
+  );
+  moveLocalPlayer(p.MapNumber, p.PositionX, p.PositionY);
+});
+
+EventBus.on('RespawnAfterDeath', packet => {
+  const p = new RespawnAfterDeathPacket(packet);
+  console.log(
+    `RespawnAfterDeath: map ${p.MapNumber} (${p.PositionX}, ${p.PositionY})`
+  );
+
+  runInAction(() => {
+    const d = Store.playerData;
+    d.currentHP = p.CurrentHealth;
+    d.currentMP = p.CurrentMana;
+    d.currentSD = p.CurrentShield;
+    d.currentAG = p.CurrentAbility;
+    d.money = p.Money;
+  });
+  Store.world?.playerEntity?.attributeSystem.setValue(
+    'currentHealth',
+    p.CurrentHealth
+  );
+
+  moveLocalPlayer(p.MapNumber, p.PositionX, p.PositionY);
+});
+
 EventBus.on('ObjectGotKilled', packet => {
   const p = new ObjectGotKilledPacket(packet);
 
@@ -490,7 +548,11 @@ EventBus.on('ObjectGotKilled', packet => {
 
   if (!obj.dead) Store.world?.addComponent(obj, 'dead', true);
 
-  if (obj.localPlayer) {
+  if (obj.localPlayer && obj.playerAnimation) {
+    // the server respawns the player with MapChanged a few seconds later
+    obj.playerAnimation.action = PlayerAction.PLAYER_DIE1;
+    stopLocalPlayer(obj);
+    Store.addNotification('You died', 'error');
   } else if (obj.monsterAnimation) {
     obj.monsterAnimation.action = MonsterActionType.Die;
   } else if (obj.playerAnimation) {

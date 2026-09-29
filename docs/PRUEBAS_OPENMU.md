@@ -22,6 +22,7 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Recoger objeto con clic y con Espacio | ✅ | `ItemsDropped` → `PickupItemRequest` → `ItemDropRemoved`, `ItemAddedToInventory` |
 | Usar pociones (Q/W y clic derecho) | ✅ | `ConsumeItemRequest` → `ItemDurabilityChanged`, `CurrentHealthAndShield` (vida 35 → 112) |
 | Repartir puntos (panel C) | ✅ | `IncreaseCharacterStatPoint` → `CharacterStatIncreaseResponse` (VIT 25 → 26, vida máx. 112 → 115) |
+| Morir y reaparecer | ✅ | `ObjectGotKilled` → `RespawnAfterDeath` (pueblo, vida llena, se puede volver a caminar) |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

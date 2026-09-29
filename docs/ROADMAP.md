@@ -22,6 +22,7 @@
 - [x] Etiquetas de nombre sobre personajes, NPCs y objetos
 - [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
 - [x] Repartir puntos de nivel (panel C)
+- [x] Muerte y reaparición en el pueblo
 - [ ] Daño/defensa del panel C (valores fijos de ejemplo)
 - [ ] Modelos para monstruos de otros mapas
 - [ ] Tiendas, trade y almacén

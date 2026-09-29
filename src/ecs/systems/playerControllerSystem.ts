@@ -42,7 +42,7 @@ export const PlayerControllerSystem: ISystemFactory = world => {
   let delay = MOVE_DELAY;
   function tryMove() {
     const playerEntity = world.playerEntity;
-    if (!playerEntity) return;
+    if (!playerEntity || playerEntity.dead) return;
 
     const pickInfo = scene.pick(
       lastClientX,

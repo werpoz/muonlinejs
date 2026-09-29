@@ -59,7 +59,7 @@ export const PickupSystem: ISystemFactory = world => {
       repathDelay -= dt;
 
       const player = world.playerEntity;
-      if (!player) return;
+      if (!player || player.dead) return;
 
       const pressed = world.pointerPressed;
       if (pressed && !wasPressed) {

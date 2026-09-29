@@ -93,7 +93,7 @@ export const AttackSystem: ISystemFactory = world => {
       repathDelay -= dt;
 
       const player = world.playerEntity;
-      if (!player) return;
+      if (!player || player.dead) return;
 
       const pressed = world.pointerPressed;
       const hovered = world.currentPointerTarget;
