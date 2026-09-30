@@ -18,7 +18,13 @@ import { getSkillInfo } from './common/skills';
 import { playSkillEffect } from './effects/skillEffects';
 import { getAttackAction } from './ecs/systems/attackSystem';
 import { NPC_NAMES } from './common/npcNames';
-import { MINI_GAMES, isMiniGameMap, type MiniGameKind } from './common/miniGames';
+import { MINI_GAMES, isMiniGameMap, miniGameOfMap, type MiniGameKind } from './common/miniGames';
+import { TWFlags } from './common/terrain/consts';
+import {
+  CHAOS_CASTLE_FALLING_FLOOR,
+  chaosCastleWarrior,
+  isChaosCastleWarrior,
+} from './common/chaosCastle';
 import {
   LegacyQuestState,
   classAfterQuest,
@@ -71,6 +77,7 @@ import {
   DuelFinishedPacket,
   DevilSquareEnterResultPacket,
   BloodCastleEnterResultPacket,
+  ChaosCastleEnterResultPacket,
   MiniGameOpeningStatePacket,
   UpdateMiniGameStatePacket,
   UpdateMiniGameStateMiniGameTypeStateEnum,
@@ -370,6 +377,27 @@ EventBus.on('warpCompleted', () => {
   }
 });
 
+// Chaos Castle: its monsters look like players (see chaosCastle.ts)
+function spawnChaosCastleWarrior(
+  world: World,
+  id: number,
+  npc: { TypeNumber: number; CurrentPositionX: number; CurrentPositionY: number; Rotation: number }
+) {
+  const look = chaosCastleWarrior(npc.TypeNumber);
+  const entity = spawnPlayer(world, { cls: look.charClass });
+  world.addComponent(entity, 'netId', id);
+  world.addComponent(entity, 'worldIndex', world.mapIndex);
+  world.addComponent(entity, 'npcType', npc.TypeNumber);
+  world.addComponent(entity, 'monster', true);
+  world.addComponent(entity, 'interactable', true);
+  entity.transform.pos.x = npc.CurrentPositionX;
+  entity.transform.pos.z = npc.CurrentPositionY;
+  entity.transform.pos.y = world.getTerrainHeight(npc.CurrentPositionX, npc.CurrentPositionY);
+  entity.transform.rot.y = convertDirectionToAngle(npc.Rotation);
+  entity.objectNameInWorld = MonstersDatabase.get(npc.TypeNumber)?.Name || 'Chaos Castle';
+  Object.assign(entity.charAppearance, look, { changed: true });
+}
+
 EventBus.on('AddNpcsToScope', packet => {
   const p = new AddNpcsToScopePacket(packet);
   const npcs = p.getNPCs();
@@ -382,6 +410,10 @@ EventBus.on('AddNpcsToScope', packet => {
 
   npcs.forEach(npc => {
     const id = npc.Id & 0x7fff;
+    if (isChaosCastleWarrior(npc.TypeNumber)) {
+      spawnChaosCastleWarrior(world, id, npc);
+      return;
+    }
     const definedModelFactory =
       ModelFactoryPerId[npc.TypeNumber] ??
       getGenericModelFactory(npc.TypeNumber);
@@ -740,6 +772,7 @@ EventBus.on('ObjectGotKilled', packet => {
   const p = new ObjectGotKilledPacket(packet);
 
   const killedId = p.KilledId & 0x7fff;
+  console.log(`ObjectGotKilled: ${killedId} by ${p.KillerId & 0x7fff}`);
   const obj = Store.world?.netObjsQuery.entities.find(
     e => e.netId === killedId
   );
@@ -2287,15 +2320,28 @@ EventBus.on('LegacyQuestMonsterKillInfo', packet => {
 
 // ---- Devil Square / Blood Castle
 
-const MINI_GAME_BY_TYPE: Record<number, MiniGameKind> = { 1: 'DevilSquare', 2: 'BloodCastle' };
+const MINI_GAME_BY_TYPE: Record<number, MiniGameKind> = {
+  1: 'DevilSquare',
+  2: 'BloodCastle',
+  4: 'ChaosCastle',
+};
+// OpenMU: no timetable
+const NO_TIMETABLE = 0xff;
 
 EventBus.on('MiniGameOpeningState', packet => {
   const p = new MiniGameOpeningStatePacket(packet);
   const kind = MINI_GAME_BY_TYPE[p.GameType];
-  console.log(`MiniGameOpeningState: ${kind} ${p.RemainingEnteringTimeMinutes} min, ${p.UserCount} players`);
+  // Chaos Castle: the minutes have two bytes, the high one first and the
+  // low one after the player count (0xFFFF: no timetable)
+  let minutes = p.RemainingEnteringTimeMinutes;
+  if (kind === 'ChaosCastle') {
+    minutes = (minutes << 8) | (p.buffer.byteLength > 6 ? p.buffer.getUint8(6) : 0);
+    if (minutes === 0xffff) minutes = NO_TIMETABLE;
+  }
+  console.log(`MiniGameOpeningState: ${kind} ${minutes} min, ${p.UserCount} players`);
   if (!kind) return;
   runInAction(() => {
-    Store.miniGameOpening = { kind, minutes: p.RemainingEnteringTimeMinutes, players: p.UserCount };
+    Store.miniGameOpening = { kind, minutes, players: p.UserCount };
   });
 });
 
@@ -2310,12 +2356,21 @@ const ENTER_ERRORS: Record<number, string> = {
   7: 'Player killers cannot enter',
 };
 
-function onMiniGameEnterResult(kind: MiniGameKind, result: number) {
+// the result of Chaos Castle has its own values
+const CHAOS_CASTLE_ENTER_ERRORS: Record<number, string> = {
+  1: 'You cannot enter (check your level and your Armor of Guardsman)',
+  2: 'The entrance is not open yet',
+  5: 'Chaos Castle is full',
+  7: 'Not enough zen',
+  8: 'Player killers cannot enter',
+};
+
+function onMiniGameEnterResult(kind: MiniGameKind, result: number, errors = ENTER_ERRORS) {
   const pending = Store.pendingMiniGame;
   Store.pendingMiniGame = null;
   console.log(`${kind}EnterResult: ${result}`);
   if (result !== 0) {
-    Store.addNotification(ENTER_ERRORS[result] ?? 'You cannot enter', 'error');
+    Store.addNotification(errors[result] ?? 'You cannot enter', 'error');
     return;
   }
   runInAction(() => {
@@ -2337,6 +2392,11 @@ EventBus.on('BloodCastleEnterResult', packet => {
   onMiniGameEnterResult('BloodCastle', new BloodCastleEnterResultPacket(packet).Result);
 });
 
+EventBus.on('ChaosCastleEnterResult', packet => {
+  const result = new ChaosCastleEnterResultPacket(packet).Result;
+  onMiniGameEnterResult('ChaosCastle', result, CHAOS_CASTLE_ENTER_ERRORS);
+});
+
 const MINI_GAME_COUNTDOWN = 30;
 
 const MINI_GAME_STATE_TEXT: Partial<Record<UpdateMiniGameStateMiniGameTypeStateEnum, string>> = {
@@ -2347,6 +2407,9 @@ const MINI_GAME_STATE_TEXT: Partial<Record<UpdateMiniGameStateMiniGameTypeStateE
   [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleEnding]: 'Blood Castle has started!',
   [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleFinished]: 'Blood Castle has ended',
   [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleClosed]: 'Blood Castle starts in 30 seconds!',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.ChaosCastleOpened]: 'The entrance of Chaos Castle is open',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.ChaosCastleClosed]: 'Chaos Castle starts in 30 seconds!',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.ChaosCastleFinished]: 'Chaos Castle has ended',
 };
 
 // only sent to the players of the game (and of its entrance)
@@ -2373,16 +2436,50 @@ EventBus.on('UpdateMiniGameState', packet => {
   });
 });
 
+const CHAOS_CASTLE_STAGES = [
+  BloodCastleStateStatusEnum.ChaosCastleStageOne,
+  BloodCastleStateStatusEnum.ChaosCastleStageTwo,
+  BloodCastleStateStatusEnum.ChaosCastleStageThree,
+];
+
+const CHAOS_CASTLE_FALL_TEXT = [
+  'The castle crumbles! Stay away from the edge',
+  'The castle crumbles again!',
+  'Only the center of the castle is left!',
+];
+
+// the floor of the stages up to this one falls (once)
+function dropChaosCastleFloor(stage: number) {
+  const game = Store.miniGame;
+  const world = Store.world;
+  if (!game || !world || (game.fallenStage ?? 0) >= stage) return;
+  for (let s = game.fallenStage ?? 0; s < stage; s++) {
+    for (const [x1, y1, x2, y2] of CHAOS_CASTLE_FALLING_FLOOR[s]) {
+      world.setTerrainFlag(x1, y1, x2, y2, TWFlags.NoGround, true);
+    }
+  }
+  runInAction(() => {
+    game.fallenStage = stage;
+  });
+  EventBus.emit('terrainChanged');
+  Store.addNotification(CHAOS_CASTLE_FALL_TEXT[stage - 1]);
+}
+
 EventBus.on('BloodCastleState', packet => {
   const p = new BloodCastleStatePacket(packet);
   const buffer = p.buffer;
   const ownerId = buffer.getUint16(10, true);
   console.log(`BloodCastleState: ${BloodCastleStateStatusEnum[p.State]} ${p.RemainSecond}s monsters ${p.CurMonster}/${p.MaxMonster} owner ${ownerId}`);
+  // Chaos Castle uses this packet too (states 5-10)
+  const kind: MiniGameKind =
+    p.State >= BloodCastleStateStatusEnum.ChaosCastleStarted ? 'ChaosCastle' : 'BloodCastle';
+  const previous = Store.miniGame?.status;
   runInAction(() => {
-    const game = (Store.miniGame ??= { kind: 'BloodCastle', level: 0 });
+    const game = (Store.miniGame ??= { kind, level: 0 });
+    game.kind = kind;
     if (!game.level) {
-      const map = Store.world?.mapIndex;
-      game.level = MINI_GAMES.BloodCastle.levels.find(l => l.map === map)?.level ?? 0;
+      const map = Store.world?.mapIndex ?? -1;
+      game.level = miniGameOfMap(map)?.level ?? 0;
     }
     game.status = p.State;
     game.remaining = p.RemainSecond;
@@ -2394,6 +2491,15 @@ EventBus.on('BloodCastleState', packet => {
   if (p.State === BloodCastleStateStatusEnum.BloodCastleGateDestroyed) {
     Store.addNotification('The castle gate was destroyed!');
   }
+  if (
+    p.State === BloodCastleStateStatusEnum.ChaosCastleStarted &&
+    previous !== BloodCastleStateStatusEnum.ChaosCastleStarted
+  ) {
+    Store.addNotification('Chaos Castle has started! Be the last one standing');
+  }
+  // while a stage lasts OpenMU sends it and Running every second
+  const stage = CHAOS_CASTLE_STAGES.indexOf(p.State) + 1;
+  if (stage > 0) dropChaosCastleFloor(stage);
 });
 
 // both are code 0x93: the score table of Devil Square (5 + 24 bytes per
@@ -2410,12 +2516,14 @@ function readString(buffer: DataView, offset: number, length: number) {
 }
 
 function onMiniGameScore(buffer: DataView) {
+  // Chaos Castle sends the result of Blood Castle too
   const bloodCastle =
     buffer.byteLength === 29 && Store.miniGame?.kind !== 'DevilSquare';
+  const kind: MiniGameKind = Store.miniGame?.kind === 'ChaosCastle' ? 'ChaosCastle' : 'BloodCastle';
   let score: import('./store').MiniGameScore;
   if (bloodCastle) {
     score = {
-      kind: 'BloodCastle',
+      kind,
       success: buffer.getUint8(3) !== 0,
       rows: [
         {

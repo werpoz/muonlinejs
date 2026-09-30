@@ -6,7 +6,7 @@ import {
   Texture,
   Vector3,
 } from '../babylon/exports';
-import { CreateGroundFromHeightMap } from './customGroundMesh';
+import { CreateGroundFromHeightMap, refreshGroundTiles } from './customGroundMesh';
 import { createTerrainMaterial } from './terrainMaterial';
 import { ENUM_WORLD } from '../../common';
 import {
@@ -202,6 +202,8 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
         terrainAttrs[index] = set ? terrainAttrs[index] | flag : terrainAttrs[index] & ~flag;
       }
     }
+    // the floor falls (Chaos Castle)
+    if (flag & TWFlags.NoGround) refreshGroundTiles(terrain, startX, startY, endX, endY);
   }
 
   function RequestTerrainHeight(xf: number, yf: number) {

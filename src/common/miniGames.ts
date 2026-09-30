@@ -1,16 +1,17 @@
 import type { Item } from '../ecs/world';
 import { CharacterClassNumber as C } from './types';
 
-// Devil Square and Blood Castle as OpenMU defines them (MiniGameDefinition):
-// levels, character levels (special ones for Magic Gladiator and Dark Lord),
-// ticket items and maps.
+// Devil Square, Blood Castle and Chaos Castle as OpenMU defines them
+// (MiniGameDefinition): levels, character levels (special ones for Magic
+// Gladiator and Dark Lord), ticket items, entrance fees and maps.
 
-export type MiniGameKind = 'DevilSquare' | 'BloodCastle';
+export type MiniGameKind = 'DevilSquare' | 'BloodCastle' | 'ChaosCastle';
 
 // MiniGameType of the protocol
 export const MINI_GAME_TYPE: Record<MiniGameKind, number> = {
   DevilSquare: 1,
   BloodCastle: 2,
+  ChaosCastle: 4,
 };
 
 export type MiniGameLevel = {
@@ -23,6 +24,8 @@ export type MiniGameLevel = {
   // needs a third class (the last level)
   masterClass?: boolean;
   map: number;
+  // zen taken when entering
+  fee?: number;
 };
 
 type MiniGameInfo = {
@@ -31,6 +34,9 @@ type MiniGameInfo = {
   levels: MiniGameLevel[];
   // minutes of a game
   duration: number;
+  // level of the ticket for every level of the game (Chaos Castle: one
+  // Armor of Guardsman for all); the level of the game when missing
+  ticketLevel?: number;
 };
 
 const level = (
@@ -40,8 +46,9 @@ const level = (
   specialMin: number,
   specialMax: number,
   map: number,
-  masterClass = false
-): MiniGameLevel => ({ level, min, max, specialMin, specialMax, map, masterClass });
+  masterClass = false,
+  fee?: number
+): MiniGameLevel => ({ level, min, max, specialMin, specialMax, map, masterClass, fee });
 
 export const MINI_GAMES: Record<MiniGameKind, MiniGameInfo> = {
   DevilSquare: {
@@ -73,6 +80,30 @@ export const MINI_GAMES: Record<MiniGameKind, MiniGameInfo> = {
       level(8, 331, 400, 0, 400, 52, true),
     ],
   },
+  ChaosCastle: {
+    name: 'Chaos Castle',
+    ticket: { group: 13, num: 29, name: 'Armor of Guardsman' },
+    duration: 10,
+    ticketLevel: 0,
+    levels: [
+      level(1, 15, 49, 15, 29, 18, false, 25_000),
+      level(2, 50, 119, 30, 99, 19, false, 80_000),
+      level(3, 120, 179, 100, 159, 20, false, 150_000),
+      level(4, 180, 239, 160, 219, 21, false, 250_000),
+      level(5, 240, 299, 220, 279, 22, false, 400_000),
+      level(6, 300, 400, 280, 400, 23, false, 650_000),
+      level(7, 400, 400, 400, 400, 53, true, 1_000_000),
+    ],
+  },
+};
+
+// the game of an event map
+export const miniGameOfMap = (map: number) => {
+  for (const [kind, game] of Object.entries(MINI_GAMES) as [MiniGameKind, MiniGameInfo][]) {
+    const l = game.levels.find(l => l.map === map);
+    if (l) return { kind, level: l.level };
+  }
+  return undefined;
 };
 
 const SPECIAL_CLASSES = [C.MagicGladiator, C.DuelMaster, C.DarkLord, C.LordEmperor];

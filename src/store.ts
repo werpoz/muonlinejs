@@ -56,6 +56,7 @@ import {
   DuelChannelQuitRequestPacket,
   DevilSquareEnterRequestPacket,
   BloodCastleEnterRequestPacket,
+  ChaosCastleEnterRequestPacket,
   MiniGameOpeningStateRequestPacket,
   LahapJewelMixRequestMixTypeEnum,
   PlayerShopOpenPacket,
@@ -445,6 +446,8 @@ export type MiniGame = {
   monsters?: { max: number; current: number };
   // Blood Castle: the player that carries the weapon of the archangel
   itemOwner?: string;
+  // Chaos Castle: stages whose floor has fallen (1-3)
+  fallenStage?: number;
 };
 
 export type MiniGameScore = {
@@ -1499,7 +1502,7 @@ export const Store = new (class _Store {
     this.sendToGS(packet.buffer);
   }
 
-  // level: 1-7 (Devil Square), 1-8 (Blood Castle); slot of the ticket
+  // level: 1-7 (Devil Square, Chaos Castle), 1-8 (Blood Castle); slot of the ticket
   enterMiniGame(kind: MiniGameKind, level: number, ticketSlot: number): void {
     this.pendingMiniGame = { kind, level };
     if (kind === 'DevilSquare') {
@@ -1509,12 +1512,26 @@ export const Store = new (class _Store {
       packet.SquareLevel = level - 1;
       packet.TicketItemInventoryIndex = ticketSlot + 12;
       this.sendToGS(packet.buffer);
-    } else {
+    } else if (kind === 'BloodCastle') {
       const packet = BloodCastleEnterRequestPacket.createPacket();
       packet.CastleLevel = level;
       packet.TicketItemInventoryIndex = ticketSlot;
       this.sendToGS(packet.buffer);
+    } else {
+      // OpenMU picks the castle of the character level by itself
+      const packet = ChaosCastleEnterRequestPacket.createPacket();
+      packet.CastleLevel = level - 1;
+      packet.TicketItemInventoryIndex = ticketSlot;
+      this.sendToGS(packet.buffer);
     }
+  }
+
+  // right click on an Armor of Guardsman: the window of Chaos Castle
+  openChaosCastleEntry(): void {
+    runInAction(() => {
+      this.miniGameEntry = 'ChaosCastle';
+      this.miniGameOpening = null;
+    });
   }
 
   // Lahap: pack 10, 20 or 30 jewels of a type (stack 0, 1, 2)
@@ -1725,7 +1742,8 @@ export const Store = new (class _Store {
         this.miniGameEntry = null;
         this.miniGameOpening = null;
       });
-      this.sendCloseNpcRequest();
+      // Chaos Castle is entered from the inventory, without an NPC
+      if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
       return true;
     }
 

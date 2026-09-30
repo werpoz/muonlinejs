@@ -1,5 +1,6 @@
 import './style.less';
 import { observer } from 'mobx-react-lite';
+import { MINI_GAMES } from '../../../../../common/miniGames';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
 import { itemTooltipProps } from '../../../../components/itemTooltip';
@@ -49,7 +50,9 @@ const itemName = (item: Item) => {
 const onUse = (e: React.MouseEvent, item: Item | null, slot: number) => {
   // right click uses potions / learns skills, like in the original client
   e.preventDefault();
-  if (isUsableFromInventory(item)) Store.consumeItem(slot);
+  const ticket = MINI_GAMES.ChaosCastle.ticket;
+  if (item?.group === ticket.group && item.num === ticket.num) Store.openChaosCastleEntry();
+  else if (isUsableFromInventory(item)) Store.consumeItem(slot);
 };
 
 const EquipmentSlot = observer(

@@ -23,9 +23,9 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-// Charon (Devil Square) / Messenger of Archangel (Blood Castle): the
-// levels of the game, the one of the character, its tickets and when the
-// entrance opens
+// Charon (Devil Square) / Messenger of Archangel (Blood Castle) / Armor of
+// Guardsman (Chaos Castle): the levels of the game, the one of the
+// character, its tickets and when the entrance opens
 export const MiniGameEntry = observer(() => {
   const kind = Store.miniGameEntry;
   const d = Store.playerData;
@@ -59,7 +59,9 @@ export const MiniGameEntry = observer(() => {
         <div className="levels">
           {game.levels.map(l => {
             const [min, max] = levelRange(l, cls);
-            const ticket = tickets.find(t => t.level === l.level);
+            const ticket = tickets.find(t => t.level === (game.ticketLevel ?? l.level));
+            const ticketName = game.ticketLevel === undefined ? `${game.ticket.name} +${l.level}` : game.ticket.name;
+            const poor = !!l.fee && d.money < l.fee;
             const mine = canEnterLevel(l, cls, d.level);
             return (
               <div key={l.level} className={`level-row${mine ? ' mine' : ''}`}>
@@ -69,18 +71,23 @@ export const MiniGameEntry = observer(() => {
                 <span className="level-range">
                   {l.masterClass ? '3rd class' : `${min}-${max}`}
                 </span>
-                <span className={`ticket${ticket ? ' have' : ''}`} title={`${game.ticket.name} +${l.level}`}>
+                {l.fee !== undefined && (
+                  <span className={`fee${poor ? ' poor' : ''}`}>{l.fee.toLocaleString('en-US')} Zen</span>
+                )}
+                <span className={`ticket${ticket ? ' have' : ''}`} title={ticketName}>
                   {ticket ? '✓' : '—'}
                 </span>
                 <button
                   className="small-button"
-                  disabled={!mine || !ticket}
+                  disabled={!mine || !ticket || poor}
                   title={
                     !mine
                       ? 'Not for your level'
                       : !ticket
-                        ? `You need a ${game.ticket.name} +${l.level}`
-                        : undefined
+                        ? `You need a ${ticketName}`
+                        : poor
+                          ? 'Not enough zen'
+                          : undefined
                   }
                   onClick={() => ticket && Store.enterMiniGame(kind, l.level, ticket.slot)}
                 >
@@ -96,6 +103,8 @@ export const MiniGameEntry = observer(() => {
             : `There is no ${game.name} for your level.`}{' '}
           The entrance is open a short time before each game; a game lasts{' '}
           {game.duration} minutes.
+          {kind === 'ChaosCastle' &&
+            ' Every player fights alone: defeat the warriors and the other players and be the last one standing. The castle crumbles as the warriors fall.'}
         </div>
       </div>
     </MuWindow>
@@ -122,6 +131,14 @@ function bloodCastleGoal(game: NonNullable<typeof Store.miniGame>): string | und
   return undefined;
 }
 
+// what happens in Chaos Castle
+function chaosCastleGoal(game: NonNullable<typeof Store.miniGame>): string | undefined {
+  const Status = BloodCastleStateStatusEnum;
+  if (game.status === Status.ChaosCastleEnded) return 'The game has ended';
+  if (game.fallenStage) return 'The castle crumbles! Stay away from the edge';
+  return game.status === undefined ? undefined : 'Be the last one standing';
+}
+
 // time left and monsters of the game we are in
 export const MiniGameHud = observer(() => {
   const game = Store.miniGame;
@@ -140,7 +157,12 @@ export const MiniGameHud = observer(() => {
     game.remaining != null && game.remainingAt != null
       ? game.remaining - (performance.now() - game.remainingAt) / 1000
       : null;
-  const status = game.kind === 'BloodCastle' ? bloodCastleGoal(game) : undefined;
+  const status =
+    game.kind === 'BloodCastle'
+      ? bloodCastleGoal(game)
+      : game.kind === 'ChaosCastle'
+        ? chaosCastleGoal(game)
+        : undefined;
 
   return (
     <div className="mini-game-hud">
@@ -150,7 +172,9 @@ export const MiniGameHud = observer(() => {
       {left != null ? <div className="time">{clock(left)}</div> : <div className="waiting">Waiting for the start...</div>}
       {game.monsters && game.monsters.max > 0 && (
         <div className="monsters">
-          Monsters {game.monsters.current} / {game.monsters.max}
+          {game.kind === 'ChaosCastle'
+            ? `Warriors and players left: ${game.monsters.current}`
+            : `Monsters ${game.monsters.current} / ${game.monsters.max}`}
         </div>
       )}
       {status && <div className="status">{status}</div>}

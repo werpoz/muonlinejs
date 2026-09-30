@@ -139,6 +139,30 @@ export function getTilesList(map: ENUM_WORLD) {
         'TileRock03',
         'TileRock04',
       ];
+    // Chaos Castle 1-7 (maps 18-23 and 53, all World19)
+    case ENUM_WORLD.WD_18CHAOS_CASTLE:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 1:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 2:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 3:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 4:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE_END:
+    case ENUM_WORLD.WD_53CAOSCASTLE_MASTER_LEVEL:
+      return [
+        'TileGrass01',
+        'TileGrass02',
+        'TileGround01',
+        'TileGround02',
+        'TileGround03',
+        'TileWater01',
+        'TileWood01',
+        'TileRock01',
+        'TileRock02',
+        'TileRock03',
+        'TileRock04',
+        'TileRock05',
+        'TileRock06',
+        'TileRock07',
+      ];
     case ENUM_WORLD.WD_64DUELARENA:
       return [
         'TileGrass01',
