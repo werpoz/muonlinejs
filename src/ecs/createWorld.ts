@@ -26,6 +26,7 @@ import { DropItemSystem } from './systems/dropItemSystem';
 import { GateSystem } from './systems/gateSystem';
 import { NpcTalkSystem } from './systems/npcTalkSystem';
 import { AreaSkillHitSystem } from './systems/areaSkillHitSystem';
+import { BuffAuraSystem } from './systems/buffAuraSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
@@ -47,6 +48,7 @@ const factories: ISystemFactory[] = [
   HighlightSystem,
   AnimationSystem,
   AppearanceSystem,
+  BuffAuraSystem,
   WalkSfxSystem,
   MonsterIdleSoundSystem,
   CameraFollowSystem,

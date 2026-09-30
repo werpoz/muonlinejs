@@ -442,6 +442,9 @@ EventBus.on('AddCharactersToScope', packet => {
   chars.forEach(char => {
     const maskedId = char.Id & 0x7fff;
 
+    // active effects of the player (auras)
+    Store.playerEffects.set(maskedId, new Set(char.Effects.map(e => e.Id)));
+
     // after a map change the server sends the local player again: keep the
     // same entity (spawning it again duplicated the player)
     const existing = world.playerEntity;
@@ -2084,6 +2087,12 @@ EventBus.on('MagicEffectStatus', packet => {
   const p = new MagicEffectStatusPacket(packet);
   const id = p.PlayerId & 0x7fff;
   console.log(`MagicEffectStatus: ${id} effect ${p.EffectId} ${p.IsActive ? 'on' : 'off'}`);
+
+  const effects = Store.playerEffects.get(id) ?? new Set<number>();
+  if (p.IsActive) effects.add(p.EffectId);
+  else effects.delete(p.EffectId);
+  Store.playerEffects.set(id, effects);
+
   if (id !== Store.playerId) return;
 
   runInAction(() => {

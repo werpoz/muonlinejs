@@ -50,6 +50,7 @@
 - [x] Misiones clásicas y cambio de clase (Sevina, Marlon, Priest Devin): diálogo con requisitos y progreso, aceptar, entregar y recompensas
 - [ ] Entrada a los cuarteles y al refugio de Balgass (misiones de 3.ª clase 5 y 6)
 - [x] Iconos de buffs y debuffs del jugador (iconos originales newui_statusicon)
+- [x] Aura de los buffs sobre los jugadores (bendición del Elf Soldier, Greater Damage/Defense, Soul Barrier...), también en los demás jugadores
 - [x] Lahap: empaquetar joyas x10/x20/x30 y desempaquetar
 - [ ] Eventos: Blood Castle, Devil Square y Chaos Castle
 - [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)

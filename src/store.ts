@@ -544,6 +544,8 @@ export const Store = new (class _Store {
 
   // magic effects (buffs, poison...) of the local player, by effect number
   activeEffects: number[] = [];
+  // effects of every player in view (auras), by player id
+  playerEffects = new Map<number, Set<number>>();
   // waiting for the buff of the NPC (MagicEffectStatus)
   pendingNpcBuff = false;
 
