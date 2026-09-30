@@ -2,6 +2,7 @@ import { useEventBus } from '../../../../../hooks/useEventBus';
 import { Store } from '../../../../../store';
 import { MuWindow } from '../../../../components/muWindow';
 import { CharacterClassNumber } from '../../../../../common/types';
+import { computeCharacterStats } from '../../../../../common/characterStats';
 import './style.less';
 import { observer } from 'mobx-react-lite';
 
@@ -68,6 +69,17 @@ export const CharacterInfo = observer(() => {
   if (!Store.characterInfoEnabled) return null;
 
   const player = Store.world?.playerEntity;
+  const stats = computeCharacterStats(
+    player?.charAppearance?.charClass,
+    { level: d.level, str: d.str, agi: d.agi, vit: d.sta, ene: d.eng },
+    d.items
+  );
+  const wizardry = stats.wizardryDamage
+    ? [
+        `Wizardry Dmg: ${stats.wizardryDamage[0]} ~ ${stats.wizardryDamage[1]}` +
+          (stats.wizardryRise ? ` (+${stats.wizardryRise}%)` : ''),
+      ]
+    : [];
 
   return (
     <MuWindow
@@ -90,29 +102,43 @@ export const CharacterInfo = observer(() => {
         Exp: {d.exp} / {d.expToNextLvl}
       </span>
 
-      <Stat y={90} label="Strength" value={d.str} stat={StatType.Strength} />
       <Stat
-        y={145}
+        y={86}
+        label="Strength"
+        value={d.str}
+        stat={StatType.Strength}
+        details={[
+          `Attack Dmg: ${stats.damage[0]} ~ ${stats.damage[1]}`,
+          `Attack Rate: ${stats.attackRate}`,
+        ]}
+      />
+      <Stat
+        y={156}
         label="Agility"
         value={d.agi}
         stat={StatType.Agility}
-        details={[`SD: ${d.currentSD} / ${d.maxSD}`]}
+        details={[
+          `Defense: ${stats.defense} (Rate ${stats.defenseRate})`,
+          `Attack Speed: ${stats.attackSpeed} / Magic ${stats.magicSpeed}`,
+          `SD: ${d.currentSD} / ${d.maxSD}`,
+        ]}
       />
       <Stat
-        y={200}
+        y={238}
         label="Vitality"
         value={d.sta}
         stat={StatType.Vitality}
         details={[`HP: ${d.currentHP} / ${d.maxHP}`]}
       />
       <Stat
-        y={255}
+        y={284}
         label="Energy"
         value={d.eng}
         stat={StatType.Energy}
         details={[
           `Mana: ${d.currentMP} / ${d.maxMP}`,
           `AG: ${d.currentAG} / ${d.maxAG}`,
+          ...wizardry,
         ]}
       />
     </MuWindow>

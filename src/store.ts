@@ -45,6 +45,12 @@ import {
   VaultMoveMoneyRequestPacket,
   ChaosMachineMixRequestPacket,
   TradeRequestPacket,
+  PlayerShopSetItemPricePacket,
+  PlayerShopOpenPacket,
+  PlayerShopClosePacket,
+  PlayerShopItemListRequestPacket,
+  PlayerShopItemBuyRequestPacket,
+  PlayerShopCloseOtherPacket,
   PartyInviteRequestPacket,
   PartyInviteResponsePacket,
   PartyPlayerKickRequestPacket,
@@ -186,10 +192,10 @@ class PlayerData {
   sta = 10;
   eng = 10;
 
-  items: Item[] = new Array(
-    InventoryConstants.InventoryRows * InventoryConstants.RowSize +
-      InventoryConstants.EquippableSlotsCount
-  ).fill(null);
+  // equipment, inventory, extensions and the personal store (slots 204-235)
+  items: Item[] = new Array(InventoryConstants.FirstStoreItemSlotIndex + 32).fill(
+    null
+  );
 
   get leftHandSlot() {
     return this.items[InventoryConstants.LeftHandSlot];
@@ -402,6 +408,13 @@ export const unpackEmblem = (bytes: ArrayLike<number>) =>
 export const isFriendOnline = (friend: Friend) =>
   friend.serverId !== OFFLINE_SERVER;
 
+// personal store: inventory slots 204-235 (after 12 equipment, 64 inventory
+// and 128 extension slots of season 6), 8 columns x 4 rows
+export const SHOP_FIRST_SLOT = 204;
+export const SHOP_SIZE = 32;
+
+export type ShopItem = { slot: number; item: Item; price: number };
+
 // trade window of the original client: 8 columns x 4 rows for each side
 export const TRADE_SIZE = 32;
 
@@ -502,6 +515,21 @@ export const Store = new (class _Store {
   // PK state of the players in view (see common/heroState)
   heroStates = new Map<number, number>();
 
+  // our personal store: window (S), name, open and item prices by slot
+  shopEnabled = false;
+  shopName = '';
+  shopOpen = false;
+  shopPrices = new Map<number, number>();
+  // stores of the players in view (PlayerShops): player id -> store name
+  playerShops = new Map<number, string>();
+  // store of another player we are looking at
+  viewedShop: {
+    playerId: number;
+    playerName: string;
+    shopName: string;
+    items: ShopItem[];
+  } | null = null;
+
   // our party (the first member is the leader), null without party
   party: PartyMember[] | null = null;
   // player who invited us to a party (answer dialog)
@@ -569,6 +597,12 @@ export const Store = new (class _Store {
       chaosMachine: observable,
       trade: observable,
       party: observable,
+      shopEnabled: observable,
+      shopName: observable,
+      shopOpen: observable,
+      shopPrices: observable,
+      playerShops: observable,
+      viewedShop: observable,
       friends: observable,
       guild: observable,
       guildEnabled: observable,
@@ -1055,6 +1089,9 @@ export const Store = new (class _Store {
         return this.trade?.myItems ?? [];
       case ItemStorageKind.ChaosMachine:
         return this.chaosMachine?.items ?? [];
+      // the store slots are inventory slots 204-235
+      case ItemStorageKind.PlayerShop:
+        return this.playerData.items;
       default:
         return this.playerData.items;
     }
@@ -1256,6 +1293,75 @@ export const Store = new (class _Store {
 
   get characterName(): string {
     return this.world?.playerEntity?.objectNameInWorld ?? '';
+  }
+
+  // ---- personal store
+
+  setShopPrice(slot: number, price: number): void {
+    const packet = PlayerShopSetItemPricePacket.createPacket();
+    packet.ItemSlot = slot;
+    packet.Price = price;
+    this.pendingShopPrices.set(slot, price);
+    this.sendToGS(packet.buffer);
+  }
+  pendingShopPrices = new Map<number, number>();
+
+  openShop(name: string): void {
+    const items = this.playerData.items.slice(SHOP_FIRST_SLOT, SHOP_FIRST_SLOT + SHOP_SIZE);
+    if (!items.some(Boolean)) {
+      this.addNotification('Put the items to sell in the store first', 'error');
+      return;
+    }
+    runInAction(() => {
+      this.shopName = name;
+    });
+    const packet = PlayerShopOpenPacket.createPacket();
+    packet.setStoreName(name, 26);
+    this.sendToGS(packet.buffer);
+
+    // OpenMU doesn't answer when it can't open the store: an item without
+    // a price (prices of an earlier session are kept by the server, the
+    // client doesn't know them)
+    setTimeout(() => {
+      if (!this.shopOpen) {
+        this.addNotification('Cannot open the store: every item needs a price', 'error');
+      }
+    }, 2000);
+  }
+
+  closeShop(): void {
+    this.sendToGS(PlayerShopClosePacket.createPacket().buffer);
+  }
+
+  // look at the store of a player in view
+  viewShop(playerId: number): void {
+    const name = this.playerNameById(playerId);
+    const packet = PlayerShopItemListRequestPacket.createPacket();
+    packet.PlayerId = playerId;
+    packet.setPlayerName(name);
+    this.sendToGS(packet.buffer);
+  }
+
+  buyShopItem(slot: number): void {
+    const shop = this.viewedShop;
+    if (!shop) return;
+    const packet = PlayerShopItemBuyRequestPacket.createPacket();
+    packet.PlayerId = shop.playerId;
+    packet.setPlayerName(shop.playerName);
+    packet.ItemSlot = slot;
+    this.sendToGS(packet.buffer);
+  }
+
+  closeViewedShop(): void {
+    const shop = this.viewedShop;
+    if (!shop) return;
+    runInAction(() => {
+      this.viewedShop = null;
+    });
+    const packet = PlayerShopCloseOtherPacket.createPacket();
+    packet.PlayerId = shop.playerId;
+    packet.setPlayerName(shop.playerName);
+    this.sendToGS(packet.buffer);
   }
 
   answerTradeRequest(accept: boolean): void {

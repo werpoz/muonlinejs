@@ -34,6 +34,12 @@ export const WorldObjects = observer(() => {
               entity={entity}
               key={i}
               text={entity.objectNameInWorld}
+              sign={
+                entity.charAppearance && entity.netId != null
+                  ? Store.playerShops.get(entity.netId)
+                  : undefined
+              }
+              onSignClick={() => entity.netId != null && Store.viewShop(entity.netId)}
               subText={
                 entity.charAppearance ? Store.guildNameOf(entity.netId) : undefined
               }

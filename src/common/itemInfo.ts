@@ -112,6 +112,52 @@ export const isUpgradeJewel = (item: Item | null | undefined) =>
 const FRUIT = '13/15';
 const FRUIT_STATS = ['Energy', 'Vitality', 'Agility', 'Strength', 'Command'];
 
+const configOf = (item: Item) =>
+  (ItemsDatabase.getItem(item.group, item.num) ?? {}) as ItemConfig;
+
+export const isWeaponItem = (item: Item) => WEAPON_GROUPS.includes(item.group);
+
+// damage of a weapon with its level bonus, null for other items
+export function itemDamage(item: Item): [number, number] | null {
+  if (!isWeaponItem(item)) return null;
+  const config = configOf(item);
+  const max = num(config, 'DmgMax');
+  if (!max) return null;
+  const bonus = byLevel(DAMAGE_BY_LEVEL, item.lvl ?? 0);
+  return [num(config, 'DmgMin') + bonus, max + bonus];
+}
+
+// wizardry damage rise of a staff (%)
+export function itemWizardryRise(item: Item): number {
+  if (!isWeaponItem(item)) return 0;
+  const magicPower = num(configOf(item), 'MagicPwr');
+  if (!magicPower) return 0;
+  const table = magicPower % 2 ? STAFF_RISE_ODD : STAFF_RISE_EVEN;
+  return Math.floor((magicPower + byLevel(table, item.lvl ?? 0)) / 2);
+}
+
+export const itemAttackSpeed = (item: Item) =>
+  isWeaponItem(item) ? num(configOf(item), 'Speed') : 0;
+
+// defense of an armor, shield or wings with its level bonus
+export function itemDefense(item: Item): number {
+  const config = configOf(item);
+  const defense = num(config, 'Def');
+  if (!defense) return 0;
+  if (item.group === WINGS_GROUP) return defense;
+  if (item.group !== SHIELD_GROUP && !ARMOR_GROUPS.includes(item.group)) return 0;
+  const table = item.group === SHIELD_GROUP ? SHIELD_DEFENSE_BY_LEVEL : DEFENSE_BY_LEVEL;
+  return defense + byLevel(table, item.lvl ?? 0);
+}
+
+export function itemDefenseRate(item: Item): number {
+  const defenseRate = num(configOf(item), 'DefRate');
+  if (!defenseRate || (item.group !== SHIELD_GROUP && !ARMOR_GROUPS.includes(item.group))) {
+    return 0;
+  }
+  return defenseRate + byLevel(DEFENSE_BY_LEVEL, item.lvl ?? 0);
+}
+
 export function getItemName(item: Item) {
   const config = ItemsDatabase.getItem(item.group, item.num);
   const name = config?.ItemName ?? `Item ${item.group}/${item.num}`;
@@ -177,36 +223,20 @@ export function getItemTooltip(item: Item, player?: PlayerStats): ItemTooltip {
   const isWeapon = WEAPON_GROUPS.includes(item.group);
 
   if (isWeapon) {
-    const bonus = byLevel(DAMAGE_BY_LEVEL, level);
+    const damage = itemDamage(item);
     const hands = num(config, 'X') >= 2 ? 'Two-handed' : 'One-handed';
-    const min = num(config, 'DmgMin');
-    const max = num(config, 'DmgMax');
-    if (max) add(`${hands} Damage: ${min + bonus} ~ ${max + bonus}`);
+    if (damage) add(`${hands} Damage: ${damage[0]} ~ ${damage[1]}`);
 
-    const magicPower = num(config, 'MagicPwr');
-    if (magicPower) {
-      const rise = byLevel(magicPower % 2 ? STAFF_RISE_ODD : STAFF_RISE_EVEN, level);
-      add(`Wizardry Dmg rise: ${Math.floor((magicPower + rise) / 2)}%`);
-    }
-    const speed = num(config, 'Speed');
+    const rise = itemWizardryRise(item);
+    if (rise) add(`Wizardry Dmg rise: ${rise}%`);
+    const speed = itemAttackSpeed(item);
     if (speed) add(`Attack speed: ${speed}`);
   }
 
-  if (item.group === SHIELD_GROUP || ARMOR_GROUPS.includes(item.group)) {
-    const table = item.group === SHIELD_GROUP ? SHIELD_DEFENSE_BY_LEVEL : DEFENSE_BY_LEVEL;
-    const defense = num(config, 'Def');
-    if (defense) add(`Defense: ${defense + byLevel(table, level)}`);
-
-    const defenseRate = num(config, 'DefRate');
-    if (defenseRate) {
-      add(`Defense rate: ${defenseRate + byLevel(DEFENSE_BY_LEVEL, level)}`);
-    }
-  }
-
-  if (item.group === WINGS_GROUP) {
-    const defense = num(config, 'Def');
-    if (defense) add(`Defense: ${defense}`);
-  }
+  const defense = itemDefense(item);
+  if (defense) add(`Defense: ${defense}`);
+  const defenseRate = itemDefenseRate(item);
+  if (defenseRate) add(`Defense rate: ${defenseRate}`);
 
   const baseDurability = num(config, 'Durability', 'Dur');
   if (baseDurability) {

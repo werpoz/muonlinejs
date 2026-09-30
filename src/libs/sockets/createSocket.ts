@@ -43,6 +43,10 @@ if (chatMessage) {
   (packetsCacheByCode[WHISPER_CODE] ??= []).push(chatMessage);
 }
 
+const SHOP_CODE = 0x3f;
+const SHOP_LIST_BY_REQUEST = 0x05;
+const SHOP_LIST_UPDATE = 0x13;
+
 // Several packets can share a code (e.g. 0x22: item added to inventory,
 // pick up failed, money update). Prefer a matching sub code, then a
 // matching fixed length; fall back to the first packet without sub code.
@@ -144,8 +148,13 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     const packetCode = packet.getUint8(codeIndex);
 
     // packets of 3 bytes (e.g. ShowGuildMasterDialog) have no sub code
-    const subCode =
+    let subCode =
       packet.byteLength > codeIndex + 1 ? packet.getUint8(codeIndex + 1) : -1;
+    // PlayerShopItemList: the sub code is its action, 0x13 when the list
+    // is sent again after an item was sold
+    if (packetCode === SHOP_CODE && subCode === SHOP_LIST_UPDATE) {
+      subCode = SHOP_LIST_BY_REQUEST;
+    }
 
     // an unknown code must not stop the queue
     const packetsByCode = packetsCacheByCode[packetCode] ?? [];

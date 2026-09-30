@@ -26,7 +26,12 @@ const MAX_SCALE = 2;
 const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
 
 const getHotKeyItem = (hotKey: ConsumableHotKey) =>
-  findHotKeyItem(Store.playerData.items, hotKey, FIRST_INVENTORY_SLOT);
+  findHotKeyItem(
+    // only the inventory (not the items of the personal store)
+    Store.playerData.items.slice(0, FIRST_INVENTORY_SLOT + 64),
+    hotKey,
+    FIRST_INVENTORY_SLOT
+  );
 
 // x of the Q, W, E, R slots
 const POTION_SLOTS_X = [2, 40, 78, 116];

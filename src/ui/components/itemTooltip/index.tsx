@@ -6,8 +6,10 @@ import { Store } from '../../../store';
 import { getItemTooltip } from '../../../common/itemInfo';
 
 // Props for an element that shows the tooltip of an item on hover
-export const itemTooltipProps = (item: Item) => ({
+// (price: of a personal store)
+export const itemTooltipProps = (item: Item, price?: number) => ({
   'data-item': JSON.stringify(item),
+  ...(price ? { 'data-price': String(price) } : {}),
 });
 
 const OFFSET = 16;
@@ -15,9 +17,12 @@ const OFFSET = 16;
 // Tooltip of the item under the mouse: any element with itemTooltipProps.
 // A single listener, so it also disappears when the element is removed.
 export const ItemTooltip = observer(() => {
-  const [hover, setHover] = useState<{ item: Item; x: number; y: number } | null>(
-    null
-  );
+  const [hover, setHover] = useState<{
+    item: Item;
+    price?: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +36,12 @@ export const ItemTooltip = observer(() => {
       setHover(old =>
         old && old.x === e.clientX && old.y === e.clientY
           ? old
-          : { item: JSON.parse(data), x: e.clientX, y: e.clientY }
+          : {
+              item: JSON.parse(data),
+              price: Number(el!.getAttribute('data-price')) || undefined,
+              x: e.clientX,
+              y: e.clientY,
+            }
       );
     };
     const hide = () => setHover(null);
@@ -75,6 +85,11 @@ export const ItemTooltip = observer(() => {
           {line.text}
         </div>
       ))}
+      {!!hover.price && (
+        <div className="line price">
+          Price: {hover.price.toLocaleString('en-US')} Zen
+        </div>
+      )}
     </div>
   );
 });

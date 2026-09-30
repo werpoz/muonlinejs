@@ -42,6 +42,8 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Sonido | ✅ | Lorencia (190,130), 25 s atacando: `Music/main_theme`, `eSwingWeapon1/2`, `eMeleeHit1-4`, `mBudge1`/`mBudgeAttack1`/`mBudgeDie`, `pMaleScream`, `pWalk(Grass)`, `pDrink` (Q), `iButtonClick`; el volumen de música de Opciones se aplica (0,2) y se guarda |
 | Efectos de habilidades | ✅ | 18 habilidades lanzadas en Lorencia con captura a mitad de animación: todas visibles |
 | PvP | ✅ | Dos clientes en Lorencia (175,125): A ataca a B → "Self defense is initiated…", `ObjectHit` en B y animación de ataque de A (acción 120); B muere al golpe 23 → `HeroStateChanged: 4` (aviso de PK) y B ve el nombre de A en naranja |
+| Panel C | ✅ | DK nivel 100 (FUE 60, AGI 20, VIT 500): daño 11 ~ 21 con hacha, tasa de ataque 545, defensa 19 (tasa 26), velocidad 21, vida 1735; fórmulas de `Persistence/Initialization/CharacterClasses` |
+| Tienda personal | ✅ | Dos clientes en Lorencia (177,125): S → mover joyas del inventario a la tienda (`ItemMoveRequest`, storage 4, casilla 214) → clic derecho y precio (`PlayerShopSetItemPriceResponse: Success`) → abrir (`PlayerShopOpenSuccessful`, `PlayerShops`); B ve el cartel "Cheap stuff", lo abre (`PlayerShopItemList`) y compra (`PlayerShopBuyResult: Success`, −1.000 zen); A recibe `PlayerShopItemSoldToPlayer` y B la lista actualizada (llega con acción 0x13 en el byte del sub código); cerrar → `PlayerShopClosed` y el cartel desaparece. Si falta un precio OpenMU no responde: el cliente avisa a los 2 s |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:

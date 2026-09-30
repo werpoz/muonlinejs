@@ -1,0 +1,143 @@
+.mu-window-slot.player-shop .mu-window {
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 20px);
+    grid-template-rows: repeat(4, 20px);
+  }
+
+  .shop-cell {
+    background: url('/interface/item_box.png');
+    cursor: pointer;
+  }
+
+  .shop-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    box-sizing: border-box;
+    background-color: #1a3c7a60;
+    cursor: pointer;
+
+    &:hover {
+      outline: 1px solid #ffd24a;
+      outline-offset: -1px;
+    }
+
+    // our items without a price yet
+    &.no-price {
+      background-color: #7a1a1a60;
+    }
+
+    &.selected {
+      outline: 1px solid #6f6;
+      outline-offset: -1px;
+    }
+
+    &.held {
+      opacity: 0.5;
+    }
+  }
+
+  .shop-label {
+    left: 15px;
+    width: 160px;
+    color: #f0e0b0;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    &.current-price {
+      color: #ffd24a;
+    }
+
+    &.expensive {
+      color: #ff5050;
+    }
+
+    &.money {
+      color: #ffd24a;
+    }
+  }
+
+  .shop-input {
+    height: 12px;
+    padding: 0 2px;
+    font-size: 8px;
+    color: #fff;
+    background: #000;
+    border: 1px solid #666;
+
+    &.name {
+      left: 15px;
+      top: 60px;
+      width: 154px;
+    }
+
+    &:disabled {
+      color: #999;
+    }
+  }
+
+  .shop-price-row {
+    left: 15px;
+    top: 176px;
+    width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    .shop-input {
+      position: static;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .zen {
+      color: #ffd24a;
+    }
+  }
+
+  .shop-help {
+    left: 15px;
+    top: 214px;
+    width: 160px;
+    color: #999;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .small-button {
+    height: 14px;
+    padding: 0 3px;
+    font-size: 8px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: #ffd24a;
+    }
+
+    &:disabled {
+      color: #666;
+      cursor: default;
+    }
+  }
+
+  .shop-toggle {
+    left: 55px;
+    top: 330px;
+    width: 80px;
+    height: 18px;
+  }
+
+  .shop-buy {
+    left: 65px;
+    top: 192px;
+    width: 60px;
+    height: 18px;
+  }
+}

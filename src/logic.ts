@@ -46,6 +46,17 @@ import {
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
+  PlayerShopSetItemPriceResponsePacket,
+  PlayerShopSetItemPriceResponseItemPriceSetResultEnum,
+  PlayerShopOpenSuccessfulPacket,
+  PlayerShopClosedPacket,
+  PlayerShopsPacket,
+  PlayerShopItemListPacket,
+  PlayerShopItemListActionKindEnum,
+  PlayerShopBuyResultPacket,
+  PlayerShopBuyResultResultKindEnum,
+  PlayerShopItemSoldToPlayerPacket,
+  ClosePlayerShopDialogPacket,
   HeroStateChangedPacket,
   GuildListPacket,
   GuildJoinRequestPacket,
@@ -1088,6 +1099,10 @@ EventBus.on('ItemMoved', packet => {
   runInAction(() => {
     Store.itemsOf(move.fromStorage)[move.from] = null;
     Store.itemsOf(targetStorage)[p.TargetSlot] = item;
+    // the price of the personal store stays with its slot
+    if (move.fromStorage === ItemStorageKind.PlayerShop) {
+      Store.shopPrices.delete(move.from);
+    }
   });
 
   const last = InventoryConstants.LastEquippableItemSlotIndex;
@@ -1814,4 +1829,138 @@ EventBus.on('HeroStateChanged', packet => {
   if (player?.localPlayer && p.NewState >= HERO_STATE_PK_WARNING) {
     Store.addNotification('You are a player killer now', 'error');
   }
+});
+
+// ---- personal store
+
+EventBus.on('PlayerShopSetItemPriceResponse', packet => {
+  const p = new PlayerShopSetItemPriceResponsePacket(packet);
+  const result = PlayerShopSetItemPriceResponseItemPriceSetResultEnum;
+  const price = Store.pendingShopPrices.get(p.InventorySlot);
+  Store.pendingShopPrices.delete(p.InventorySlot);
+  console.log(`PlayerShopSetItemPriceResponse: ${p.InventorySlot} ${result[p.Result]}`);
+
+  if (p.Result !== result.Success) {
+    Store.addNotification(
+      p.Result === result.CharacterLevelTooLow
+        ? 'You need level 6 to sell items'
+        : p.Result === result.Failed
+          ? 'Close the store to change the prices'
+          : 'Cannot set the price',
+      'error'
+    );
+    return;
+  }
+  runInAction(() => {
+    if (price) Store.shopPrices.set(p.InventorySlot, price);
+    else Store.shopPrices.delete(p.InventorySlot);
+  });
+});
+
+EventBus.on('PlayerShopOpenSuccessful', packet => {
+  const p = new PlayerShopOpenSuccessfulPacket(packet);
+  console.log(`PlayerShopOpenSuccessful: ${p.Success}`);
+  if (!p.Success) {
+    Store.addNotification('Cannot open the store here', 'error');
+    return;
+  }
+  runInAction(() => {
+    Store.shopOpen = true;
+  });
+  Store.addNotification('Your store is open');
+});
+
+// stores of the players in view
+EventBus.on('PlayerShops', packet => {
+  const p = new PlayerShopsPacket(packet);
+  const shops = p.getShops();
+  console.log(`PlayerShops: ${shops.map(s => `${s.PlayerId & 0x7fff} ${s.StoreName}`).join(', ')}`);
+  runInAction(() => {
+    for (const shop of shops) {
+      const id = shop.PlayerId & 0x7fff;
+      Store.playerShops.set(id, shop.StoreName);
+      if (id === Store.playerId) Store.shopOpen = true;
+    }
+  });
+});
+
+EventBus.on('PlayerShopClosed', packet => {
+  const p = new PlayerShopClosedPacket(packet);
+  const id = p.PlayerId & 0x7fff;
+  console.log(`PlayerShopClosed: ${id} ${p.Success}`);
+  runInAction(() => {
+    Store.playerShops.delete(id);
+    if (id === Store.playerId) Store.shopOpen = false;
+    if (Store.viewedShop?.playerId === id) Store.viewedShop = null;
+  });
+});
+
+EventBus.on('ClosePlayerShopDialog', packet => {
+  const p = new ClosePlayerShopDialogPacket(packet);
+  runInAction(() => {
+    if (Store.viewedShop?.playerId === (p.PlayerId & 0x7fff)) Store.viewedShop = null;
+  });
+});
+
+// items of the store we look at (also after an item was sold)
+EventBus.on('PlayerShopItemList', packet => {
+  const p = new PlayerShopItemListPacket(packet);
+  const items = p.getItems().map(i => ({
+    slot: i.ItemSlot,
+    price: i.Price,
+    item: ItemSerializer.DeserializeItem(new Uint8Array(i.ItemData.buffer)),
+  }));
+  console.log(`PlayerShopItemList: ${p.PlayerName} "${p.ShopName}" ${items.length} items`);
+  const playerId = p.PlayerId & 0x7fff;
+  // sent again after an item was sold: only for the store we look at
+  const isUpdate = p.Action !== PlayerShopItemListActionKindEnum.ByRequest;
+  if (isUpdate && Store.viewedShop?.playerId !== playerId) return;
+  if (!p.Success) {
+    Store.addNotification('The store is closed', 'error');
+    return;
+  }
+  runInAction(() => {
+    Store.viewedShop = {
+      playerId,
+      playerName: p.PlayerName,
+      shopName: p.ShopName,
+      items,
+    };
+  });
+});
+
+const SHOP_BUY_MESSAGES: Partial<Record<PlayerShopBuyResultResultKindEnum, string>> = {
+  [PlayerShopBuyResultResultKindEnum.NotAvailable]: 'The item is not available',
+  [PlayerShopBuyResultResultKindEnum.ShopNotOpened]: 'The store is closed',
+  [PlayerShopBuyResultResultKindEnum.InTransaction]: 'The store is busy, try again',
+  [PlayerShopBuyResultResultKindEnum.LackOfMoney]: 'Not enough zen',
+  [PlayerShopBuyResultResultKindEnum.MoneyOverflowOrNotEnoughSpace]: 'Not enough space in the inventory',
+  [PlayerShopBuyResultResultKindEnum.ItemBlock]: 'This item cannot be bought',
+};
+
+EventBus.on('PlayerShopBuyResult', packet => {
+  const p = new PlayerShopBuyResultPacket(packet);
+  console.log(`PlayerShopBuyResult: ${PlayerShopBuyResultResultKindEnum[p.Result]} slot ${p.ItemSlot}`);
+  if (p.Result !== PlayerShopBuyResultResultKindEnum.Success) {
+    Store.addNotification(SHOP_BUY_MESSAGES[p.Result] ?? 'Cannot buy the item', 'error');
+    return;
+  }
+  const item = ItemSerializer.DeserializeItem(new Uint8Array(p.ItemData.buffer));
+  runInAction(() => {
+    Store.playerData.items[p.ItemSlot] = item;
+  });
+  playSound('Sound/pGetItem');
+  Store.addNotification(`You bought ${getItemName(item)}`);
+});
+
+// an item of our store was sold (the money comes with InventoryMoneyUpdate)
+EventBus.on('PlayerShopItemSoldToPlayer', packet => {
+  const p = new PlayerShopItemSoldToPlayerPacket(packet);
+  const item = Store.playerData.items[p.InventorySlot];
+  console.log(`PlayerShopItemSoldToPlayer: ${p.InventorySlot} to ${p.BuyerName}`);
+  runInAction(() => {
+    Store.playerData.items[p.InventorySlot] = null as any;
+    Store.shopPrices.delete(p.InventorySlot);
+  });
+  Store.addNotification(`${p.BuyerName} bought ${item ? getItemName(item) : 'an item'}`);
 });

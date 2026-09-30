@@ -23,6 +23,7 @@ import {
 } from './components/guild';
 import { Trade, TradeRequestDialog } from './components/trade';
 import { PartyFrame, PartyRequestDialog } from './components/party';
+import { PersonalShop, ViewedShop } from './components/playerShop';
 
 const HUD = observer(() => {
   return (
@@ -33,6 +34,8 @@ const HUD = observer(() => {
         <Vault />
         <ChaosMachine />
         <Trade />
+        <ViewedShop />
+        <PersonalShop />
         <Inventory />
         <CharacterInfo />
         <Friends />

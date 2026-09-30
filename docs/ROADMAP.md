@@ -28,7 +28,7 @@
 - [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
 - [x] Repartir puntos de nivel (panel C)
 - [x] Muerte y reaparición en el pueblo
-- [ ] Daño/defensa/velocidad en el panel C (se quitaron los valores fijos de ejemplo)
+- [x] Daño/defensa/velocidad en el panel C (fórmulas de OpenMU; sin buffs ni opciones excelentes)
 - [ ] Modelos para monstruos de otros mapas
 - [x] Tiendas de NPC: hablar (clic), comprar (clic en la tienda), vender (coger objeto + clic en la tienda)
 - [x] Almacén (Baz): 120 huecos, mover objetos y zen
@@ -40,7 +40,7 @@
 - [ ] Cartas del messenger (enviar, leer y borrar)
 - [x] Guild: crear en el Guild Master (nombre y emblema), unirse (`/guild nombre`), miembros (G), expulsar, salir/disolver, chat (`@texto`) y nombre de la guild sobre los jugadores
 - [ ] Guerras de guild y alianzas
-- [ ] Tienda personal (vender sentado con letrero)
+- [x] Tienda personal (S: precios, abrir/cerrar, letrero sobre el jugador, comprar)
 - [x] PvP: Ctrl + clic ataca a otro jugador, animación de ataque de los demás con su arma, color del nombre según el estado de PK (`HeroStateChanged`)
 - [ ] Duelos
 - [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
