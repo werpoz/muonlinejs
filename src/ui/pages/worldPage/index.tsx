@@ -26,6 +26,8 @@ import { PartyFrame, PartyRequestDialog } from './components/party';
 import { PersonalShop, ViewedShop } from './components/playerShop';
 import { NpcDialog } from './components/npcDialog';
 import { QuestDialog } from './components/questDialog';
+import { BuffIcons } from './components/buffIcons';
+import { Lahap } from './components/lahap';
 
 const HUD = observer(() => {
   return (
@@ -35,6 +37,7 @@ const HUD = observer(() => {
         <NpcShop />
         <Vault />
         <ChaosMachine />
+        <Lahap />
         <Trade />
         <ViewedShop />
         <PersonalShop />
@@ -48,6 +51,7 @@ const HUD = observer(() => {
       <MapsList />
       <Minimap />
       <Chat />
+      <BuffIcons />
       <NpcDialog />
       <QuestDialog />
       <TradeRequestDialog />

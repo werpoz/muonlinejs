@@ -1,3 +1,4 @@
+import { JEWEL_MIXES, packedJewelCount, packedJewelType } from './jewelMix';
 import type { Item } from '../ecs/world';
 import { ItemsDatabase } from './itemsDatabase';
 import { SKILLS } from './skills';
@@ -169,6 +170,8 @@ export function getItemName(item: Item) {
   // quest items with another name at level 1
   const levelName = LEVEL_NAMES[`${item.group}/${item.num}/${item.lvl ?? 0}`];
   if (levelName) return levelName;
+  const packed = packedJewelType(item);
+  if (packed >= 0) return `Packed ${JEWEL_MIXES[packed].name} x${packedJewelCount(item)}`;
   if (`${item.group}/${item.num}` === FRUIT) {
     return `${name} (${FRUIT_STATS[item.lvl ?? 0] ?? item.lvl})`;
   }

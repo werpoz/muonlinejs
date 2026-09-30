@@ -10,7 +10,7 @@
 - [x] `tsc` sin errores y obligatorio en CI
 - [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
 - [x] Muerte de monstruos (animación una vez y el cuerpo se desvanece)
-- [x] Diálogo de NPC: mensajes (Leo, misiones), bendición del Elf Soldier y aviso de las ventanas que faltan (Devil Square, Blood Castle, Lahap, Gens...)
+- [x] Diálogo de NPC: mensajes (Leo, misiones), bendición del Elf Soldier y aviso de las ventanas que faltan (Devil Square, Blood Castle, Gens...)
 - [x] Nombres de los NPC de temporadas posteriores (salían como "NPC")
 - [x] Party (`/party [nombre]`): invitar, aceptar/rechazar, marco con los gráficos originales (líder, vida), expulsar y salir
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
@@ -49,6 +49,8 @@
 - [x] Sonido y música: música por mapa en bucle, golpes, arma/arco/ballesta, monstruos (64, reposo/ataque/daño/muerte), habilidades (54), daño y muerte del jugador, subir de nivel, objetos, pociones, joyas, Máquina del Caos, susurros e interfaz
 - [x] Misiones clásicas y cambio de clase (Sevina, Marlon, Priest Devin): diálogo con requisitos y progreso, aceptar, entregar y recompensas
 - [ ] Entrada a los cuarteles y al refugio de Balgass (misiones de 3.ª clase 5 y 6)
+- [x] Iconos de buffs y debuffs del jugador (iconos originales newui_statusicon)
+- [x] Lahap: empaquetar joyas x10/x20/x30 y desempaquetar
 - [ ] Eventos: Blood Castle, Devil Square y Chaos Castle
 - [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`

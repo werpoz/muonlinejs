@@ -48,6 +48,8 @@ import {
   PlayerShopSetItemPricePacket,
   NpcBuffRequestPacket,
   LegacyQuestStateSetRequestPacket,
+  LahapJewelMixRequestPacket,
+  LahapJewelMixRequestMixTypeEnum,
   PlayerShopOpenPacket,
   PlayerShopClosePacket,
   PlayerShopItemListRequestPacket,
@@ -537,6 +539,11 @@ export const Store = new (class _Store {
   // quest dialog of the NPC we talk to
   questDialog: { npcId: number; questNumber: number; state: LegacyQuestState } | null =
     null;
+  // Lahap's window (pack and unpack jewels) is open
+  lahapOpen = false;
+
+  // magic effects (buffs, poison...) of the local player, by effect number
+  activeEffects: number[] = [];
   // waiting for the buff of the NPC (MagicEffectStatus)
   pendingNpcBuff = false;
 
@@ -623,6 +630,8 @@ export const Store = new (class _Store {
       party: observable,
       shopEnabled: observable,
       npcDialog: observable,
+      activeEffects: observable,
+      lahapOpen: observable,
       questStates: observable,
       questKills: observable,
       questDialog: observable,
@@ -1344,6 +1353,24 @@ export const Store = new (class _Store {
     if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
   }
 
+  // Lahap: pack 10, 20 or 30 jewels of a type (stack 0, 1, 2)
+  packJewels(type: number, stack: number): void {
+    const packet = LahapJewelMixRequestPacket.createPacket();
+    packet.Operation = LahapJewelMixRequestMixTypeEnum.Mix;
+    packet.Item = type;
+    packet.MixingStackSize = stack;
+    this.sendToGS(packet.buffer);
+  }
+
+  // Lahap: unpack the bundle of an inventory slot
+  unpackJewels(type: number, slot: number): void {
+    const packet = LahapJewelMixRequestPacket.createPacket();
+    packet.Operation = LahapJewelMixRequestMixTypeEnum.Unmix;
+    packet.Item = type;
+    packet.UnmixingSourceSlot = slot;
+    this.sendToGS(packet.buffer);
+  }
+
   // accept (Active) or hand in (Complete) a quest of the quest dialog
   setQuestState(questNumber: number, state: LegacyQuestState): void {
     const packet = LegacyQuestStateSetRequestPacket.createPacket();
@@ -1521,6 +1548,14 @@ export const Store = new (class _Store {
       });
       this.talkingToNpc = null;
       this.sendToGS(VaultClosedPacket.createPacket().buffer);
+      return true;
+    }
+
+    if (this.lahapOpen) {
+      runInAction(() => {
+        this.lahapOpen = false;
+      });
+      this.sendCloseNpcRequest();
       return true;
     }
 

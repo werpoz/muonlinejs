@@ -247,6 +247,8 @@ EventBus.on('CharacterInformation', packet => {
   const playerData = Store.playerData;
 
   runInAction(() => {
+    // a new character: its effects come again with MagicEffectStatus
+    Store.activeEffects = [];
     playerData.money = p.Money;
     playerData.x = p.X;
     playerData.y = p.Y;
@@ -1251,7 +1253,6 @@ const UNSUPPORTED_WINDOWS: Partial<Record<NpcWindowResponseNpcWindowEnum, string
   [NpcWindowResponseNpcWindowEnum.DevilSquare]: 'Entering Devil Square',
   [NpcWindowResponseNpcWindowEnum.BloodCastle]: 'Entering Blood Castle',
   [NpcWindowResponseNpcWindowEnum.PetTrainer]: 'The pet trainer',
-  [NpcWindowResponseNpcWindowEnum.Lahap]: 'Combining jewels',
   [NpcWindowResponseNpcWindowEnum.CastleSeniorNPC]: 'The castle',
   [NpcWindowResponseNpcWindowEnum.ElphisRefinery]: 'The refinery',
   [NpcWindowResponseNpcWindowEnum.RefineStoneMaking]: 'Refining stones',
@@ -1282,6 +1283,16 @@ EventBus.on('NpcWindowResponse', packet => {
   if (p.Window === NpcWindowResponseNpcWindowEnum.ChaosMachine) {
     runInAction(() => {
       Store.chaosMachine = { items: new Array(CHAOS_MACHINE_SIZE).fill(null) };
+      Store.inventoryEnabled = true;
+    });
+    return;
+  }
+
+  // Lahap: the dialog stays open on the server (it disconnects players that
+  // unpack jewels without it)
+  if (p.Window === NpcWindowResponseNpcWindowEnum.Lahap) {
+    runInAction(() => {
+      Store.lahapOpen = true;
       Store.inventoryEnabled = true;
     });
     return;
@@ -2074,6 +2085,12 @@ EventBus.on('MagicEffectStatus', packet => {
   const id = p.PlayerId & 0x7fff;
   console.log(`MagicEffectStatus: ${id} effect ${p.EffectId} ${p.IsActive ? 'on' : 'off'}`);
   if (id !== Store.playerId) return;
+
+  runInAction(() => {
+    const effects = Store.activeEffects.filter(e => e !== p.EffectId);
+    if (p.IsActive) effects.push(p.EffectId);
+    Store.activeEffects = effects;
+  });
 
   if (p.IsActive && Store.pendingNpcBuff) {
     Store.pendingNpcBuff = false;

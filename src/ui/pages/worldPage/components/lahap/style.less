@@ -1,0 +1,71 @@
+.mu-window-slot.lahap .mu-window {
+  .lahap-content {
+    left: 12px;
+    top: 50px;
+    width: 166px;
+    height: 330px;
+    overflow-y: auto;
+  }
+
+  .section-title {
+    margin-top: 6px;
+    color: #ffd24a;
+    border-bottom: 1px solid #6a5a3a;
+  }
+
+  .note {
+    margin: 2px 0 4px;
+    color: #999;
+  }
+
+  .empty {
+    color: #777;
+    font-style: italic;
+  }
+
+  .jewel-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 17px;
+
+    .jewel-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: #fff;
+    }
+
+    .jewel-count {
+      width: 18px;
+      color: #7fd0ff;
+      text-align: right;
+      margin-right: 2px;
+    }
+  }
+
+  .small-button {
+    height: 14px;
+    padding: 0 3px;
+    font-size: 8px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+
+    &.wide {
+      width: 44px;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: #ffd24a;
+    }
+
+    &:disabled {
+      color: #666;
+      cursor: default;
+    }
+  }
+}

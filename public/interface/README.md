@@ -28,3 +28,4 @@ They are Webzen's assets, like the models and item icons of this repo.
 | chaos_mix.png | newui_Bt_mix (2 states of 44x35: normal, disabled) |
 | minimap_cha / _npc / _party / _portal.png | mini_map_ui_cha / npc / party / portal (18x18 markers) |
 | minimap_corner.png / minimap_line.png | mini_map_ui_corner (42x42) / mini_map_ui_line (42x8, frame) |
+| status_icons1/2/3.jpg | newui_statusicon / 2 / 3 (buff icons of 20x28, 10x8 per sheet: icon n = effect number n) |
