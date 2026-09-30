@@ -13,7 +13,7 @@ import {
   AnimationGroup,
   CreateBox,
 } from '../libs/babylon/exports';
-import type { IVector3Like } from '../libs/babylon/exports';
+import type { IVector3Like, Plane } from '../libs/babylon/exports';
 // import { createMeshesForBMD } from './BMD/createMeshes';
 import type { Entity, World } from '../ecs/world';
 import { ENUM_WORLD } from './types';
@@ -33,6 +33,11 @@ const tmpVec32 = Vector3.Zero();
 
 const minTmp = new Vector3(Number.MAX_VALUE);
 const maxTmp = new Vector3(Number.MIN_VALUE);
+
+const cullCenterTmp = new Vector3();
+
+// seconds between two measures of the skinned bounds of a model
+const BOUNDS_MAX_AGE = 0.5;
 
 export class ModelObject {
   static OverrideScale = -1;
@@ -248,19 +253,81 @@ export class ModelObject {
     if (this.HiddenMesh === mesh) return;
   }
 
-  UpdateBoundings() {
+  // the skinned bounds relative to the node, and when they were measured
+  private readonly boundsMin = new Vector3();
+  private readonly boundsMax = new Vector3();
+  private boundsTime = -Infinity;
+
+  // Sphere around the model for the culling of the camera: the center
+  // relative to the node and the radius, measured once with the skeleton
+  private cullRadius = -1;
+  private readonly cullCenter = new Vector3();
+
+  // false when the model is out of the view of the camera
+  isInFrustum(planes: Plane[]): boolean {
+    if (!this.gltf) return true;
+    if (this.cullRadius < 0) {
+      this.UpdateBoundings(Infinity);
+      this.boundsMin.addToRef(this.boundsMax, this.cullCenter).scaleInPlace(0.5);
+      // some margin for the animations
+      this.cullRadius = Math.max(2, Vector3.Distance(this.boundsMin, this.boundsMax) * 0.5 + 1);
+    }
+    const center = this._node.getAbsolutePosition().addToRef(this.cullCenter, cullCenterTmp);
+    for (const plane of planes) {
+      if (plane.dotCoordinate(center) < -this.cullRadius) return false;
+    }
+    return true;
+  }
+
+  // shows or hides the whole model (its meshes, bones and children); its
+  // animation stops while it is hidden
+  setEnabled(enabled: boolean) {
+    if (this._node.isEnabled(false) === enabled) return;
+    this._node.setEnabled(enabled);
+    this.pauseAnimation(!enabled);
+  }
+
+  private pauseAnimation(paused: boolean) {
+    const group = this.gltf?.animationGroups[this.CurrentAction];
+    if (group) {
+      if (paused && group.isPlaying) group.pause();
+      else if (!paused && !group.isPlaying && group.isStarted) group.play(this.LoopAction);
+    }
+    for (const child of this.Children) child.pauseAnimation(paused);
+  }
+
+  // Bounds of the model in the world (BoundingBoxLocal.minimumWorld /
+  // maximumWorld). Measuring them applies the skeleton to the vertices on
+  // the CPU, so their shape is measured again only after maxAge seconds;
+  // in between they follow the position of the model.
+  UpdateBoundings(maxAge = BOUNDS_MAX_AGE) {
     if (!this.gltf) return;
 
-    this._node.getChildMeshes(false).forEach(mesh => {
-      mesh.refreshBoundingInfo(true, false);
-    });
+    const position = this._node.getAbsolutePosition();
+    const now = performance.now() / 1000;
+    if (this.boundsTime === -Infinity || now - this.boundsTime > maxAge) {
+      this._node.getChildMeshes(false).forEach(mesh => {
+        mesh.refreshBoundingInfo(true, false);
+      });
 
-    const boundingBox = this._node.getHierarchyBoundingVectors(true, m => {
-      return !m.metadata?.SkipBoundingBox;
-    });
+      const boundingBox = this._node.getHierarchyBoundingVectors(true, m => {
+        return !m.metadata?.SkipBoundingBox;
+      });
+      if (boundingBox.min.x <= boundingBox.max.x) {
+        boundingBox.min.subtractToRef(position, this.boundsMin);
+        boundingBox.max.subtractToRef(position, this.boundsMax);
+      } else {
+        // no mesh counts for the bounds (e.g. NPCs made of body parts that
+        // skip them): the size of a character
+        this.boundsMin.set(-0.4, 0, -0.4);
+        this.boundsMax.set(0.4, 1.8, 0.4);
+      }
+      // spread the measures of the models over time
+      this.boundsTime = now + Math.random() * maxAge * 0.5;
+    }
 
-    this.BoundingBoxLocal.minimumWorld.copyFrom(boundingBox.min);
-    this.BoundingBoxLocal.maximumWorld.copyFrom(boundingBox.max);
+    position.addToRef(this.boundsMin, this.BoundingBoxLocal.minimumWorld);
+    position.addToRef(this.boundsMax, this.BoundingBoxLocal.maximumWorld);
   }
 
   updateLocation(pos: IVector3Like, scale: Float, angles: IVector3Like) {

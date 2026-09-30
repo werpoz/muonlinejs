@@ -62,12 +62,22 @@ export function createWorld(scene: TestScene) {
   const world = new World(scene);
 
   const systems = factories.map(f => f(world));
+  const names = factories.map(f => f.name);
 
   return {
     world,
     updateSystems: (dt: number) => {
-      systems.forEach(system => {
+      // profiling: `window.__systemTimes = {}` in the console accumulates
+      // the milliseconds of each system
+      const times = (window as any).__systemTimes as Record<string, number> | undefined;
+      systems.forEach((system, i) => {
+        if (!times) {
+          system.update?.(dt);
+          return;
+        }
+        const start = performance.now();
         system.update?.(dt);
+        times[names[i]] = (times[names[i]] ?? 0) + performance.now() - start;
       });
     },
   } as const;

@@ -36,14 +36,20 @@ export const PointerInputSystem: ISystemFactory = world => {
     'interactable'
   );
 
-  scene.onPointerObservable.add(ev => {
-    const pickInfo = scene.pick(ev.event.clientX, ev.event.clientY);
+  // the ray of the mouse is enough: picking the scene (the terrain has
+  // 131072 triangles) on every move of the mouse is slow
+  scene.skipPointerMovePicking = true;
 
-    const ray = pickInfo.ray;
-    if (ray) {
-      tmpCameraRay.direction.copyFrom(ray.direction);
-      tmpCameraRay.origin.copyFrom(ray.origin);
-      tmpCameraRay.length = ray.length;
+  scene.onPointerObservable.add(ev => {
+    if (scene.activeCamera) {
+      scene.createPickingRayToRef(
+        ev.event.clientX,
+        ev.event.clientY,
+        null,
+        tmpCameraRay,
+        scene.activeCamera
+      );
+      tmpCameraRay.length = Infinity;
     } else {
       tmpCameraRay.direction.set(0, 0, 1);
       tmpCameraRay.origin.set(0, 0, 0);
