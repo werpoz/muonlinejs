@@ -17,6 +17,7 @@ import { ItemStorageKind } from './common/itemStorageKind';
 import { getSkillInfo } from './common/skills';
 import { playSkillEffect } from './effects/skillEffects';
 import { getAttackAction } from './ecs/systems/attackSystem';
+import { NPC_NAMES } from './common/npcNames';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -47,6 +48,9 @@ import {
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
   PlayerShopSetItemPriceResponsePacket,
+  OpenNpcDialogPacket,
+  ObjectMessagePacket,
+  MagicEffectStatusPacket,
   PlayerShopSetItemPriceResponseItemPriceSetResultEnum,
   PlayerShopOpenSuccessfulPacket,
   PlayerShopClosedPacket,
@@ -396,6 +400,7 @@ EventBus.on('AddNpcsToScope', packet => {
       objectNameInWorld:
         MonstersDatabase.get(npc.TypeNumber)?.Name ||
         getNpcModelInfo(npc.TypeNumber)?.name ||
+        NPC_NAMES[npc.TypeNumber] ||
         'NPC',
       interactable: true,
     });
@@ -878,6 +883,16 @@ EventBus.on('ServerMessage', packet => {
 
   Store.addChatLine({ sender: '', text: p.Message, system: true });
 
+  // OpenMU answers like this for the NPCs it has no dialog for
+  const npcId = Store.talkingToNpc;
+  if (npcId !== null && /not implemented/i.test(p.Message)) {
+    Store.showNpcDialog({
+      npcId,
+      name: Store.npcName(npcId),
+      text: 'This NPC has nothing to say yet.',
+    });
+  }
+
   console.log(
     `%cServerMessage: ${p.Message}`,
     `color: ${color}; font-weight: bold; font-size: 1em;`
@@ -1218,6 +1233,30 @@ const VAULT_SIZE = 120;
 // chaos machine: 8 columns x 4 rows
 const CHAOS_MACHINE_SIZE = 32;
 
+// windows of NPCs that this client doesn't have yet
+const UNSUPPORTED_WINDOWS: Partial<Record<NpcWindowResponseNpcWindowEnum, string>> = {
+  [NpcWindowResponseNpcWindowEnum.DevilSquare]: 'Entering Devil Square',
+  [NpcWindowResponseNpcWindowEnum.BloodCastle]: 'Entering Blood Castle',
+  [NpcWindowResponseNpcWindowEnum.PetTrainer]: 'The pet trainer',
+  [NpcWindowResponseNpcWindowEnum.Lahap]: 'Combining jewels',
+  [NpcWindowResponseNpcWindowEnum.CastleSeniorNPC]: 'The castle',
+  [NpcWindowResponseNpcWindowEnum.ElphisRefinery]: 'The refinery',
+  [NpcWindowResponseNpcWindowEnum.RefineStoneMaking]: 'Refining stones',
+  [NpcWindowResponseNpcWindowEnum.RemoveJohOption]: 'Removing harmony options',
+  [NpcWindowResponseNpcWindowEnum.IllusionTemple]: 'Entering Illusion Temple',
+  [NpcWindowResponseNpcWindowEnum.ChaosCardCombination]: 'Chaos cards',
+  [NpcWindowResponseNpcWindowEnum.CherryBlossomBranchesAssembly]: 'The cherry blossom event',
+  [NpcWindowResponseNpcWindowEnum.SeedMaster]: 'Seed crafting',
+  [NpcWindowResponseNpcWindowEnum.SeedResearcher]: 'Socket crafting',
+  [NpcWindowResponseNpcWindowEnum.StatReInitializer]: 'Resetting stats',
+  [NpcWindowResponseNpcWindowEnum.DelgadoLuckyCoinRegistration]: 'Registering lucky coins',
+  [NpcWindowResponseNpcWindowEnum.DoorkeeperTitusDuelWatch]: 'Watching duels',
+  [NpcWindowResponseNpcWindowEnum.LugardDoppelgangerEntry]: 'Entering Doppelganger',
+  [NpcWindowResponseNpcWindowEnum.JerintGaionEvententry]: 'Entering the Imperial Guardian',
+  [NpcWindowResponseNpcWindowEnum.JuliaWarpMarketServer]: 'Warping to the market server',
+  [NpcWindowResponseNpcWindowEnum.CombineLuckyItem]: 'Combining lucky items',
+};
+
 const MERCHANT_WINDOWS = [
   NpcWindowResponseNpcWindowEnum.Merchant,
   NpcWindowResponseNpcWindowEnum.Merchant1,
@@ -1244,7 +1283,13 @@ EventBus.on('NpcWindowResponse', packet => {
   }
 
   if (!MERCHANT_WINDOWS.includes(p.Window)) {
-    Store.addNotification('This NPC is not supported yet', 'error');
+    const npcId = Store.talkingToNpc ?? 0;
+    const feature = UNSUPPORTED_WINDOWS[p.Window] ?? 'This window';
+    Store.showNpcDialog({
+      npcId,
+      name: Store.npcName(npcId),
+      text: `${feature} is not available in this client yet.`,
+    });
     // the server keeps the dialog open until it is closed
     Store.sendCloseNpcRequest();
     return;
@@ -1965,4 +2010,60 @@ EventBus.on('PlayerShopItemSoldToPlayer', packet => {
     Store.shopPrices.delete(p.InventorySlot);
   });
   Store.addNotification(`${p.BuyerName} bought ${item ? getItemName(item) : 'an item'}`);
+});
+
+// ---- NPC dialogs
+
+const ELF_SOLDIER = 257;
+const GENS_NPCS = [543, 544];
+
+// dialog of the S6 NPCs (Elf Soldier, Gens stewards, mercenaries...)
+EventBus.on('OpenNpcDialog', packet => {
+  const p = new OpenNpcDialogPacket(packet);
+  const npcId = Store.talkingToNpc ?? 0;
+  const name = Store.npcName(npcId);
+  console.log(`OpenNpcDialog: ${p.NpcNumber} ${name}`);
+
+  if (p.NpcNumber === ELF_SOLDIER) {
+    Store.showNpcDialog({
+      npcId,
+      name,
+      text: 'Brave warrior, the road ahead is dangerous. Take my blessing: it will protect you while you are still weak.',
+      buff: true,
+    });
+    return;
+  }
+  Store.showNpcDialog({
+    npcId,
+    name,
+    text: GENS_NPCS.includes(p.NpcNumber)
+      ? `The Gens families are not available in this client yet. (Contribution: ${p.GensContributionPoints})`
+      : 'Talking to this NPC is not available in this client yet.',
+  });
+});
+
+// message over a character or NPC (e.g. "I have no quests for you.")
+EventBus.on('ObjectMessage', packet => {
+  const p = new ObjectMessagePacket(packet);
+  const id = p.ObjectId & 0x7fff;
+  const name = Store.npcName(id);
+  console.log(`ObjectMessage: ${name}: ${p.Message}`);
+
+  if (id === Store.talkingToNpc) {
+    Store.showNpcDialog({ npcId: id, name, text: p.Message });
+    return;
+  }
+  Store.addChatLine({ sender: name, text: p.Message });
+});
+
+EventBus.on('MagicEffectStatus', packet => {
+  const p = new MagicEffectStatusPacket(packet);
+  const id = p.PlayerId & 0x7fff;
+  console.log(`MagicEffectStatus: ${id} effect ${p.EffectId} ${p.IsActive ? 'on' : 'off'}`);
+  if (id !== Store.playerId) return;
+
+  if (p.IsActive && Store.pendingNpcBuff) {
+    Store.pendingNpcBuff = false;
+    Store.addNotification('You received the blessing');
+  }
 });

@@ -46,6 +46,7 @@ import {
   ChaosMachineMixRequestPacket,
   TradeRequestPacket,
   PlayerShopSetItemPricePacket,
+  NpcBuffRequestPacket,
   PlayerShopOpenPacket,
   PlayerShopClosePacket,
   PlayerShopItemListRequestPacket,
@@ -410,6 +411,15 @@ export const isFriendOnline = (friend: Friend) =>
 
 // personal store: inventory slots 204-235 (after 12 equipment, 64 inventory
 // and 128 extension slots of season 6), 8 columns x 4 rows
+// dialog of an NPC without a window of its own (message, blessing...)
+export type NpcDialog = {
+  npcId: number;
+  name: string;
+  text: string;
+  // Elf Soldier: gives its buff (NpcBuffRequest)
+  buff?: boolean;
+};
+
 export const SHOP_FIRST_SLOT = 204;
 export const SHOP_SIZE = 32;
 
@@ -516,6 +526,10 @@ export const Store = new (class _Store {
   heroStates = new Map<number, number>();
 
   // our personal store: window (S), name, open and item prices by slot
+  npcDialog: NpcDialog | null = null;
+  // waiting for the buff of the NPC (MagicEffectStatus)
+  pendingNpcBuff = false;
+
   shopEnabled = false;
   shopName = '';
   shopOpen = false;
@@ -598,6 +612,7 @@ export const Store = new (class _Store {
       trade: observable,
       party: observable,
       shopEnabled: observable,
+      npcDialog: observable,
       shopName: observable,
       shopOpen: observable,
       shopPrices: observable,
@@ -1296,6 +1311,32 @@ export const Store = new (class _Store {
     return this.world?.playerEntity?.objectNameInWorld ?? '';
   }
 
+  // ---- NPC dialogs
+
+  npcName(npcId: number): string {
+    const npc = this.world?.netObjsQuery.entities.find(e => e.netId === npcId);
+    return npc?.objectNameInWorld ?? 'NPC';
+  }
+
+  showNpcDialog(dialog: NpcDialog): void {
+    runInAction(() => {
+      this.npcDialog = dialog;
+    });
+  }
+
+  closeNpcDialog(): void {
+    runInAction(() => {
+      this.npcDialog = null;
+    });
+    if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
+  }
+
+  requestNpcBuff(): void {
+    this.pendingNpcBuff = true;
+    this.sendToGS(NpcBuffRequestPacket.createPacket().buffer);
+    this.closeNpcDialog();
+  }
+
   // ---- personal store
 
   setShopPrice(slot: number, price: number): void {
@@ -1461,6 +1502,11 @@ export const Store = new (class _Store {
       // (the Guild Master dialog is closed with its answer)
       if (this.talkingToNpc !== null && !this.guildMasterDialog) {
         this.sendCloseNpcRequest();
+      }
+      if (this.npcDialog) {
+        runInAction(() => {
+          this.npcDialog = null;
+        });
       }
       return true;
     }

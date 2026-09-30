@@ -10,7 +10,8 @@
 - [x] `tsc` sin errores y obligatorio en CI
 - [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
 - [x] Muerte de monstruos (animación una vez y el cuerpo se desvanece)
-- [ ] Nombres de algunos NPC (salen como "NPC")
+- [x] Diálogo de NPC: mensajes (Leo, misiones), bendición del Elf Soldier y aviso de las ventanas que faltan (Devil Square, Blood Castle, Lahap, Gens...)
+- [x] Nombres de los NPC de temporadas posteriores (salían como "NPC")
 - [x] Party (`/party [nombre]`): invitar, aceptar/rechazar, marco con los gráficos originales (líder, vida), expulsar y salir
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
