@@ -1,0 +1,109 @@
+.quest-dialog {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  transform: translateX(-50%);
+  width: 280px;
+  padding: 10px 12px;
+  background: #000 url('/interface/window_back.png');
+  border: 1px solid #6a5a3a;
+  color: #e8e0c8;
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: auto;
+  z-index: 10;
+
+  .name {
+    padding-bottom: 4px;
+    color: #ffd24a;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #6a5a3a;
+  }
+
+  .quest-name {
+    margin: 6px 0 4px;
+    color: #7fd0ff;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .text {
+    text-align: center;
+  }
+
+  .section {
+    margin-top: 8px;
+
+    .title {
+      margin-bottom: 2px;
+      color: #ffd24a;
+    }
+  }
+
+  .requirement {
+    display: flex;
+    gap: 5px;
+
+    .mark {
+      width: 10px;
+    }
+
+    &.ok {
+      color: #7fe07f;
+    }
+
+    &.goal .mark {
+      color: #ffd24a;
+    }
+
+    &.missing {
+      color: #c8c0a8;
+
+      .mark {
+        color: #ff6060;
+      }
+    }
+  }
+
+  .reward {
+    color: #fff;
+
+    &::before {
+      content: '• ';
+      color: #ffd24a;
+    }
+  }
+
+  .hint {
+    margin-top: 2px;
+    color: #999;
+    font-style: italic;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .text-button {
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: #ffd24a;
+      color: #fff;
+    }
+
+    &:disabled {
+      color: #666;
+      cursor: default;
+    }
+  }
+}

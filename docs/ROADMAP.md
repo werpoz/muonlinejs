@@ -47,7 +47,8 @@
 - [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
 - [x] Ventana de opciones (botón Menu): volumen de música y efectos, lista de teclas
 - [x] Sonido y música: música por mapa en bucle, golpes, arma/arco/ballesta, monstruos (64, reposo/ataque/daño/muerte), habilidades (54), daño y muerte del jugador, subir de nivel, objetos, pociones, joyas, Máquina del Caos, susurros e interfaz
-- [ ] Misiones y cambio de clase (2.ª y 3.ª)
+- [x] Misiones clásicas y cambio de clase (Sevina, Marlon, Priest Devin): diálogo con requisitos y progreso, aceptar, entregar y recompensas
+- [ ] Entrada a los cuarteles y al refugio de Balgass (misiones de 3.ª clase 5 y 6)
 - [ ] Eventos: Blood Castle, Devil Square y Chaos Castle
 - [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`

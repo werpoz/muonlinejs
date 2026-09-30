@@ -158,9 +158,17 @@ export function itemDefenseRate(item: Item): number {
   return defenseRate + byLevel(DEFENSE_BY_LEVEL, item.lvl ?? 0);
 }
 
+const LEVEL_NAMES: Record<string, string> = {
+  '14/23/1': 'Ring of Honor',
+  '14/24/1': 'Dark Stone',
+};
+
 export function getItemName(item: Item) {
   const config = ItemsDatabase.getItem(item.group, item.num);
   const name = config?.ItemName ?? `Item ${item.group}/${item.num}`;
+  // quest items with another name at level 1
+  const levelName = LEVEL_NAMES[`${item.group}/${item.num}/${item.lvl ?? 0}`];
+  if (levelName) return levelName;
   if (`${item.group}/${item.num}` === FRUIT) {
     return `${name} (${FRUIT_STATS[item.lvl ?? 0] ?? item.lvl})`;
   }

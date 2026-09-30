@@ -47,6 +47,7 @@ import {
   TradeRequestPacket,
   PlayerShopSetItemPricePacket,
   NpcBuffRequestPacket,
+  LegacyQuestStateSetRequestPacket,
   PlayerShopOpenPacket,
   PlayerShopClosePacket,
   PlayerShopItemListRequestPacket,
@@ -99,6 +100,7 @@ import { ItemsDatabase } from './common/itemsDatabase';
 import { ItemStorageKind } from './common/itemStorageKind';
 import { playSound } from './libs/gameSounds';
 import { isConsumable } from './common/consumables';
+import { LegacyQuestState } from './common/legacyQuests';
 import {
   UPGRADE_JEWELS,
   isUpgradeJewel,
@@ -527,6 +529,14 @@ export const Store = new (class _Store {
 
   // our personal store: window (S), name, open and item prices by slot
   npcDialog: NpcDialog | null = null;
+
+  // legacy quests (class changes): state by quest number
+  questStates = new Map<number, LegacyQuestState>();
+  // kills of the monsters of the active quest (LegacyQuestMonsterKillInfo)
+  questKills = new Map<number, number>();
+  // quest dialog of the NPC we talk to
+  questDialog: { npcId: number; questNumber: number; state: LegacyQuestState } | null =
+    null;
   // waiting for the buff of the NPC (MagicEffectStatus)
   pendingNpcBuff = false;
 
@@ -613,6 +623,9 @@ export const Store = new (class _Store {
       party: observable,
       shopEnabled: observable,
       npcDialog: observable,
+      questStates: observable,
+      questKills: observable,
+      questDialog: observable,
       shopName: observable,
       shopOpen: observable,
       shopPrices: observable,
@@ -1331,6 +1344,21 @@ export const Store = new (class _Store {
     if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
   }
 
+  // accept (Active) or hand in (Complete) a quest of the quest dialog
+  setQuestState(questNumber: number, state: LegacyQuestState): void {
+    const packet = LegacyQuestStateSetRequestPacket.createPacket();
+    packet.QuestNumber = questNumber;
+    packet.NewState = state;
+    this.sendToGS(packet.buffer);
+  }
+
+  closeQuestDialog(): void {
+    runInAction(() => {
+      this.questDialog = null;
+    });
+    if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
+  }
+
   requestNpcBuff(): void {
     this.pendingNpcBuff = true;
     this.sendToGS(NpcBuffRequestPacket.createPacket().buffer);
@@ -1503,9 +1531,10 @@ export const Store = new (class _Store {
       if (this.talkingToNpc !== null && !this.guildMasterDialog) {
         this.sendCloseNpcRequest();
       }
-      if (this.npcDialog) {
+      if (this.npcDialog || this.questDialog) {
         runInAction(() => {
           this.npcDialog = null;
+          this.questDialog = null;
         });
       }
       return true;

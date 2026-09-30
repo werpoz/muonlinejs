@@ -18,6 +18,13 @@ import { getSkillInfo } from './common/skills';
 import { playSkillEffect } from './effects/skillEffects';
 import { getAttackAction } from './ecs/systems/attackSystem';
 import { NPC_NAMES } from './common/npcNames';
+import {
+  LegacyQuestState,
+  classAfterQuest,
+  classDisplayName,
+  legacyQuest,
+  questStateIn,
+} from './common/legacyQuests';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -49,6 +56,12 @@ import {
   TradeRequestPacket,
   PlayerShopSetItemPriceResponsePacket,
   OpenNpcDialogPacket,
+  LegacyQuestStateListPacket,
+  LegacyQuestStateDialogPacket,
+  LegacySetQuestStateResponsePacket,
+  LegacyQuestRewardPacket,
+  LegacyQuestRewardQuestRewardTypeEnum,
+  LegacyQuestMonsterKillInfoPacket,
   ObjectMessagePacket,
   MagicEffectStatusPacket,
   PlayerShopSetItemPriceResponseItemPriceSetResultEnum,
@@ -2066,4 +2079,119 @@ EventBus.on('MagicEffectStatus', packet => {
     Store.pendingNpcBuff = false;
     Store.addNotification('You received the blessing');
   }
+});
+
+// ---- legacy quests (class changes)
+
+const QUESTS_PER_BYTE = 4;
+
+// states of the 4 quests of a state byte, from the quest number
+function setQuestStates(questNumber: number, stateByte: number) {
+  const first = questNumber - (questNumber % QUESTS_PER_BYTE);
+  runInAction(() => {
+    for (let i = first; i < first + QUESTS_PER_BYTE; i++) {
+      Store.questStates.set(i, questStateIn(stateByte, i));
+    }
+  });
+}
+
+// after entering the game: 2 bits per quest from byte 4
+EventBus.on('LegacyQuestStateList', packet => {
+  const p = new LegacyQuestStateListPacket(packet);
+  const count = p.QuestCount;
+  for (let i = 0; i < count; i += QUESTS_PER_BYTE) {
+    setQuestStates(i, p.buffer.getUint8(4 + i / QUESTS_PER_BYTE));
+  }
+  console.log(`LegacyQuestStateList: ${[...Store.questStates].map(([n, s]) => `${n}:${LegacyQuestState[s]}`).join(' ')}`);
+});
+
+// talking to a quest NPC (Sevina, Marlon, Priest Devin)
+EventBus.on('LegacyQuestStateDialog', packet => {
+  const p = new LegacyQuestStateDialogPacket(packet);
+  const state = questStateIn(p.State, p.QuestIndex);
+  console.log(`LegacyQuestStateDialog: quest ${p.QuestIndex} ${LegacyQuestState[state]}`);
+  setQuestStates(p.QuestIndex, p.State);
+  runInAction(() => {
+    Store.questDialog = {
+      npcId: Store.talkingToNpc ?? 0,
+      questNumber: p.QuestIndex,
+      state,
+    };
+  });
+});
+
+EventBus.on('LegacySetQuestStateResponse', packet => {
+  const p = new LegacySetQuestStateResponsePacket(packet);
+  const state = questStateIn(p.NewState, p.QuestIndex);
+  const name = legacyQuest(p.QuestIndex)?.name ?? `Quest ${p.QuestIndex}`;
+  console.log(`LegacySetQuestStateResponse: quest ${p.QuestIndex} result ${p.Result} ${LegacyQuestState[state]}`);
+  if (p.Result !== 0) {
+    Store.addNotification('The quest could not be changed', 'error');
+    return;
+  }
+  setQuestStates(p.QuestIndex, p.NewState);
+  runInAction(() => {
+    Store.questKills.clear();
+  });
+  Store.closeQuestDialog();
+
+  if (state === LegacyQuestState.Active) {
+    Store.addNotification(`Quest accepted: ${name}`);
+  } else if (state === LegacyQuestState.Complete) {
+    playSound('Sound/pLevelUp');
+    Store.addNotification(`Quest completed: ${name}`);
+  }
+});
+
+// reward of a finished quest, also of the other players in view (class change)
+EventBus.on('LegacyQuestReward', packet => {
+  const p = new LegacyQuestRewardPacket(packet);
+  const id = p.PlayerId & 0x7fff;
+  const Reward = LegacyQuestRewardQuestRewardTypeEnum;
+  console.log(`LegacyQuestReward: ${id} ${Reward[p.Reward]} ${p.Count}`);
+  const mine = id === Store.playerId;
+
+  switch (p.Reward) {
+    case Reward.CharacterEvolutionFirstToSecond:
+    case Reward.CharacterEvolutionSecondToThird: {
+      const cls = classAfterQuest(p.Count);
+      const player = Store.world?.netObjsQuery.entities.find(e => e.netId === id);
+      if (player?.charAppearance) {
+        player.charAppearance.charClass = cls;
+        player.charAppearance.changed = true;
+      }
+      if (mine) {
+        playSound('Sound/mQuest');
+        Store.addNotification(`You are now a ${classDisplayName(cls)}!`);
+      }
+      break;
+    }
+    case Reward.LevelUpPoints:
+      if (!mine) break;
+      runInAction(() => {
+        Store.playerData.points += p.Count;
+      });
+      Store.addNotification(`You received ${p.Count} level up points`);
+      break;
+    case Reward.LevelUpPointsPerLevelIncrease:
+      if (!mine) break;
+      runInAction(() => {
+        Store.playerData.points += p.Count;
+      });
+      Store.addNotification(`You receive 1 more point per level (+${p.Count} points)`);
+      break;
+    case Reward.ComboSkill:
+      if (mine) Store.addNotification('You learned the combo skill');
+      break;
+  }
+});
+
+EventBus.on('LegacyQuestMonsterKillInfo', packet => {
+  const p = new LegacyQuestMonsterKillInfoPacket(packet);
+  const kills = p.getKills(5).filter(k => k.MonsterNumber);
+  console.log(`LegacyQuestMonsterKillInfo: quest ${p.QuestIndex} ${kills.map(k => `${k.MonsterNumber}:${k.KillCount}`).join(' ')}`);
+  runInAction(() => {
+    Store.questKills.clear();
+    for (const k of kills) Store.questKills.set(k.MonsterNumber, k.KillCount);
+  });
 });

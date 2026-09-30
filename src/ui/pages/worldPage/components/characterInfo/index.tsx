@@ -4,6 +4,7 @@ import { MuWindow } from '../../../../components/muWindow';
 import { CharacterClassNumber } from '../../../../../common/types';
 import { computeCharacterStats } from '../../../../../common/characterStats';
 import './style.less';
+import { classDisplayName } from '../../../../../common/legacyQuests';
 import { observer } from 'mobx-react-lite';
 
 enum StatType {
@@ -13,11 +14,7 @@ enum StatType {
   Energy = 3,
 }
 
-// 'DarkKnight' -> 'Dark Knight'
-const className = (cls: CharacterClassNumber | undefined) =>
-  cls === undefined
-    ? ''
-    : (CharacterClassNumber[cls] ?? '').replace(/([a-z])([A-Z])/g, '$1 $2');
+const className = classDisplayName;
 
 // stat box of the original window (170x21 text box with the level-up button)
 const Stat = observer(

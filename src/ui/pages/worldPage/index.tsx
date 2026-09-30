@@ -25,6 +25,7 @@ import { Trade, TradeRequestDialog } from './components/trade';
 import { PartyFrame, PartyRequestDialog } from './components/party';
 import { PersonalShop, ViewedShop } from './components/playerShop';
 import { NpcDialog } from './components/npcDialog';
+import { QuestDialog } from './components/questDialog';
 
 const HUD = observer(() => {
   return (
@@ -48,6 +49,7 @@ const HUD = observer(() => {
       <Minimap />
       <Chat />
       <NpcDialog />
+      <QuestDialog />
       <TradeRequestDialog />
       <PartyRequestDialog />
       <FriendRequestDialog />
