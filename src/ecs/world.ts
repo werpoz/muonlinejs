@@ -211,6 +211,15 @@ export class World extends ECSWorld<Entity> {
     return 0;
   }
 
+  setTerrainFlag(
+    _startX: number,
+    _startY: number,
+    _endX: number,
+    _endY: number,
+    _flag: number,
+    _set: boolean
+  ): void {}
+
   getTerrainTile(x: number, y: number): number {
     return 0;
   }

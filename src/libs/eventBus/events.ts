@@ -25,6 +25,8 @@ export type Events = CSEvents &
     };
     requestWarp: { map: ENUM_WORLD; pos?: { x: number; y: number } };
     warpCompleted: { map: ENUM_WORLD };
+    // walkable tiles changed (ChangeTerrainAttributes)
+    terrainChanged: void;
     keyPressed: string;
     keyReleased: string;
     pageVisibilityChanged: boolean;

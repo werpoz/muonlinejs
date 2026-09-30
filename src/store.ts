@@ -49,6 +49,9 @@ import {
   NpcBuffRequestPacket,
   LegacyQuestStateSetRequestPacket,
   LahapJewelMixRequestPacket,
+  DevilSquareEnterRequestPacket,
+  BloodCastleEnterRequestPacket,
+  MiniGameOpeningStateRequestPacket,
   LahapJewelMixRequestMixTypeEnum,
   PlayerShopOpenPacket,
   PlayerShopClosePacket,
@@ -103,6 +106,7 @@ import { ItemStorageKind } from './common/itemStorageKind';
 import { playSound } from './libs/gameSounds';
 import { isConsumable } from './common/consumables';
 import { LegacyQuestState } from './common/legacyQuests';
+import { MINI_GAME_TYPE, type MiniGameKind } from './common/miniGames';
 import {
   UPGRADE_JEWELS,
   isUpgradeJewel,
@@ -424,6 +428,27 @@ export type NpcDialog = {
   buff?: boolean;
 };
 
+// Devil Square / Blood Castle the player is in
+export type MiniGame = {
+  kind: MiniGameKind;
+  level: number;
+  // Blood Castle: BloodCastleState
+  status?: number;
+  // seconds left, when they were received (performance.now())
+  remaining?: number;
+  remainingAt?: number;
+  monsters?: { max: number; current: number };
+  // Blood Castle: the player that carries the weapon of the archangel
+  itemOwner?: string;
+};
+
+export type MiniGameScore = {
+  kind: MiniGameKind;
+  success?: boolean;
+  rank?: number;
+  rows: { name: string; score: number; experience: number; money: number }[];
+};
+
 export const SHOP_FIRST_SLOT = 204;
 export const SHOP_SIZE = 32;
 
@@ -542,6 +567,15 @@ export const Store = new (class _Store {
   // Lahap's window (pack and unpack jewels) is open
   lahapOpen = false;
 
+  // entrance of Devil Square (Charon) / Blood Castle (Messenger of Archangel)
+  miniGameEntry: MiniGameKind | null = null;
+  // MiniGameOpeningState: minutes until the entrance opens (0: open)
+  miniGameOpening: { kind: MiniGameKind; minutes: number; players: number } | null = null;
+  miniGame: MiniGame | null = null;
+  miniGameScore: MiniGameScore | null = null;
+  // the game we asked to enter (to know it with the enter result)
+  pendingMiniGame: { kind: MiniGameKind; level: number } | null = null;
+
   // magic effects (buffs, poison...) of the local player, by effect number
   activeEffects: number[] = [];
   // effects of every player in view (auras), by player id
@@ -634,6 +668,10 @@ export const Store = new (class _Store {
       npcDialog: observable,
       activeEffects: observable,
       lahapOpen: observable,
+      miniGameEntry: observable,
+      miniGameOpening: observable,
+      miniGame: observable,
+      miniGameScore: observable,
       questStates: observable,
       questKills: observable,
       questDialog: observable,
@@ -1355,6 +1393,32 @@ export const Store = new (class _Store {
     if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
   }
 
+  // time until the entrance of a mini game opens (MiniGameOpeningState)
+  requestMiniGameOpening(kind: MiniGameKind, level: number): void {
+    const packet = MiniGameOpeningStateRequestPacket.createPacket();
+    packet.EventType = MINI_GAME_TYPE[kind];
+    packet.EventLevel = level;
+    this.sendToGS(packet.buffer);
+  }
+
+  // level: 1-7 (Devil Square), 1-8 (Blood Castle); slot of the ticket
+  enterMiniGame(kind: MiniGameKind, level: number, ticketSlot: number): void {
+    this.pendingMiniGame = { kind, level };
+    if (kind === 'DevilSquare') {
+      const packet = DevilSquareEnterRequestPacket.createPacket();
+      // OpenMU adds 1 to the level and takes the 12 equipment slots from
+      // the slot (it finds the ticket by itself if it isn't there)
+      packet.SquareLevel = level - 1;
+      packet.TicketItemInventoryIndex = ticketSlot + 12;
+      this.sendToGS(packet.buffer);
+    } else {
+      const packet = BloodCastleEnterRequestPacket.createPacket();
+      packet.CastleLevel = level;
+      packet.TicketItemInventoryIndex = ticketSlot;
+      this.sendToGS(packet.buffer);
+    }
+  }
+
   // Lahap: pack 10, 20 or 30 jewels of a type (stack 0, 1, 2)
   packJewels(type: number, stack: number): void {
     const packet = LahapJewelMixRequestPacket.createPacket();
@@ -1550,6 +1614,15 @@ export const Store = new (class _Store {
       });
       this.talkingToNpc = null;
       this.sendToGS(VaultClosedPacket.createPacket().buffer);
+      return true;
+    }
+
+    if (this.miniGameEntry) {
+      runInAction(() => {
+        this.miniGameEntry = null;
+        this.miniGameOpening = null;
+      });
+      this.sendCloseNpcRequest();
       return true;
     }
 

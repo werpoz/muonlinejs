@@ -17,6 +17,9 @@ export const PathfindingSystem: ISystemFactory = world => {
   EventBus.on('warpCompleted', () => {
     init = false;
   });
+  EventBus.on('terrainChanged', () => {
+    init = false;
+  });
 
   return {
     update: () => {

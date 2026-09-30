@@ -30,3 +30,16 @@ They are Webzen's assets, like the models and item icons of this repo.
 | minimap_corner.png / minimap_line.png | mini_map_ui_corner (42x42) / mini_map_ui_line (42x8, frame) |
 | status_icons1/2/3.jpg | newui_statusicon / 2 / 3 (buff icons of 20x28, 10x8 per sheet: icon n = effect number n) |
 | ../effects/shiny02.jpg | Data/Effect/Shiny02.OZJ (sparkle of the buff auras) |
+
+## Blood Castle 1 (game-assets)
+
+`World12/` and `Object12/` come from the newer client (MU_Red), `NPC/BloodCastle01.glb`
+(Archangel) too:
+
+- Objects and the Archangel: `bun tools/bmdToGlb.ts` with `Data/Object12` and `Data/NPC`
+  (BMD version 15, LEA-256, now read by `src/common/BMD/lea.ts`).
+- `EncTerrain12.map`: `MAP\x01` file (ModulusCryptor: RC6 + 3-Way), decrypted and written in
+  the old format with `python3 tools/modulusCryptor.py map`.
+- `EncTerrain12.att`: from the `TerrainData` of map 11 in the OpenMU database
+  (`python3 tools/modulusCryptor.py att`), its `ATT\x01` file uses MARS.
+- `TerrainLight.OZB` (BMP) converted to `TerrainLight.OZJ`; `TileGround01` is missing (replaced when loaded).

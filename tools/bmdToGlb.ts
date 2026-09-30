@@ -130,15 +130,14 @@ async function convertBMDToGLTF(bmd: BMD, outputFilename: string) {
 
       skinNodes.push(node);
 
-      if (bmdBone.Parent === -1) {
-        skinRoot.addChild(node);
-      } else {
-        const parentNode = skinNodes[bmdBone.Parent];
-        parentNode.addChild(node);
-      }
-
       boneIndex++;
     }
+
+    // parents after creating every bone: a bone can come before its parent
+    bmd.Bones.forEach((bmdBone, i) => {
+      const parentNode = bmdBone.Parent === -1 ? undefined : skinNodes[bmdBone.Parent];
+      (parentNode && bmdBone.Parent !== i ? parentNode : skinRoot).addChild(skinNodes[i]);
+    });
 
     // === Animations conversion ===
     const DEFAULT_FPS = 24;

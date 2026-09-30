@@ -18,6 +18,7 @@ import { getSkillInfo } from './common/skills';
 import { playSkillEffect } from './effects/skillEffects';
 import { getAttackAction } from './ecs/systems/attackSystem';
 import { NPC_NAMES } from './common/npcNames';
+import { MINI_GAMES, isMiniGameMap, type MiniGameKind } from './common/miniGames';
 import {
   LegacyQuestState,
   classAfterQuest,
@@ -56,6 +57,14 @@ import {
   TradeRequestPacket,
   PlayerShopSetItemPriceResponsePacket,
   OpenNpcDialogPacket,
+  DevilSquareEnterResultPacket,
+  BloodCastleEnterResultPacket,
+  MiniGameOpeningStatePacket,
+  UpdateMiniGameStatePacket,
+  UpdateMiniGameStateMiniGameTypeStateEnum,
+  BloodCastleStatePacket,
+  BloodCastleStateStatusEnum,
+  ChangeTerrainAttributesPacket,
   LegacyQuestStateListPacket,
   LegacyQuestStateDialogPacket,
   LegacySetQuestStateResponsePacket,
@@ -670,6 +679,27 @@ EventBus.on('MapChanged', packet => {
     `MapChanged: map ${p.MapNumber} (${p.PositionX}, ${p.PositionY}), change: ${p.IsMapChange}`
   );
   moveLocalPlayer(p.MapNumber, p.PositionX, p.PositionY);
+
+  // OpenMU doesn't send the enter result when it works: it warps the player
+  // into the game
+  const pending = Store.pendingMiniGame;
+  if (pending && isMiniGameMap(p.MapNumber)) {
+    Store.pendingMiniGame = null;
+    runInAction(() => {
+      Store.miniGameEntry = null;
+      Store.miniGameOpening = null;
+      Store.miniGameScore = null;
+      Store.miniGame = { kind: pending.kind, level: pending.level };
+    });
+    Store.talkingToNpc = null;
+  }
+
+  // left Devil Square / Blood Castle (the score window stays)
+  if (Store.miniGame && !isMiniGameMap(p.MapNumber)) {
+    runInAction(() => {
+      Store.miniGame = null;
+    });
+  }
 });
 
 EventBus.on('RespawnAfterDeath', packet => {
@@ -1253,8 +1283,6 @@ const CHAOS_MACHINE_SIZE = 32;
 
 // windows of NPCs that this client doesn't have yet
 const UNSUPPORTED_WINDOWS: Partial<Record<NpcWindowResponseNpcWindowEnum, string>> = {
-  [NpcWindowResponseNpcWindowEnum.DevilSquare]: 'Entering Devil Square',
-  [NpcWindowResponseNpcWindowEnum.BloodCastle]: 'Entering Blood Castle',
   [NpcWindowResponseNpcWindowEnum.PetTrainer]: 'The pet trainer',
   [NpcWindowResponseNpcWindowEnum.CastleSeniorNPC]: 'The castle',
   [NpcWindowResponseNpcWindowEnum.ElphisRefinery]: 'The refinery',
@@ -1286,6 +1314,22 @@ EventBus.on('NpcWindowResponse', packet => {
   if (p.Window === NpcWindowResponseNpcWindowEnum.ChaosMachine) {
     runInAction(() => {
       Store.chaosMachine = { items: new Array(CHAOS_MACHINE_SIZE).fill(null) };
+      Store.inventoryEnabled = true;
+    });
+    return;
+  }
+
+  // Charon / Messenger of Archangel: entrance of the mini games
+  const miniGame: MiniGameKind | null =
+    p.Window === NpcWindowResponseNpcWindowEnum.DevilSquare
+      ? 'DevilSquare'
+      : p.Window === NpcWindowResponseNpcWindowEnum.BloodCastle
+        ? 'BloodCastle'
+        : null;
+  if (miniGame) {
+    runInAction(() => {
+      Store.miniGameEntry = miniGame;
+      Store.miniGameOpening = null;
       Store.inventoryEnabled = true;
     });
     return;
@@ -2220,4 +2264,181 @@ EventBus.on('LegacyQuestMonsterKillInfo', packet => {
     Store.questKills.clear();
     for (const k of kills) Store.questKills.set(k.MonsterNumber, k.KillCount);
   });
+});
+
+// ---- Devil Square / Blood Castle
+
+const MINI_GAME_BY_TYPE: Record<number, MiniGameKind> = { 1: 'DevilSquare', 2: 'BloodCastle' };
+
+EventBus.on('MiniGameOpeningState', packet => {
+  const p = new MiniGameOpeningStatePacket(packet);
+  const kind = MINI_GAME_BY_TYPE[p.GameType];
+  console.log(`MiniGameOpeningState: ${kind} ${p.RemainingEnteringTimeMinutes} min, ${p.UserCount} players`);
+  if (!kind) return;
+  runInAction(() => {
+    Store.miniGameOpening = { kind, minutes: p.RemainingEnteringTimeMinutes, players: p.UserCount };
+  });
+});
+
+// results of EnterMiniGameAction (0-5 in the protocol, then OpenMU's own)
+const ENTER_ERRORS: Record<number, string> = {
+  1: 'You cannot enter (check your ticket)',
+  2: 'The entrance is not open yet',
+  3: 'Your level is too high for this game',
+  4: 'Your level is too low for this game',
+  5: 'The game is full',
+  6: 'Not enough zen',
+  7: 'Player killers cannot enter',
+};
+
+function onMiniGameEnterResult(kind: MiniGameKind, result: number) {
+  const pending = Store.pendingMiniGame;
+  Store.pendingMiniGame = null;
+  console.log(`${kind}EnterResult: ${result}`);
+  if (result !== 0) {
+    Store.addNotification(ENTER_ERRORS[result] ?? 'You cannot enter', 'error');
+    return;
+  }
+  runInAction(() => {
+    Store.miniGameEntry = null;
+    Store.miniGameOpening = null;
+    Store.miniGameScore = null;
+    Store.miniGame = { kind, level: pending?.kind === kind ? pending.level : 0 };
+  });
+  // the NPC dialog is over: the server warps the player
+  Store.talkingToNpc = null;
+  Store.addNotification(`You entered ${MINI_GAMES[kind].name}`);
+}
+
+EventBus.on('DevilSquareEnterResult', packet => {
+  onMiniGameEnterResult('DevilSquare', new DevilSquareEnterResultPacket(packet).Result);
+});
+
+EventBus.on('BloodCastleEnterResult', packet => {
+  onMiniGameEnterResult('BloodCastle', new BloodCastleEnterResultPacket(packet).Result);
+});
+
+const MINI_GAME_COUNTDOWN = 30;
+
+const MINI_GAME_STATE_TEXT: Partial<Record<UpdateMiniGameStateMiniGameTypeStateEnum, string>> = {
+  [UpdateMiniGameStateMiniGameTypeStateEnum.DevilSquareOpened]: 'The entrance of Devil Square is open',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.DevilSquareRunning]: 'Devil Square has started!',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.DevilSquareClosed]: 'Devil Square starts in 30 seconds!',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleOpened]: 'The entrance of Blood Castle is open',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleEnding]: 'Blood Castle has started!',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleFinished]: 'Blood Castle has ended',
+  [UpdateMiniGameStateMiniGameTypeStateEnum.BloodCastleClosed]: 'Blood Castle starts in 30 seconds!',
+};
+
+// only sent to the players of the game (and of its entrance)
+EventBus.on('UpdateMiniGameState', packet => {
+  const p = new UpdateMiniGameStatePacket(packet);
+  const State = UpdateMiniGameStateMiniGameTypeStateEnum;
+  console.log(`UpdateMiniGameState: ${State[p.State]}`);
+  const text = MINI_GAME_STATE_TEXT[p.State];
+  if (text) Store.addNotification(text);
+
+  const game = Store.miniGame;
+  if (!game) return;
+  runInAction(() => {
+    // OpenMU sends Closed to the players of the game when the entrance
+    // closes: the game starts after a countdown of 30 seconds and lasts its
+    // duration (the start itself isn't sent)
+    const started =
+      (p.State === State.DevilSquareClosed || p.State === State.DevilSquareRunning) &&
+      game.kind === 'DevilSquare';
+    if (started && game.remaining == null) {
+      game.remaining = MINI_GAME_COUNTDOWN + MINI_GAMES.DevilSquare.duration * 60;
+      game.remainingAt = performance.now();
+    }
+  });
+});
+
+EventBus.on('BloodCastleState', packet => {
+  const p = new BloodCastleStatePacket(packet);
+  const buffer = p.buffer;
+  const ownerId = buffer.getUint16(10, true);
+  console.log(`BloodCastleState: ${BloodCastleStateStatusEnum[p.State]} ${p.RemainSecond}s monsters ${p.CurMonster}/${p.MaxMonster} owner ${ownerId}`);
+  runInAction(() => {
+    const game = (Store.miniGame ??= { kind: 'BloodCastle', level: 0 });
+    if (!game.level) {
+      const map = Store.world?.mapIndex;
+      game.level = MINI_GAMES.BloodCastle.levels.find(l => l.map === map)?.level ?? 0;
+    }
+    game.status = p.State;
+    game.remaining = p.RemainSecond;
+    game.remainingAt = performance.now();
+    game.monsters = { max: p.MaxMonster, current: p.CurMonster };
+    game.itemOwner =
+      ownerId !== 0xff && ownerId !== 0xffff ? Store.playerNameById(ownerId & 0x7fff) : undefined;
+  });
+  if (p.State === BloodCastleStateStatusEnum.BloodCastleGateDestroyed) {
+    Store.addNotification('The castle gate was destroyed!');
+  }
+});
+
+// both are code 0x93: the score table of Devil Square (5 + 24 bytes per
+// player) and the result of Blood Castle (29 bytes); a table with one
+// player has 29 bytes too, the game we are in decides
+function readString(buffer: DataView, offset: number, length: number) {
+  let s = '';
+  for (let i = 0; i < length; i++) {
+    const c = buffer.getUint8(offset + i);
+    if (!c) break;
+    s += String.fromCharCode(c);
+  }
+  return s;
+}
+
+function onMiniGameScore(buffer: DataView) {
+  const bloodCastle =
+    buffer.byteLength === 29 && Store.miniGame?.kind !== 'DevilSquare';
+  let score: import('./store').MiniGameScore;
+  if (bloodCastle) {
+    score = {
+      kind: 'BloodCastle',
+      success: buffer.getUint8(3) !== 0,
+      rows: [
+        {
+          name: readString(buffer, 5, 10),
+          score: buffer.getUint32(17, true),
+          experience: buffer.getUint32(21, true),
+          money: buffer.getUint32(25, true),
+        },
+      ],
+    };
+  } else {
+    const count = buffer.getUint8(4);
+    const rows = [];
+    for (let i = 0; i < count && 5 + (i + 1) * 24 <= buffer.byteLength; i++) {
+      const o = 5 + i * 24;
+      rows.push({
+        name: readString(buffer, o, 10),
+        score: buffer.getUint32(o + 12, true),
+        experience: buffer.getUint32(o + 16, true),
+        money: buffer.getUint32(o + 20, true),
+      });
+    }
+    score = { kind: 'DevilSquare', rank: buffer.getUint8(3), rows };
+  }
+  console.log('MiniGameScore', JSON.stringify(score));
+  runInAction(() => {
+    Store.miniGameScore = score;
+  });
+}
+
+EventBus.on('MiniGameScoreTable', packet => onMiniGameScore(packet));
+EventBus.on('BloodCastleScore', packet => onMiniGameScore(packet));
+
+// walkable tiles of the events (gates and bridge of Blood Castle...)
+EventBus.on('ChangeTerrainAttributes', packet => {
+  const p = new ChangeTerrainAttributesPacket(packet);
+  const areas = p.getAreas();
+  console.log(`ChangeTerrainAttributes: ${p.Attribute} ${p.RemoveAttribute ? 'removed' : 'set'} ${JSON.stringify(areas)}`);
+  const world = Store.world;
+  if (!world) return;
+  for (const a of areas) {
+    world.setTerrainFlag(a.StartX, a.StartY, a.EndX, a.EndY, p.Attribute, !p.RemoveAttribute);
+  }
+  EventBus.emit('terrainChanged');
 });

@@ -127,6 +127,7 @@
   "226": {"name":"Trainer","model":"NPC/Breeder.glb","scale":1,"kind":"npc"},
   "229": {"name":"Marlon","model":"Player/player.glb","scale":1,"kind":"npc","bodyParts":{"parts":["","","","",""],"index":10}},
   "230": {"name":"Alex","model":"NPC/Man01.glb","scale":1,"kind":"npc","bodyParts":{"parts":["ManHead","ManUpper","","ManGloves","ManBoots"],"index":2}},
+  "232": {"name":"Archangel","model":"NPC/BloodCastle01.glb","scale":1,"kind":"npc"},
   "233": {"name":"Messenger of Archangel","model":"NPC/BloodCastle02.glb","scale":1,"kind":"npc"},
   "234": {"name":"Goblin Gate","model":"Monster/Monster20.glb","scale":1.5,"kind":"npc"},
   "235": {"name":"Priestess Sevina","model":"NPC/Sevina01.glb","scale":1,"kind":"npc"},

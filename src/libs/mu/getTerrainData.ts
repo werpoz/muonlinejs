@@ -68,10 +68,16 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
 
   const textureNames = getTilesList(map);
 
-  const loadedTextures = await Promise.all(
+  const tiles = await Promise.all(
     textureNames.map(async (t, i) => {
       const filePath = `World${worldNum}/${t}.OZJ`;
-      const ozjBytes = await downloadDataBytesBuffer(filePath);
+      const ozjBytes = await downloadDataBytesBuffer(filePath).catch(() => null);
+      // a missing file comes as the html page: a JPEG starts after the 24
+      // bytes of the OZJ header
+      if (!ozjBytes || ozjBytes[24] !== 0xff || ozjBytes[25] !== 0xd8) {
+        console.warn(`Missing tile ${filePath}`);
+        return null;
+      }
 
       return readOJZBufferAsJPEGBuffer(
         scene,
@@ -80,6 +86,9 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
       );
     })
   );
+  // some maps don't have every tile of the list: use another one
+  const fallbackTile = tiles.find(t => t !== null)!;
+  const loadedTextures = tiles.map(t => t ?? fallbackTile);
   const terrainTextures = loadedTextures.map(t => t.Texture);
 
   const minimap = createMinimap(
@@ -176,6 +185,24 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
     return terrainAttrs[GetTerrainIndex(xi, yi)];
   }
 
+  // sets or removes a flag of the tiles of an area (ChangeTerrainAttributes:
+  // the gates of Blood Castle, safe zones of events...)
+  function SetTerrainFlag(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    flag: number,
+    set: boolean
+  ) {
+    for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+      for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+        const index = GetTerrainIndex(x, y);
+        terrainAttrs[index] = set ? terrainAttrs[index] | flag : terrainAttrs[index] & ~flag;
+      }
+    }
+  }
+
   function RequestTerrainHeight(xf: number, yf: number) {
     if (xf < 0 || yf < 0) return 0;
 
@@ -247,6 +274,7 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
     RequestTerrainHeight,
     IsWalkable,
     RequestTerrainFlag,
+    SetTerrainFlag,
     GetTerrainTile,
   };
 }

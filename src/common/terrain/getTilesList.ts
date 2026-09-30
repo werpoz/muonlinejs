@@ -113,6 +113,29 @@ export function getTilesList(map: ENUM_WORLD) {
         'TileRock03',
         'TileRock04',
       ];
+    // Devil Square and Blood Castle: the usual tiles (the missing ones are
+    // replaced when loaded)
+    case ENUM_WORLD.WD_9DEVILSQUARE:
+    case ENUM_WORLD.WD_11BLOODCASTLE1:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 1:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 2:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 3:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 4:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 5:
+    case ENUM_WORLD.WD_11BLOODCASTLE_END:
+      return [
+        'TileGrass01',
+        'TileGrass02',
+        'TileGround01',
+        'TileGround02',
+        'TileGround03',
+        'TileWater01',
+        'TileWood01',
+        'TileRock01',
+        'TileRock02',
+        'TileRock03',
+        'TileRock04',
+      ];
     case ENUM_WORLD.WD_10ICARUS:
       return [
         'TileGrass01',

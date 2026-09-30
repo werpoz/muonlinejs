@@ -154,12 +154,14 @@ export async function loadMapIntoScene(
       RequestTerrainHeight,
       IsWalkable,
       RequestTerrainFlag,
+      SetTerrainFlag,
       GetTerrainTile,
     } = await getTerrainData(world, map);
 
     world.getTerrainHeight = RequestTerrainHeight;
     world.isWalkable = IsWalkable;
     world.getTerrainFlag = RequestTerrainFlag;
+    world.setTerrainFlag = SetTerrainFlag;
     world.getTerrainTile = GetTerrainTile;
     world.minimap = minimap;
 

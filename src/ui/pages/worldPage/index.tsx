@@ -28,6 +28,7 @@ import { NpcDialog } from './components/npcDialog';
 import { QuestDialog } from './components/questDialog';
 import { BuffIcons } from './components/buffIcons';
 import { Lahap } from './components/lahap';
+import { MiniGameEntry, MiniGameHud, MiniGameScore } from './components/miniGame';
 
 const HUD = observer(() => {
   return (
@@ -38,6 +39,7 @@ const HUD = observer(() => {
         <Vault />
         <ChaosMachine />
         <Lahap />
+        <MiniGameEntry />
         <Trade />
         <ViewedShop />
         <PersonalShop />
@@ -52,6 +54,8 @@ const HUD = observer(() => {
       <Minimap />
       <Chat />
       <BuffIcons />
+      <MiniGameHud />
+      <MiniGameScore />
       <NpcDialog />
       <QuestDialog />
       <TradeRequestDialog />
