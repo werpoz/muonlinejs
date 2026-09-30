@@ -986,6 +986,7 @@ export const Store = new (class _Store {
   // Guild Master NPC: the answer sets the player back to the normal state,
   // which OpenMU requires to create the guild
   answerGuildMaster(create: boolean): void {
+    this.talkingToNpc = null;
     runInAction(() => {
       this.guildMasterDialog = false;
       this.guildCreationOpen = create;
@@ -1454,7 +1455,15 @@ export const Store = new (class _Store {
       return true;
     }
 
-    if (!this.npcShop) return true;
+    if (!this.npcShop) {
+      // a dialog without a window of ours (quest message, unsupported
+      // window...): OpenMU ignores other NPCs until it is closed
+      // (the Guild Master dialog is closed with its answer)
+      if (this.talkingToNpc !== null && !this.guildMasterDialog) {
+        this.sendCloseNpcRequest();
+      }
+      return true;
+    }
     runInAction(() => {
       this.npcShop = null;
     });

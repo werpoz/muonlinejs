@@ -691,6 +691,8 @@ EventBus.on('ObjectGotKilled', packet => {
     Store.addNotification('You died', 'error');
   } else if (obj.monsterAnimation) {
     obj.monsterAnimation.action = MonsterActionType.Die;
+    obj.monsterAnimation.oneShotTime = 0;
+    obj.monsterAnimation.deathTime = 0;
     playMonsterSound(obj, 'death');
   } else if (obj.playerAnimation) {
     obj.playerAnimation.action = PlayerAction.PLAYER_DIE1;

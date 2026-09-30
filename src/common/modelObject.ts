@@ -272,6 +272,15 @@ export class ModelObject {
     this._node.scaling.setAll(scale);
   }
 
+  // transparency of the model and its children (weapons...), 1 = opaque
+  setAlpha(alpha: number) {
+    const mesh = this.gltf?.mesh;
+    if (mesh) {
+      for (const m of [mesh, ...mesh.getChildMeshes(false)]) m.visibility = alpha;
+    }
+    for (const child of this.Children) child.setAlpha(alpha);
+  }
+
   Unload() {
     // remove the model (e.g. an unequipped weapon), the node stays for reuse
     if (this.gltf) {

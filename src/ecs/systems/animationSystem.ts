@@ -4,6 +4,11 @@ import type { MUAttributeSystem } from '../../libs/attributeSystem';
 import type { ISystemFactory } from '../world';
 import type { PlayerObject } from '../../common/playerObject';
 
+// a dead monster: the death animation plays once, then the body fades out
+// and is removed (OutOfScopeSystem waits for it)
+export const DEATH_FADE_START = 1.6;
+export const DEATH_FADE_TIME = 1;
+
 export const AnimationSystem: ISystemFactory = world => {
   const playersQuery = world.with(
     'playerAnimation',
@@ -179,12 +184,24 @@ export const AnimationSystem: ISystemFactory = world => {
       } of monsterAnimatableQuery) {
         const isMoving = movement.velocity.x !== 0 || movement.velocity.y !== 0;
 
+        if (monsterAnimation.action === MonsterActionType.Die) {
+          const time = (monsterAnimation.deathTime ?? 0) + dt;
+          monsterAnimation.deathTime = time;
+          modelObject.playAction(MonsterActionType.Die, false);
+          if (time > DEATH_FADE_START) {
+            modelObject.setAlpha(
+              Math.max(0, 1 - (time - DEATH_FADE_START) / DEATH_FADE_TIME)
+            );
+          }
+          continue;
+        }
+
         if (monsterAnimation.oneShotTime) {
           monsterAnimation.oneShotTime = Math.max(
             0,
             monsterAnimation.oneShotTime - dt
           );
-        } else if (monsterAnimation.action !== MonsterActionType.Die) {
+        } else {
           monsterAnimation.action = isMoving
             ? MonsterActionType.Walk
             : MonsterActionType.Stop1;

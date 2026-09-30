@@ -9,7 +9,7 @@
 - [ ] Creación / borrado de personaje (sin probar)
 - [x] `tsc` sin errores y obligatorio en CI
 - [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
-- [ ] Estado de muerte en la animación de monstruos
+- [x] Muerte de monstruos (animación una vez y el cuerpo se desvanece)
 - [ ] Nombres de algunos NPC (salen como "NPC")
 - [x] Party (`/party [nombre]`): invitar, aceptar/rechazar, marco con los gráficos originales (líder, vida), expulsar y salir
 - [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
@@ -20,7 +20,7 @@
 - [x] Barra inferior con los gráficos originales (Season 6): pociones, globos de vida/maná, SD/AG, habilidades 1-5 con sus iconos, botones y experiencia
 - [x] Ventanas de inventario, personaje y tienda con los gráficos originales
 - [x] Recoger objetos del suelo (clic o Espacio)
-- [ ] Recoger dinero (implementado, sin probar)
+- [x] Recoger dinero
 - [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
 - [x] Mover y equipar/desequipar objetos (clic para coger, clic para soltar)
 - [x] Tirar objetos al suelo (objeto cogido + clic en el mundo; Escape cancela)

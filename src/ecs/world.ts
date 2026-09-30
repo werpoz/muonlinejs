@@ -73,6 +73,8 @@ export type Entity = Partial<{
   monsterAnimation: {
     action: MonsterActionType;
     oneShotTime?: number;
+    // seconds since it died (death animation, then the body fades out)
+    deathTime?: number;
   };
   // attackable monster (NPCs and players don't have it)
   monster: true;
