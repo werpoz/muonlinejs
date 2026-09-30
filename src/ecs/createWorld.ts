@@ -19,22 +19,38 @@ import { KeyboardInputSystem } from './systems/keyboardInputSystem';
 import { BackgroundMusicSystem } from './systems/backgroundMusicSystem';
 import { InteractiveAreaSystem } from './systems/interactiveAreaSystem';
 import { WalkSfxSystem } from './systems/walkSfxSystem';
+import { MonsterIdleSoundSystem } from './systems/monsterIdleSoundSystem';
+import { AttackSystem } from './systems/attackSystem';
+import { PickupSystem } from './systems/pickupSystem';
+import { DropItemSystem } from './systems/dropItemSystem';
+import { GateSystem } from './systems/gateSystem';
+import { NpcTalkSystem } from './systems/npcTalkSystem';
+import { AreaSkillHitSystem } from './systems/areaSkillHitSystem';
+import { BuffAuraSystem } from './systems/buffAuraSystem';
 
 const factories: ISystemFactory[] = [
   ModelLoaderSystem,
   PointerInputSystem,
   KeyboardInputSystem,
   InteractiveAreaSystem,
+  DropItemSystem,
+  AttackSystem,
+  AreaSkillHitSystem,
+  PickupSystem,
+  NpcTalkSystem,
   PlayerControllerSystem,
   PathfindingSystem,
   CalculateVisibilitySystem,
   CalculateScreenPositionSystem,
   NetworkSystem,
   MoveAlongPathSystem,
+  GateSystem,
   HighlightSystem,
   AnimationSystem,
   AppearanceSystem,
+  BuffAuraSystem,
   WalkSfxSystem,
+  MonsterIdleSoundSystem,
   CameraFollowSystem,
   OutOfScopeSystem,
   BackgroundMusicSystem,
@@ -46,12 +62,22 @@ export function createWorld(scene: TestScene) {
   const world = new World(scene);
 
   const systems = factories.map(f => f(world));
+  const names = factories.map(f => f.name);
 
   return {
     world,
     updateSystems: (dt: number) => {
-      systems.forEach(system => {
+      // profiling: `window.__systemTimes = {}` in the console accumulates
+      // the milliseconds of each system
+      const times = (window as any).__systemTimes as Record<string, number> | undefined;
+      systems.forEach((system, i) => {
+        if (!times) {
+          system.update?.(dt);
+          return;
+        }
+        const start = performance.now();
         system.update?.(dt);
+        times[names[i]] = (times[names[i]] ?? 0) + performance.now() - start;
       });
     },
   } as const;

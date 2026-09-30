@@ -47,6 +47,8 @@ export {
 } from '@babylonjs/core/Maths/math.vector';
 export { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 export { Viewport } from '@babylonjs/core/Maths/math.viewport';
+export { Frustum } from '@babylonjs/core/Maths/math.frustum';
+export type { Plane } from '@babylonjs/core/Maths/math.plane';
 export { Scene, ScenePerformancePriority } from '@babylonjs/core/scene';
 export { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 export { Mesh } from '@babylonjs/core/Meshes/mesh';

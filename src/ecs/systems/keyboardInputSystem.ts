@@ -5,6 +5,10 @@ export const KeyboardInputSystem: ISystemFactory = world => {
   const pressedKeys = new Set<string>();
 
   document.addEventListener('keydown', e => {
+    // typing in a text field (chat) is not game input
+    const target = e.target as HTMLElement | null;
+    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
+
     if (!pressedKeys.has(e.code)) {
       EventBus.emit('keyPressed', e.code);
     }

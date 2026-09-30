@@ -3,6 +3,12 @@ import { MonsterActionType, PlayerAction } from '../../common/objects/enum';
 import type { MUAttributeSystem } from '../../libs/attributeSystem';
 import type { ISystemFactory } from '../world';
 import type { PlayerObject } from '../../common/playerObject';
+import { MOUNT_ACTION_IDLE, MOUNT_ACTION_RUN, ridingAction } from '../../common/mounts';
+
+// a dead monster: the death animation plays once, then the body fades out
+// and is removed (OutOfScopeSystem waits for it)
+export const DEATH_FADE_START = 1.6;
+export const DEATH_FADE_TIME = 1;
 
 export const AnimationSystem: ISystemFactory = world => {
   const playersQuery = world.with(
@@ -120,23 +126,32 @@ export const AnimationSystem: ISystemFactory = world => {
   }
 
   return {
-    update: () => {
+    update: dt => {
       // calculate current anim
-      for (const {
-        playerAnimation,
-        movement,
-        attributeSystem,
-      } of playersQuery) {
-        if (
-          playerAnimation.action === PlayerAction.PLAYER_ATTACK_FIST ||
-          playerAnimation.action === PlayerAction.PLAYER_DIE1
-        ) {
+      for (const entity of playersQuery) {
+        const { playerAnimation, movement, attributeSystem } = entity;
+        const playerObject = entity.modelObject as PlayerObject;
+        const mount = playerObject.mountKind;
+        const isMoving = movement.velocity.x !== 0 || movement.velocity.y !== 0;
+
+        // the mount runs or stands with the player
+        if (mount && playerObject.Mount?.Ready) {
+          playerObject.Mount.playAction(isMoving ? MOUNT_ACTION_RUN : MOUNT_ACTION_IDLE, true);
+        }
+
+        if (playerAnimation.action === PlayerAction.PLAYER_DIE1) continue;
+
+        if (playerAnimation.oneShotTime) {
+          playerAnimation.oneShotTime = Math.max(
+            0,
+            playerAnimation.oneShotTime - dt
+          );
           continue;
         }
-        playerAnimation.action = calculateAnimation(
-          attributeSystem,
-          movement.velocity
-        );
+        const armed = !!(entity.charAppearance?.leftHand || entity.charAppearance?.rightHand);
+        playerAnimation.action = mount
+          ? ridingAction(mount, isMoving, armed)
+          : calculateAnimation(attributeSystem, movement.velocity);
       }
 
       // update anim
@@ -176,8 +191,27 @@ export const AnimationSystem: ISystemFactory = world => {
       } of monsterAnimatableQuery) {
         const isMoving = movement.velocity.x !== 0 || movement.velocity.y !== 0;
 
-        if (isMoving) {
-          monsterAnimation.action = MonsterActionType.Walk;
+        if (monsterAnimation.action === MonsterActionType.Die) {
+          const time = (monsterAnimation.deathTime ?? 0) + dt;
+          monsterAnimation.deathTime = time;
+          modelObject.playAction(MonsterActionType.Die, false);
+          if (time > DEATH_FADE_START) {
+            modelObject.setAlpha(
+              Math.max(0, 1 - (time - DEATH_FADE_START) / DEATH_FADE_TIME)
+            );
+          }
+          continue;
+        }
+
+        if (monsterAnimation.oneShotTime) {
+          monsterAnimation.oneShotTime = Math.max(
+            0,
+            monsterAnimation.oneShotTime - dt
+          );
+        } else {
+          monsterAnimation.action = isMoving
+            ? MonsterActionType.Walk
+            : MonsterActionType.Stop1;
         }
         // monsterAnimation.action = isMoving
         //   ? MonsterActionType.Walk

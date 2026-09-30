@@ -23,6 +23,11 @@ export const ItemIcon = memo(({ group, num, lvl, isExcellent }: Item) => {
       className="item-icon"
       alt="icon"
       draggable={false}
+      // not every item has an excellent icon: use the normal one
+      onError={e => {
+        const img = e.currentTarget;
+        if (img.src.endsWith('_e.png')) img.src = img.src.replace(/_e\.png$/, '.png');
+      }}
     />
   );
 });

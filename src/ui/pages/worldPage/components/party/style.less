@@ -1,0 +1,74 @@
+// boxes of 77x23 (newui_Party_Back), scaled like the windows
+.party-frame {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transform: scale(var(--window-scale, 1));
+  transform-origin: top right;
+  pointer-events: auto;
+  image-rendering: pixelated;
+
+  .party-member {
+    position: relative;
+    width: 77px;
+    height: 23px;
+    background: url('/interface/party_back.png');
+    color: #fff;
+    font-size: 8px;
+
+    &.me .name {
+      color: #ffd24a;
+    }
+
+    &.far {
+      opacity: 0.6;
+    }
+
+    .flag {
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 9px;
+      height: 10px;
+      background: url('/interface/party_flag.png');
+    }
+
+    .name {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .hp {
+      position: absolute;
+      left: 4px;
+      top: 16px;
+      height: 3px;
+      background: url('/interface/party_hpbar.png') no-repeat;
+    }
+
+    // 2 states of 11x11
+    .kick {
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      width: 11px;
+      height: 11px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+      background: url('/interface/party_x.png') no-repeat 0 0;
+
+      &:active {
+        background-position: 0 -11px;
+      }
+    }
+  }
+}

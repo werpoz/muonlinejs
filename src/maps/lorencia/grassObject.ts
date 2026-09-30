@@ -13,13 +13,13 @@ const HEIGHT_INFLUENCE = 1.0;
 const HEIGHT_GRADIENT = 0.5;
 
 export class GrassObject extends ModelObject {
-  private _lastWindUpdate;
+  private _lastWindUpdate = 0;
   private _currentAngleX = 0;
   private _currentAngleZ = 0;
   private _targetAngleX = 0;
   private _targetAngleZ = 0;
   private _windTime = 0;
-  private _windOffset: Vector2;
+  private _windOffset = Vector2.Zero();
   private _modelHeight = 1.0;
 
   async init(): Promise<void> {

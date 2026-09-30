@@ -210,7 +210,8 @@ export class MonsterAnimationStateMachine<
   // }
 
   private goToDie(): void {
-    this.changeState(this.diedState);
+    // TODO: switch to diedState once it is implemented
+    this.changeState(this.idleState);
   }
 
   handleIncomeEvent<TKey extends keyof IStateMachineIncomingEvents>(

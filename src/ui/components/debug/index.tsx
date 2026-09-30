@@ -1,16 +1,25 @@
 import './style.less';
 import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
+import { useEventBus } from '../../../hooks/useEventBus';
 import { Store } from '../../../store';
 import { TWFlags } from '../../../common/terrain/consts';
 import { isFlagInBinaryMask } from '../../../common/utils';
 import { getTilesList } from '../../../common/terrain/getTilesList';
 import { ENUM_WORLD } from '../../../common';
 
+// Tile information of the player position. Hidden by default (it covered the
+// chat): F3 or ?debug in the url shows it.
 export const Debug = observer(() => {
+  const [visible, setVisible] = useState(() => location.search.includes('debug'));
+  useEventBus('keyPressed', key => {
+    if (key === 'F3') setVisible(v => !v);
+  });
+
   const playerData = Store.playerData;
   const world = Store.world;
 
-  if (!world) return null;
+  if (!world || !visible) return null;
 
   const noMoveFlag = isFlagInBinaryMask(playerData.tileFlag, TWFlags.NoMove);
   const noGroundFlag = isFlagInBinaryMask(

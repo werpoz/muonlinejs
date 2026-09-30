@@ -23,31 +23,10 @@ interface ItemGroup {
 
 const result: ItemGroup[] = [];
 
+// values are separated by any amount of tabs/spaces; the name is quoted and
+// can contain spaces
 function extractValues(line: string) {
-  const values: string[] = [];
-
-  line = line.replaceAll('\t', ' ').replaceAll('  ', ' ');
-
-  let val = '';
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === `"`) {
-      i++;
-      while (line[i] !== `"`) {
-        val += line[i];
-        i++;
-      }
-      values.push(val);
-      val = '';
-    } else if (char === ' ') {
-      values.push(val);
-      val = '';
-    } else {
-      val += char;
-    }
-  }
-
-  return values;
+  return (line.match(/"[^"]*"|[^\s"]+/g) ?? []).map(v => v.replaceAll('"', ''));
 }
 
 let lineIndex = 0;

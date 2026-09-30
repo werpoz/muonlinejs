@@ -89,7 +89,8 @@ export function createEngine(
       audioEngine: true,
       stencil: true,
       useHighPrecisionFloats: true,
-      powerPreference: 'low-power',
+      // a game: the dedicated GPU of laptops with two
+      powerPreference: 'high-performance',
       doNotHandleContextLost: false,
       limitDeviceRatio: enableAntialiasing ? undefined : 1,
       failIfMajorPerformanceCaveat: false,

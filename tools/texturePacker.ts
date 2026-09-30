@@ -12,7 +12,7 @@ async function tga2png(file: Buffer) {
     width: tga.details.header.width,
     height: tga.details.header.height,
   });
-  png.data = tga.image.data;
+  png.data = Buffer.from(tga.image.data);
 
   return new Promise<Buffer>((resolve, reject) => {
     const bufs: Uint8Array[] = [];

@@ -1,0 +1,683 @@
+{
+ "0": {
+  "idle": [
+   "Sound/mBull1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mBullDie"
+  ]
+ },
+ "1": {
+  "idle": [
+   "Sound/mHound1"
+  ],
+  "attack": [
+   "Sound/mHoundAttack1"
+  ],
+  "death": [
+   "Sound/mHoundDie"
+  ]
+ },
+ "2": {
+  "idle": [
+   "Sound/mBudge1"
+  ],
+  "attack": [
+   "Sound/mBudgeAttack1"
+  ],
+  "damage": [
+   "Sound/mBudgeAttack1"
+  ],
+  "death": [
+   "Sound/mBudgeDie"
+  ]
+ },
+ "4": {
+  "idle": [
+   "Sound/mBull1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mBullDie"
+  ]
+ },
+ "5": {
+  "idle": [
+   "Sound/mHound1"
+  ],
+  "attack": [
+   "Sound/mHoundAttack1"
+  ],
+  "death": [
+   "Sound/mHoundDie"
+  ]
+ },
+ "6": {
+  "idle": [
+   "Sound/mWizard1"
+  ],
+  "attack": [
+   "Sound/mWizardAttack1"
+  ],
+  "death": [
+   "Sound/mWizardDie"
+  ]
+ },
+ "7": {
+  "idle": [
+   "Sound/mGiant1"
+  ],
+  "attack": [
+   "Sound/mGiantAttack1"
+  ],
+  "death": [
+   "Sound/mGiantDie"
+  ]
+ },
+ "8": {
+  "idle": [
+   "Sound/mBull1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mBullDie"
+  ]
+ },
+ "9": {
+  "idle": [
+   "Sound/mWizard1"
+  ],
+  "attack": [
+   "Sound/mWizardAttack1"
+  ],
+  "death": [
+   "Sound/mWizardDie"
+  ]
+ },
+ "10": {
+  "idle": [
+   "Sound/mDarkKnight1"
+  ],
+  "attack": [
+   "Sound/mDarkKnightAttack1"
+  ],
+  "death": [
+   "Sound/mDarkKnightDie"
+  ]
+ },
+ "11": {
+  "idle": [
+   "Sound/mGhost1"
+  ],
+  "attack": [
+   "Sound/mGhostAttack1"
+  ],
+  "death": [
+   "Sound/mGhostDie"
+  ]
+ },
+ "12": {
+  "idle": [
+   "Sound/mLarva1"
+  ],
+  "attack": [
+   "Sound/mLarva1"
+  ],
+  "death": [
+   "Sound/mLarva2"
+  ]
+ },
+ "13": {
+  "idle": [
+   "Sound/mHellSpider1"
+  ],
+  "attack": [
+   "Sound/mHellSpiderAttack1"
+  ],
+  "death": [
+   "Sound/mHellSpiderDie"
+  ]
+ },
+ "14": {
+  "damage": [
+   "Sound/mBone2"
+  ]
+ },
+ "15": {
+  "damage": [
+   "Sound/mBone2"
+  ]
+ },
+ "16": {
+  "damage": [
+   "Sound/mBone2"
+  ]
+ },
+ "17": {
+  "idle": [
+   "Sound/mOgre1"
+  ],
+  "attack": [
+   "Sound/mOgreAttack1"
+  ],
+  "death": [
+   "Sound/mOgreDie"
+  ]
+ },
+ "18": {
+  "idle": [
+   "Sound/mGorgon1"
+  ],
+  "attack": [
+   "Sound/mGorgonAttack1"
+  ],
+  "death": [
+   "Sound/mGorgonDie"
+  ]
+ },
+ "19": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mYetiAttack1"
+  ],
+  "death": [
+   "Sound/mYetiDie"
+  ]
+ },
+ "20": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mYetiAttack1"
+  ],
+  "death": [
+   "Sound/mYetiDie"
+  ]
+ },
+ "21": {
+  "attack": [
+   "Sound/mAssassinAttack1"
+  ],
+  "death": [
+   "Sound/mAssassinDie"
+  ]
+ },
+ "22": {
+  "idle": [
+   "Sound/mIceMonster1"
+  ],
+  "attack": [
+   "Sound/mIceMonster1"
+  ],
+  "death": [
+   "Sound/mIceMonsterDie"
+  ]
+ },
+ "23": {
+  "idle": [
+   "Sound/mHomord1"
+  ],
+  "attack": [
+   "Sound/mHomordAttack1"
+  ],
+  "death": [
+   "Sound/mHomordDie"
+  ]
+ },
+ "24": {
+  "idle": [
+   "Sound/mWorm1"
+  ],
+  "attack": [
+   "Sound/mWormDie"
+  ],
+  "death": [
+   "Sound/mWormDie"
+  ]
+ },
+ "25": {
+  "idle": [
+   "Sound/mIceQueen1"
+  ],
+  "attack": [
+   "Sound/mIceQueenAttack1"
+  ],
+  "death": [
+   "Sound/mIceQueenDie"
+  ]
+ },
+ "26": {
+  "idle": [
+   "Sound/mGoblin1"
+  ],
+  "attack": [
+   "Sound/mGoblinAttack1"
+  ],
+  "death": [
+   "Sound/mGoblinDie"
+  ]
+ },
+ "27": {
+  "idle": [
+   "Sound/mScorpion1"
+  ],
+  "attack": [
+   "Sound/mScorpionAttack1"
+  ],
+  "death": [
+   "Sound/mScorpionDie"
+  ]
+ },
+ "28": {
+  "idle": [
+   "Sound/mBeetle1"
+  ],
+  "attack": [
+   "Sound/mBeetleAttack1"
+  ],
+  "death": [
+   "Sound/mBeetleDie"
+  ]
+ },
+ "29": {
+  "idle": [
+   "Sound/mHunter1"
+  ],
+  "attack": [
+   "Sound/mHunterAttack1"
+  ],
+  "death": [
+   "Sound/mHunterDie"
+  ]
+ },
+ "30": {
+  "idle": [
+   "Sound/mWoodMon1"
+  ],
+  "attack": [
+   "Sound/mWoodMonAttack1"
+  ],
+  "death": [
+   "Sound/mWoodMonDie"
+  ]
+ },
+ "31": {
+  "idle": [
+   "Sound/mArgon1"
+  ],
+  "attack": [
+   "Sound/mArgonAttack1"
+  ],
+  "death": [
+   "Sound/mArgonDie"
+  ]
+ },
+ "32": {
+  "idle": [
+   "Sound/mGolem1"
+  ],
+  "attack": [
+   "Sound/mGolemAttack1"
+  ],
+  "death": [
+   "Sound/mGolemDie"
+  ]
+ },
+ "33": {
+  "idle": [
+   "Sound/mGoblin1"
+  ],
+  "attack": [
+   "Sound/mGoblinAttack1"
+  ],
+  "death": [
+   "Sound/mGoblinDie"
+  ]
+ },
+ "35": {
+  "idle": [
+   "Sound/mGorgon1"
+  ],
+  "attack": [
+   "Sound/mGorgonAttack1"
+  ],
+  "death": [
+   "Sound/mGorgonDie"
+  ]
+ },
+ "36": {
+  "idle": [
+   "Sound/mShadow1"
+  ],
+  "attack": [
+   "Sound/mShadowAttack1"
+  ],
+  "death": [
+   "Sound/mShadowDie"
+  ]
+ },
+ "37": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mSatanAttack1"
+  ],
+  "death": [
+   "Sound/mYetiDie"
+  ]
+ },
+ "38": {
+  "idle": [
+   "Sound/mBalrog1"
+  ],
+  "attack": [
+   "Sound/mWizardAttack2"
+  ],
+  "death": [
+   "Sound/mBalrogDie"
+  ]
+ },
+ "39": {
+  "idle": [
+   "Sound/mShadow1"
+  ],
+  "attack": [
+   "Sound/mShadowAttack1"
+  ],
+  "death": [
+   "Sound/mShadowDie"
+  ]
+ },
+ "41": {
+  "idle": [
+   "Sound/mBull1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mBullDie"
+  ]
+ },
+ "42": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mYetiDie"
+  ]
+ },
+ "43": {
+  "idle": [
+   "Sound/mBudge1"
+  ],
+  "attack": [
+   "Sound/mBudgeAttack1"
+  ],
+  "damage": [
+   "Sound/mBudgeAttack1"
+  ],
+  "death": [
+   "Sound/mBudgeDie"
+  ]
+ },
+ "44": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mBullAttack1"
+  ],
+  "death": [
+   "Sound/mYetiDie"
+  ]
+ },
+ "45": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mYetiAttack1"
+  ],
+  "death": [
+   "Sound/mYeti1"
+  ]
+ },
+ "46": {
+  "idle": [
+   "Sound/mBepar1"
+  ],
+  "attack": [
+   "Sound/mGolemAttack1"
+  ],
+  "death": [
+   "Sound/mBepar2"
+  ]
+ },
+ "47": {
+  "idle": [
+   "Sound/mValkyrie1"
+  ],
+  "death": [
+   "Sound/mValkyrieDie"
+  ]
+ },
+ "48": {
+  "idle": [
+   "Sound/mLizardKing1"
+  ],
+  "attack": [
+   "Sound/mLizardKing1"
+  ]
+ },
+ "49": {
+  "idle": [
+   "Sound/mHydra1"
+  ],
+  "attack": [
+   "Sound/mHydraAttack1"
+  ],
+  "death": [
+   "Sound/mHydra1"
+  ]
+ },
+ "51": {
+  "idle": [
+   "Sound/mYeti1"
+  ],
+  "attack": [
+   "Sound/mYetiAttack1"
+  ],
+  "death": [
+   "Sound/mYeti1"
+  ]
+ },
+ "52": {
+  "idle": [
+   "Sound/mValkyrie1"
+  ],
+  "death": [
+   "Sound/mValkyrieDie"
+  ]
+ },
+ "53": {
+  "idle": [
+   "Sound/mDarkKnight1"
+  ],
+  "attack": [
+   "Sound/mDarkKnightAttack1"
+  ],
+  "death": [
+   "Sound/mDarkKnightDie"
+  ]
+ },
+ "57": {
+  "idle": [
+   "Sound/iron1"
+  ],
+  "attack": [
+   "Sound/iron_attack1"
+  ],
+  "death": [
+   "Sound/iron_attack1"
+  ]
+ },
+ "58": {
+  "idle": [
+   "Sound/jaikan1"
+  ],
+  "attack": [
+   "Sound/jaikan_attack1",
+   "Sound/jaikan_attack2"
+  ],
+  "death": [
+   "Sound/jaikan_die"
+  ]
+ },
+ "60": {
+  "idle": [
+   "Sound/blood1"
+  ],
+  "attack": [
+   "Sound/blood_attack1",
+   "Sound/blood_attack2"
+  ],
+  "death": [
+   "Sound/blood_die"
+  ]
+ },
+ "61": {
+  "idle": [
+   "Sound/death1"
+  ],
+  "attack": [
+   "Sound/death_attack1"
+  ],
+  "death": [
+   "Sound/death_die"
+  ]
+ },
+ "62": {
+  "idle": [
+   "Sound/mutant1"
+  ],
+  "attack": [
+   "Sound/mutant_attack1"
+  ],
+  "death": [
+   "Sound/mutant_attack1"
+  ]
+ },
+ "69": {
+  "idle": [
+   "Sound/mAlquamosAttack1"
+  ],
+  "attack": [
+   "Sound/mAlquamosAttack1"
+  ],
+  "death": [
+   "Sound/mAlquamosDie"
+  ]
+ },
+ "70": {
+  "idle": [
+   "Sound/mRainner1"
+  ],
+  "attack": [
+   "Sound/mRainnerAttack1"
+  ],
+  "death": [
+   "Sound/mRainnerDie"
+  ]
+ },
+ "71": {
+  "idle": [
+   "Sound/mMegaCrust1"
+  ],
+  "attack": [
+   "Sound/mMegaCrustAttack1"
+  ],
+  "death": [
+   "Sound/mMegaCrustDie"
+  ]
+ },
+ "72": {
+  "idle": [
+   "Sound/mPhantom1"
+  ],
+  "attack": [
+   "Sound/mPhantomAttack1"
+  ],
+  "death": [
+   "Sound/mPhantomDie"
+  ]
+ },
+ "73": {
+  "idle": [
+   "Sound/mDrakan1"
+  ],
+  "attack": [
+   "Sound/mDrakanAttack1"
+  ],
+  "death": [
+   "Sound/mDrakanDie"
+  ]
+ },
+ "77": {
+  "idle": [
+   "Sound/mPhoenix1"
+  ],
+  "attack": [
+   "Sound/mPhoenixAttack1"
+  ]
+ },
+ "150": {
+  "idle": [
+   "Sound/mBali1"
+  ],
+  "attack": [
+   "Sound/mBaliAttack1",
+   "Sound/mBaliAttack2"
+  ],
+  "death": [
+   "Sound/mBali2"
+  ]
+ },
+ "151": {
+  "idle": [
+   "Sound/mLizardKing1"
+  ],
+  "attack": [
+   "Sound/mLizardKing1",
+   "Sound/mLizardKing2"
+  ],
+  "death": [
+   "Sound/mGorgonDie"
+  ]
+ },
+ "305": {
+  "idle": [
+   "Sound/mGolem1"
+  ],
+  "attack": [
+   "Sound/mGolemAttack1"
+  ],
+  "death": [
+   "Sound/mGolemDie"
+  ]
+ }
+}

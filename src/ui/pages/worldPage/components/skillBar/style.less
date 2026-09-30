@@ -1,0 +1,50 @@
+.main-frame {
+  .skill-slot {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    &.selected {
+      outline: 1px solid #ffd24a;
+      outline-offset: -1px;
+    }
+
+    .item-icon {
+      pointer-events: none;
+    }
+  }
+
+  .skill-icon {
+    display: block;
+    width: 20px;
+    height: 24px;
+    background: url('/interface/skill_icons.png') no-repeat;
+    pointer-events: none;
+  }
+
+  .skill-list {
+    position: absolute;
+    right: 640px - 417px;
+    bottom: 51px + 2px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+    max-width: 160px;
+    padding: 2px;
+    background-color: #000000c0;
+    border: 1px solid #666;
+    color: #fff;
+    font-size: 7px;
+
+    .skill-slot {
+      position: relative;
+      width: 24px;
+      height: 28px;
+    }
+  }
+}

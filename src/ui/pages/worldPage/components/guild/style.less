@@ -1,0 +1,172 @@
+.guild-emblem {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  background: repeating-conic-gradient(#333 0 25%, #222 0 50%) 0 0 / 8px 8px;
+  border: 1px solid #666;
+  image-rendering: pixelated;
+
+  &.editable > div {
+    cursor: crosshair;
+  }
+}
+
+.mu-window-slot.guild .mu-window,
+.mu-window-slot.guild-creation .mu-window {
+  .small-button {
+    height: 14px;
+    padding: 0 4px;
+    font-size: 8px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+  }
+
+  input {
+    height: 12px;
+    padding: 0 2px;
+    font-size: 8px;
+    color: #fff;
+    background: #000;
+    border: 1px solid #666;
+  }
+}
+
+.mu-window-slot.guild-creation .mu-window {
+  .guild-name {
+    left: 15px;
+    top: 50px;
+    width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #f0e0b0;
+
+    input {
+      flex: 1;
+    }
+  }
+
+  .emblem-editor {
+    left: 31px;
+    top: 74px;
+  }
+
+  .palette {
+    left: 15px;
+    top: 212px;
+    width: 160px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+
+    .swatch {
+      height: 16px;
+      border: 1px solid #555;
+      cursor: pointer;
+
+      &.eraser {
+        background: repeating-conic-gradient(#555 0 25%, #222 0 50%) 0 0 / 6px 6px !important;
+      }
+
+      &.selected {
+        outline: 2px solid #ffd24a;
+      }
+    }
+  }
+
+  .guild-buttons {
+    left: 15px;
+    top: 260px;
+    width: 160px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+.mu-window-slot.guild .mu-window {
+  .no-guild {
+    left: 20px;
+    top: 60px;
+    width: 150px;
+    color: #c8c8c8;
+    line-height: 12px;
+    text-align: center;
+
+    b {
+      color: #ffd24a;
+    }
+  }
+
+  .guild-header {
+    left: 71px;
+    top: 44px;
+  }
+
+  .guild-members {
+    left: 15px;
+    top: 100px;
+    width: 160px;
+    height: 240px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid #444;
+  }
+
+  .guild-member {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 16px;
+    padding: 0 3px;
+    color: #999;
+
+    &.online {
+      color: #fff;
+    }
+
+    .state {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #666;
+    }
+
+    &.online .state {
+      background: #3cff3c;
+    }
+
+    .name {
+      flex: 1;
+    }
+
+    .role {
+      color: #ffd24a;
+      font-size: 7px;
+    }
+  }
+
+  .guild-footer {
+    left: 15px;
+    top: 348px;
+    width: 160px;
+    display: flex;
+    gap: 3px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .guild-help {
+    left: 15px;
+    top: 368px;
+    width: 160px;
+    color: #999;
+    font-size: 7px;
+    text-align: center;
+  }
+}

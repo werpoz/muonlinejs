@@ -84,6 +84,8 @@ export const DrawDebugSystem: ISystemFactory = world => {
 
   return {
     update: dt => {
+      // the bounds are only needed to draw them
+      if (!DEBUG_SHOW_BOUNDING_BOXES) return;
       delay -= dt;
       if (delay > 0) return;
       delay = 0.1;

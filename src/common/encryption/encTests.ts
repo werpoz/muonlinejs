@@ -3,6 +3,7 @@ import { SimpleModulusDecryptor, SimpleModulusEncryptor, Xor32Decryptor } from "
 function Assert(r: boolean, str: string = '') {
   if (!r) {
     console.error(str);
+    process.exitCode = 1;
   }
 }
 

@@ -4,6 +4,9 @@ import {
   StandardMaterial,
 } from '../../libs/babylon/exports';
 import type { ISystemFactory } from '../world';
+import { isAttackable } from './attackSystem';
+import { isPickable } from './pickupSystem';
+import { isTalkable } from './npcTalkSystem';
 
 const MOVE_DELAY = 0.25;
 
@@ -40,7 +43,7 @@ export const PlayerControllerSystem: ISystemFactory = world => {
   let delay = MOVE_DELAY;
   function tryMove() {
     const playerEntity = world.playerEntity;
-    if (!playerEntity) return;
+    if (!playerEntity || playerEntity.dead) return;
 
     const pickInfo = scene.pick(
       lastClientX,
@@ -74,7 +77,16 @@ export const PlayerControllerSystem: ISystemFactory = world => {
     update: dt => {
       delay -= dt;
 
-      if (world.pointerPressed) {
+      // clicks on monsters and dropped items have their own systems
+      const hovered = world.currentPointerTarget;
+      const busy =
+        world.pointerConsumed ||
+        world.attackTarget ||
+        isAttackable(hovered) ||
+        isPickable(hovered) ||
+        isTalkable(hovered);
+
+      if (world.pointerPressed && world.pointerButton === 0 && !busy) {
         if (delay <= 0) {
           delay = MOVE_DELAY;
           tryMove();

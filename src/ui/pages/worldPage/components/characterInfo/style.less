@@ -1,68 +1,56 @@
-.character-info {
-  background-color: #333;
-  pointer-events: auto;
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 2px solid #000;
-  color: #fff;
-  font-size: 14px;
-  height: 100%;
+.mu-window-slot.character-info .mu-window {
+  .line {
+    left: 22px;
+    color: #e0e0e0;
 
-  @yellow-color: #ff0;
-
-  .nickname {
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    color: #0ff;
+    &.points {
+      left: auto;
+      right: 22px;
+      color: #ffd24a;
+    }
   }
 
-  .level {
-    color: @yellow-color;
-  }
-
-  .level-points {
+  // 170x21 text box of the original window
+  .stat {
+    left: 10px;
+    width: 170px;
+    height: 21px;
+    box-sizing: border-box;
+    padding: 0 22px 0 10px;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-  }
+    background: url('/interface/textbox.png') no-repeat;
 
-  .status {
-    font-size: 12px;
-    text-align: center;
-    color: #fff;
-  }
+    .label {
+      color: #f0e0b0;
+    }
 
-  .stats {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    .value {
+      color: #ffd24a;
+      font-weight: bold;
+    }
 
-    .stat {
-      display: flex;
-      align-items: center;
-      border-radius: 8px;
-      background-color: #626262;
-      gap: 8px;
+    // 2 states of 16x15
+    .add-point {
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      width: 16px;
+      height: 15px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+      background: url('/interface/level_button.png') no-repeat 0 0;
 
-      .label {
-        width: 6ch;
-        text-align: center;
-        color: @yellow-color;
-      }
-
-      .value {
-        width: 10ch;
-        text-align: center;
-        color: @yellow-color;
-        background-color: #000;
-        border-radius: 4px;
+      &:hover {
+        background-position: 0 -15px;
       }
     }
   }
 
-  .attribute-value {
-    font-size: 12px;
+  .detail {
+    left: 22px;
+    color: #c8c8c8;
   }
 }

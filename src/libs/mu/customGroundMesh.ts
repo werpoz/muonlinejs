@@ -22,6 +22,49 @@ function getTerrainIndex(x: number, y: number) {
 const tilesCountPerSide = 256;
 const v3Temp = Vector3.Zero();
 
+// data of the ground meshes to update tiles later (see refreshGroundTiles)
+const groundData = new WeakMap<
+  Mesh,
+  { heightBuffer: Float32Array; terrainFlags: Uint16Array }
+>();
+
+// Sinks or restores the tiles of an area after their NoGround flag changed
+// (the floor of Chaos Castle crumbles), like prepareVertices does.
+export function refreshGroundTiles(
+  ground: Mesh,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+) {
+  const data = groundData.get(ground);
+  const positions = ground.getVerticesData('position');
+  if (!data || !positions) return;
+  for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+    for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+      if (x < 0 || y < 0 || x >= tilesCountPerSide || y >= tilesCountPerSide)
+        continue;
+      const noGround = isFlagInBinaryMask(
+        data.terrainFlags[getTerrainIndex(x, y)],
+        TWFlags.NoGround
+      );
+      const corners = [
+        getTerrainIndex(x, y),
+        getTerrainIndex(x + 1, y),
+        getTerrainIndex(x + 1, y + 1),
+        getTerrainIndex(x, y + 1),
+      ];
+      const vertex = (y * tilesCountPerSide + x) * 4;
+      corners.forEach((idx, i) => {
+        positions[(vertex + i) * 3 + 1] = noGround
+          ? -10000
+          : data.heightBuffer[idx];
+      });
+    }
+  }
+  ground.updateVerticesData('position', positions);
+}
+
 export function CreateGroundFromHeightMap(
   name: string,
   scene: Scene,
@@ -34,6 +77,7 @@ export function CreateGroundFromHeightMap(
   ambientLight: Vector3
 ): Mesh {
   const ground = new Mesh(name, scene);
+  groundData.set(ground, { heightBuffer, terrainFlags });
 
   const indices: number[] = [];
   const positions: number[] = [];

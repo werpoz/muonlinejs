@@ -1,7 +1,10 @@
 import { ModelObject } from './modelObject';
+import { BullFighter, EliteBullFighter } from './monsters/bullFighter';
 import { BudgeDragon } from './monsters/budgeDragon';
+import { Giant } from './monsters/giant';
 import { Hound } from './monsters/hound';
-import { SkeletonWarrior } from './monsters/skeletonWarrior';
+import { Lich } from './monsters/lich';
+import { SkeletonArcher, SkeletonWarrior } from './monsters/skeletonWarrior';
 import { Spider } from './monsters/spider';
 import { Baz } from './npcs/baz';
 import { BerdyshGuard } from './npcs/berdyshGuard';
@@ -31,9 +34,14 @@ export const ModelFactoryPerId: Record<number, typeof ModelObject> = {
   [568]: Zyro,
 
   // Monsters
+  [0]: BullFighter,
   [1]: Hound,
   [2]: BudgeDragon,
   [3]: Spider,
+  [4]: EliteBullFighter,
+  [6]: Lich,
+  [7]: Giant,
   [14]: SkeletonWarrior,
+  [15]: SkeletonArcher,
   [236]: GoldenArcher,
 };

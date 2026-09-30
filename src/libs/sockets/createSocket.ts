@@ -8,9 +8,21 @@ type Options = {
   tcpPort: number;
 };
 
-const STCPackets = [...ConnectServerPackets, ...ServerToClientPackets].filter(p => p.Direction === 'ServerToClient');
+// Packets of other protocol versions share codes with the Season 6 ones
+// (e.g. MoneyDropped vs ItemsDropped), so they are not dispatched.
+const isOtherVersionPacket = (name: string) =>
+  /(075|095)$/.test(name) || name === 'MoneyDropped';
 
-const packetsCacheByCode: (typeof STCPackets)[] = [];
+const STCPackets = [...ConnectServerPackets, ...ServerToClientPackets].filter(
+  p => p.Direction === 'ServerToClient' && !isOtherVersionPacket(p.Name)
+);
+
+type STCPacket = (typeof STCPackets)[number];
+
+const getSubCode = (p: STCPacket): number | undefined =>
+  'SubCode' in p ? (p.SubCode as number) : undefined;
+
+const packetsCacheByCode: STCPacket[][] = [];
 
 STCPackets.forEach(p => {
   const code = p.Code;
@@ -21,6 +33,51 @@ STCPackets.forEach(p => {
     packetsCacheByCode[code].push(p);
   }
 });
+
+// ChatMessage: the code is the message type (0 normal, 2 whisper), so
+// whispers come with code 0x02 (PatchVersionOkay also has it, but it's only
+// 4 bytes long)
+const WHISPER_CODE = 0x02;
+const chatMessage = STCPackets.find(p => p.Name === 'ChatMessage');
+if (chatMessage) {
+  (packetsCacheByCode[WHISPER_CODE] ??= []).push(chatMessage);
+}
+
+const SHOP_CODE = 0x3f;
+const SHOP_LIST_BY_REQUEST = 0x05;
+const SHOP_LIST_UPDATE = 0x13;
+
+// Several packets can share a code (e.g. 0x22: item added to inventory,
+// pick up failed, money update). Prefer a matching sub code, then a
+// matching fixed length; fall back to the first packet without sub code.
+function findPacketDefinition(
+  candidates: STCPacket[],
+  subCode: number,
+  length: number
+): STCPacket | undefined {
+  let best: STCPacket | undefined;
+  let bestScore = -1;
+
+  for (const p of candidates) {
+    const sc = getSubCode(p);
+    if (sc != null && sc !== subCode) continue;
+    if (p.Length != null && p.Length !== length) continue;
+
+    const score = (sc != null ? 2 : 0) + (p.Length != null ? 1 : 0);
+    if (score > bestScore) {
+      best = p;
+      bestScore = score;
+    }
+  }
+
+  return (
+    best ??
+    candidates.find(p => {
+      const sc = getSubCode(p);
+      return sc == null || sc === subCode;
+    })
+  );
+}
 
 const HEADERS = new Set<number>([0xc1, 0xc2, 0xc3, 0xc4]);
 
@@ -69,7 +126,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
 
     const packetHeaderSize = getSizeOfPacketType(packetType);
 
-    let packet = new DataView(bytes.buffer, 0, 3);
+    let packet: DataView<ArrayBufferLike> = new DataView(bytes.buffer, 0, 3);
     const length = getPacketSize(bytes);
 
     packet = new DataView(bytes.buffer, 0, length);
@@ -90,20 +147,31 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
     const codeIndex = packetHeaderSize === 3 ? 3 : 2;
     const packetCode = packet.getUint8(codeIndex);
 
-    const subCode = packet.getUint8(codeIndex + 1);
+    // packets of 3 bytes (e.g. ShowGuildMasterDialog) have no sub code
+    let subCode =
+      packet.byteLength > codeIndex + 1 ? packet.getUint8(codeIndex + 1) : -1;
+    // PlayerShopItemList: the sub code is its action, 0x13 when the list
+    // is sent again after an item was sold
+    if (packetCode === SHOP_CODE && subCode === SHOP_LIST_UPDATE) {
+      subCode = SHOP_LIST_BY_REQUEST;
+    }
 
-    const packetsByCode = packetsCacheByCode[packetCode];
-    const pDef = packetsByCode.find(p => p.SubCode == null || p.SubCode === subCode);
+    // an unknown code must not stop the queue
+    const packetsByCode = packetsCacheByCode[packetCode] ?? [];
+    const pDef = findPacketDefinition(packetsByCode, subCode, packet.byteLength);
 
     if (!pDef) {
-      console.error(`${LOG_PREFIX}no packet: 0x` + byteToString(packetCode));
+      console.error(
+        `${LOG_PREFIX}no packet: 0x${byteToString(packetType)} 0x${byteToString(packetCode)} lng:${length}`,
+        Array.from(new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength))
+      );
       removePacketAndGoNext(length);
 
       return;
     }
 
     INFO_LOG && console.log(
-      `${LOG_PREFIX}[${pDef.name}][${pDef.HeaderType}]0x${byteToString(pDef.Code)}${pDef.SubCode != null ? `(0x${byteToString(pDef.SubCode)})` : ""
+      `${LOG_PREFIX}[${pDef.name}][${pDef.HeaderType}]0x${byteToString(pDef.Code)}${getSubCode(pDef) != null ? `(0x${byteToString(getSubCode(pDef)!)})` : ""
       } lng:${length}`
     );
 
@@ -138,7 +206,7 @@ export function createSocket({ wsAddress, tcpIP, tcpPort }: Options) {
   // error handler
   socket.addEventListener("error", (event) => {
     console.log(`${LOG_PREFIX}error:`, event);
-    EventBus.emit('wsError', { socket, error: event.error });
+    EventBus.emit('wsError', { socket, error: (event as Partial<ErrorEvent>).error });
 
   });
 

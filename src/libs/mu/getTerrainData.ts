@@ -1,3 +1,4 @@
+import { worldFolderNumber } from '../../common/worldFolder';
 import {
   CreatePlane,
   RawTexture,
@@ -5,7 +6,7 @@ import {
   Texture,
   Vector3,
 } from '../babylon/exports';
-import { CreateGroundFromHeightMap } from './customGroundMesh';
+import { CreateGroundFromHeightMap, refreshGroundTiles } from './customGroundMesh';
 import { createTerrainMaterial } from './terrainMaterial';
 import { ENUM_WORLD } from '../../common';
 import {
@@ -14,6 +15,7 @@ import {
   readOJZBufferAsJPEGBuffer,
 } from '../../common/utils';
 import { parseTerrainAttribute } from '../../common/terrain/parseTerrainAttribute';
+import { averageColor, createMinimap } from '../../common/terrain/createMinimap';
 import { parseTerrainHeight } from '../../common/terrain/parseTerrainHeight';
 import { parseTerrainMapping } from '../../common/terrain/parseTerrainMapping';
 import { parseTerrainLight } from '../../common/terrain/parseTerrainLight';
@@ -34,7 +36,7 @@ function GetTerrainIndex(x: number, y: number) {
 
 export async function getTerrainData(world: World, map: ENUM_WORLD) {
   const scene = world.scene;
-  const worldNum = map + 1;
+  const worldNum = worldFolderNumber(map);
   const worldFolder = `World${worldNum}/`;
 
   const terrainAttributeBytes = await downloadDataBytesBuffer(
@@ -67,20 +69,35 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
 
   const textureNames = getTilesList(map);
 
-  const terrainTextures = (
-    await Promise.all(
-      textureNames.map(async (t, i) => {
-        const filePath = `World${worldNum}/${t}.OZJ`;
-        const ozjBytes = await downloadDataBytesBuffer(filePath);
+  const tiles = await Promise.all(
+    textureNames.map(async (t, i) => {
+      const filePath = `World${worldNum}/${t}.OZJ`;
+      const ozjBytes = await downloadDataBytesBuffer(filePath).catch(() => null);
+      // a missing file comes as the html page: a JPEG starts after the 24
+      // bytes of the OZJ header
+      if (!ozjBytes || ozjBytes[24] !== 0xff || ozjBytes[25] !== 0xd8) {
+        console.warn(`Missing tile ${filePath}`);
+        return null;
+      }
 
-        return readOJZBufferAsJPEGBuffer(
-          scene,
-          filePath.replace('.', `_${i}.`),
-          ozjBytes
-        );
-      })
-    )
-  ).map(t => t.Texture);
+      return readOJZBufferAsJPEGBuffer(
+        scene,
+        filePath.replace('.', `_${i}.`),
+        ozjBytes
+      );
+    })
+  );
+  // some maps don't have every tile of the list: use another one
+  const fallbackTile = tiles.find(t => t !== null)!;
+  const loadedTextures = tiles.map(t => t ?? fallbackTile);
+  const terrainTextures = loadedTextures.map(t => t.Texture);
+
+  const minimap = createMinimap(
+    terrainMapping,
+    loadedTextures.map(t => averageColor(t.BufferFloat)),
+    terrainLight,
+    terrainAttrs
+  );
 
   const objsBuffer = await downloadDataBytesBuffer(
     `World${worldNum}/EncTerrain${worldNum}.obj`
@@ -169,6 +186,26 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
     return terrainAttrs[GetTerrainIndex(xi, yi)];
   }
 
+  // sets or removes a flag of the tiles of an area (ChangeTerrainAttributes:
+  // the gates of Blood Castle, safe zones of events...)
+  function SetTerrainFlag(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    flag: number,
+    set: boolean
+  ) {
+    for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+      for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+        const index = GetTerrainIndex(x, y);
+        terrainAttrs[index] = set ? terrainAttrs[index] | flag : terrainAttrs[index] & ~flag;
+      }
+    }
+    // the floor falls (Chaos Castle)
+    if (flag & TWFlags.NoGround) refreshGroundTiles(terrain, startX, startY, endX, endY);
+  }
+
   function RequestTerrainHeight(xf: number, yf: number) {
     if (xf < 0 || yf < 0) return 0;
 
@@ -235,10 +272,12 @@ export async function getTerrainData(world: World, map: ENUM_WORLD) {
   return {
     objects,
     terrain,
+    minimap,
     terrainHeight,
     RequestTerrainHeight,
     IsWalkable,
     RequestTerrainFlag,
+    SetTerrainFlag,
     GetTerrainTile,
   };
 }

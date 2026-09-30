@@ -1,0 +1,29 @@
+// full map over the screen, like the Tab map of the original client
+.minimap {
+  position: absolute;
+  left: 50%;
+  top: calc((100% - var(--main-frame-height, 80px)) / 2);
+  transform: translate(-50%, -50%);
+  width: min(80vh, 80vw);
+  aspect-ratio: 1;
+  pointer-events: none;
+  opacity: 0.85;
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+
+  .minimap-info {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 4%;
+    color: #f0e0b0;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 1px 1px 2px #000;
+  }
+}

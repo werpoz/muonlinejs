@@ -51,6 +51,13 @@ You should see log messages from OpenMU in the browser console.
 /src              Game logic, packet definitions and encryption utilities
 ```
 
+## Documentación
+
+- [Arquitectura](docs/ARQUITECTURA.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Prueba con OpenMU](docs/PRUEBAS_OPENMU.md)
+- [Contribuir](CONTRIBUTING.md)
+
 ## Need help?
 
 If you encounter a bug or have an idea for improvement, please open an [issue](https://github.com/afrokick/muonlinejs/issues) or submit a pull request.
@@ -62,3 +69,4 @@ Distributed under the MIT License.
 ## Acknowledgements
 
 - [OpenMU](https://github.com/MUnique/OpenMU) — the open-source server this client was built for
+- [bernatvadell/muonline](https://github.com/bernatvadell/muonline) — source of the monster/NPC model table (`src/common/npcModels.json`: number, model file and scale; data only, extracted with `tools/extractNpcModels.ts`)

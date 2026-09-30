@@ -8,8 +8,8 @@ function byteToString(i: number) {
 }
 
 // like 'C1 04 00 01'
-function stringifyPacket(buffer: Buffer) {
-  return Array.from(new Uint8Array(buffer)).map(byteToString).join(" ");
+function stringifyPacket(buffer: ArrayLike<number>) {
+  return Array.from(buffer).map(byteToString).join(" ");
 }
 
 type WebSocketData = {
@@ -51,7 +51,7 @@ Bun.serve<WebSocketData>({
         socket: {
           data(socket, data) {
             console.log("data from tcp:", stringifyPacket(data));
-            ws.send(data);
+            ws.send(new Uint8Array(data));
           },
           open(socket) {
             ws.data.tcpSocket = socket;
@@ -79,9 +79,11 @@ Bun.serve<WebSocketData>({
     message(ws, message) {
       const socket = ws.data.tcpSocket;
       if (socket) {
-        console.log("data from ws:", stringifyPacket(message));
+        const bytes =
+          typeof message === "string" ? Buffer.from(message) : message;
+        console.log("data from ws:", stringifyPacket(bytes));
 
-        socket.write(message);
+        socket.write(new Uint8Array(bytes));
         socket.flush();
       }
     },

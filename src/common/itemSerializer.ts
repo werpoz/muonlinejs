@@ -17,6 +17,9 @@ function IsTrainablePet(item: Item) {
 /// At the moment, each item is serialized into a 12-byte long part of an array:
 /// Byte Order: ItemCode Options Dura Exe Ancient Kind/380Opt HarmonyOpt Socket1 Socket2 Socket3 Socket4 Socket5.
 /// </summary>
+// size of the item data in season 6 packets
+const ItemDataSize = 12;
+
 export class ItemSerializer {
   static readonly NeededSpace = 12;
 
@@ -99,7 +102,7 @@ export class ItemSerializer {
 
   /// <inheritdoc />
   static DeserializeItem(array: Uint8Array): Item {
-    const itemNumber = array[0] + ((array[0] & 0x80) << 1);
+    const itemNumber = array[0] + ((array[3] & 0x80) << 1);
     const itemGroup = (array[5] & 0xf0) >> 4;
     // var definition = gameConfiguration.Items.FirstOrDefault(def => def.Number == itemNumber && def.Group == itemGroup)
     //                  ?? throw new ArgumentException($"Couldn't find the item definition for the given byte array. Extracted item number and group: {itemNumber}, {itemGroup}");
@@ -114,7 +117,17 @@ export class ItemSerializer {
 
     item.lvl = castToByte((array[1] & LevelMask) >> 3);
 
-    // item.Durability = array[2];
+    item.durability = array[2];
+    item.raw = Array.from(array.subarray(0, ItemDataSize));
+
+    item.hasSkill = (array[1] & SkillFlag) !== 0;
+    item.hasLuck = (array[1] & LuckFlag) !== 0;
+    // 2 low bits in the option byte, the highest bit is 0x40 of the exc byte
+    item.optionLevel = (array[1] & 3) + ((array[3] >> 4) & 4);
+    item.excellentOptions = array[3] & 0x3f;
+    // wings use the same bits for their options, they are not excellent
+    item.isExcellent = item.excellentOptions !== 0 && itemGroup !== 12;
+    item.isAncient = (array[4] & AncientDiscriminatorMask) !== 0;
 
     // if (item.Definition.PossibleItemOptions.Any(o =>
     //         o.PossibleOptions.Any(i => i.OptionType == ItemOptionTypes.Excellent)))

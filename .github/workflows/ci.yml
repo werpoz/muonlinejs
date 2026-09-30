@@ -1,0 +1,16 @@
+name: CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Tests de cifrado (SimpleModulus / Xor32)
+        run: bun run src/common/encryption/encTests.ts
+      - name: Typecheck
+        run: bun run tsc

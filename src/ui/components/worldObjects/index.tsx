@@ -1,7 +1,8 @@
 import { observer } from 'mobx-react-lite';
 import { Store } from '../../../store';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { WorldLabel } from '../worldLabel';
+import { heroStateClass } from '../../../common/heroState';
 import { useRenderId } from '../../../hooks';
 
 export const WorldObjects = observer(() => {
@@ -14,7 +15,7 @@ export const WorldObjects = observer(() => {
     [world]
   );
 
-  useState(() => {
+  useEffect(() => {
     const sub = query.onEntityAdded.subscribe(refresh);
     const sub2 = query.onEntityRemoved.subscribe(refresh);
 
@@ -33,6 +34,20 @@ export const WorldObjects = observer(() => {
               entity={entity}
               key={i}
               text={entity.objectNameInWorld}
+              sign={
+                entity.charAppearance && entity.netId != null
+                  ? Store.playerShops.get(entity.netId)
+                  : undefined
+              }
+              onSignClick={() => entity.netId != null && Store.viewShop(entity.netId)}
+              subText={
+                entity.charAppearance ? Store.guildNameOf(entity.netId) : undefined
+              }
+              className={
+                entity.charAppearance && entity.netId != null
+                  ? heroStateClass(Store.heroStates.get(entity.netId))
+                  : undefined
+              }
             />
           );
 

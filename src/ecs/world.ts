@@ -21,8 +21,18 @@ export type Item = {
   num: number;
   group: number;
   lvl?: number;
+  // stack size for potions, jewels etc.
+  durability?: number;
+  // original item bytes, sent back to the server when moving the item
+  raw?: number[];
   isExcellent?: boolean;
   hasSkill?: boolean;
+  hasLuck?: boolean;
+  // additional option (jewel of life): 0-7, each level adds 4 damage/defense
+  optionLevel?: number;
+  // bits of the 6 excellent options
+  excellentOptions?: number;
+  isAncient?: boolean;
 };
 
 export type Entity = Partial<{
@@ -57,10 +67,19 @@ export type Entity = Partial<{
   };
   playerAnimation: {
     action: PlayerAction;
+    // seconds left of a one-shot action (attack, hit) before idle/walk resumes
+    oneShotTime?: number;
   };
   monsterAnimation: {
     action: MonsterActionType;
+    oneShotTime?: number;
+    // seconds since it died (death animation, then the body fades out)
+    deathTime?: number;
   };
+  // attackable monster (NPCs and players don't have it)
+  monster: true;
+  dead: true;
+  droppedItem: { isMoney: boolean };
   attributeSystem: MUAttributeSystem;
   visibility: {
     state: 'visible' | 'nearby' | 'hidden';
@@ -81,6 +100,8 @@ export type Entity = Partial<{
     leftHand: Item | null;
     rightHand: Item | null;
     wings: Item | null;
+    // pet or mount (the helper slot)
+    pet?: Item | null;
     charClass: CharacterClassNumber;
     changed: boolean;
   };
@@ -135,6 +156,9 @@ export class World extends ECSWorld<Entity> {
 
   mapIndex = ENUM_WORLD.WD_55LOGINSCENE;
 
+  // 256x256 RGBA image of the current map (see createMinimap)
+  minimap: Uint8ClampedArray | null = null;
+
   terrain: {
     mesh: Mesh;
     MapTileObjects: (typeof ModelObject)[];
@@ -150,7 +174,17 @@ export class World extends ECSWorld<Entity> {
 
   currentPointerTarget: Entity | null = null;
 
+  // monster the local player is walking to / hitting
+  attackTarget: Entity | null = null;
+
   pointerPressed = false;
+
+  // mouse button of the current press: 0 left, 2 right
+  pointerButton = 0;
+
+  // the current click was used by the UI logic (e.g. dropping an item) and
+  // must not also walk/attack/pick up, until the button is released
+  pointerConsumed = false;
 
   constructor(readonly scene: TestScene) {
     super();
@@ -178,6 +212,15 @@ export class World extends ECSWorld<Entity> {
   getTerrainFlag(x: number, y: number): number {
     return 0;
   }
+
+  setTerrainFlag(
+    _startX: number,
+    _startY: number,
+    _endX: number,
+    _endY: number,
+    _flag: number,
+    _set: boolean
+  ): void {}
 
   getTerrainTile(x: number, y: number): number {
     return 0;

@@ -113,6 +113,71 @@ export function getTilesList(map: ENUM_WORLD) {
         'TileRock03',
         'TileRock04',
       ];
+    // Devil Square and Blood Castle: the usual tiles (the missing ones are
+    // replaced when loaded)
+    case ENUM_WORLD.WD_9DEVILSQUARE:
+    case ENUM_WORLD.WD_11BLOODCASTLE1:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 1:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 2:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 3:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 4:
+    case ENUM_WORLD.WD_11BLOODCASTLE1 + 5:
+    case ENUM_WORLD.WD_11BLOODCASTLE_END:
+    // Blood Castle 8 and Devil Square 5-7 (World12 / World10)
+    case 52 as ENUM_WORLD:
+    case 32 as ENUM_WORLD:
+      return [
+        'TileGrass01',
+        'TileGrass02',
+        'TileGround01',
+        'TileGround02',
+        'TileGround03',
+        'TileWater01',
+        'TileWood01',
+        'TileRock01',
+        'TileRock02',
+        'TileRock03',
+        'TileRock04',
+      ];
+    // Chaos Castle 1-7 (maps 18-23 and 53, all World19)
+    case ENUM_WORLD.WD_18CHAOS_CASTLE:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 1:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 2:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 3:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE + 4:
+    case ENUM_WORLD.WD_18CHAOS_CASTLE_END:
+    case ENUM_WORLD.WD_53CAOSCASTLE_MASTER_LEVEL:
+      return [
+        'TileGrass01',
+        'TileGrass02',
+        'TileGround01',
+        'TileGround02',
+        'TileGround03',
+        'TileWater01',
+        'TileWood01',
+        'TileRock01',
+        'TileRock02',
+        'TileRock03',
+        'TileRock04',
+        'TileRock05',
+        'TileRock06',
+        'TileRock07',
+      ];
+    case ENUM_WORLD.WD_64DUELARENA:
+      return [
+        'TileGrass01',
+        'TileGrass02',
+        'TileGround01',
+        'TileGround02',
+        'TileGround03',
+        'TileWater01',
+        'TileWood01',
+        'TileRock01',
+        'TileRock02',
+        'TileRock03',
+        'TileRock04',
+        'TileRock05',
+      ];
     case ENUM_WORLD.WD_10ICARUS:
       return [
         'TileGrass01',

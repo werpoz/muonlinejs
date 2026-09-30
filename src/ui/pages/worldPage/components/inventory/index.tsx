@@ -1,109 +1,187 @@
 import './style.less';
 import { observer } from 'mobx-react-lite';
+import { MINI_GAMES } from '../../../../../common/miniGames';
 import { Store } from '../../../../../store';
 import { ItemIcon } from '../../../../components/itemIcon';
+import { itemTooltipProps } from '../../../../components/itemTooltip';
+import { MuWindow } from '../../../../components/muWindow';
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { Item } from '../../../../../ecs/world';
 import { ItemsDatabase } from '../../../../../common/itemsDatabase';
-import { useState } from 'react';
+import { InventoryConstants } from '../../../../../common/inventoryConstants';
+import { isUsableFromInventory } from '../../../../../common/consumables';
+import { ItemStorageKind } from '../../../../../common/itemStorageKind';
 
-const EquipmentItem = ({
-  className,
-  item,
-}: {
-  className: string;
-  item: Item | null;
-}) => {
-  return (
-    <div className={`equipment-item ${className}`}>
-      <span className="equipment-item-name">
-        {!!item && <ItemIcon {...item} />}
-      </span>
-    </div>
-  );
+const FIRST_INVENTORY_SLOT = InventoryConstants.LastEquippableItemSlotIndex + 1;
+const COLUMNS = InventoryConstants.RowSize;
+
+// positions in the 190x429 window of the original client
+const CELL = 20;
+const GRID_X = 15;
+const GRID_Y = 208;
+
+// equipment slot -> [background image, x, y, width, height]
+const EQUIPMENT: [number, string, number, number, number, number][] = [
+  [InventoryConstants.PetSlot, 'pet', 15, 44, 46, 46],
+  [InventoryConstants.HelmSlot, 'helm', 75, 44, 46, 46],
+  [InventoryConstants.WingsSlot, 'wings', 120, 44, 61, 46],
+  [InventoryConstants.LeftHandSlot, 'weapon_left', 15, 87, 46, 66],
+  [InventoryConstants.PendantSlot, 'pendant', 54, 87, 28, 28],
+  [InventoryConstants.ArmorSlot, 'armor', 75, 87, 46, 66],
+  [InventoryConstants.RightHandSlot, 'weapon_right', 134, 87, 46, 66],
+  [InventoryConstants.GlovesSlot, 'gloves', 15, 150, 46, 46],
+  [InventoryConstants.Ring1Slot, 'ring', 54, 150, 28, 28],
+  [InventoryConstants.PantsSlot, 'pants', 75, 150, 46, 46],
+  [InventoryConstants.Ring2Slot, 'ring', 114, 150, 28, 28],
+  [InventoryConstants.BootsSlot, 'boots', 134, 150, 46, 46],
+];
+
+const heldClass = (slot: number) =>
+  Store.heldItemSlot === slot &&
+  Store.heldItemStorage === ItemStorageKind.Inventory
+    ? ' held'
+    : '';
+
+const itemName = (item: Item) => {
+  const config = ItemsDatabase.getItem(item.group, item.num);
+  return (config?.ItemName ?? 'Item') + (item.lvl ? ` +${item.lvl}` : '');
 };
 
-const ItemTooltip = ({
-  item,
-  children,
-}: {
-  item: Item | null;
-  children: React.ReactNode;
-}) => {
-  const config = item ? ItemsDatabase.getItem(item.group, item.num) : null;
-  const [isVisible, setIsVisible] = useState(false);
+const onUse = (e: React.MouseEvent, item: Item | null, slot: number) => {
+  // right click uses potions / learns skills, like in the original client
+  e.preventDefault();
+  const ticket = MINI_GAMES.ChaosCastle.ticket;
+  if (item?.group === ticket.group && item.num === ticket.num) Store.openChaosCastleEntry();
+  else if (isUsableFromInventory(item)) Store.consumeItem(slot);
+};
+
+const EquipmentSlot = observer(
+  ({
+    slot,
+    image,
+    x,
+    y,
+    w,
+    h,
+  }: {
+    slot: number;
+    image: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }) => {
+    const item = Store.playerData.items[slot];
+    return (
+      <div
+        className={`equipment-slot${heldClass(slot)}`}
+        style={{
+          left: x,
+          top: y,
+          width: w,
+          height: h,
+          backgroundImage: `url('/interface/equip_${image}.png')`,
+        }}
+        aria-label={item ? itemName(item) : undefined}
+        {...(item ? itemTooltipProps(item) : {})}
+        onClick={() => Store.onItemSlotClick(slot)}
+      >
+        {!!item && <ItemIcon {...item} />}
+      </div>
+    );
+  }
+);
+
+// items of the 8x8 grid, drawn over the cells with their size
+const GridItem = observer(({ item, slot }: { item: Item; slot: number }) => {
+  const config = ItemsDatabase.getItem(item.group, item.num);
+  const index = slot - FIRST_INVENTORY_SLOT;
 
   return (
     <div
-      className="tooltip"
-      onPointerEnter={() => setIsVisible(true)}
-      onPointerLeave={() => setIsVisible(false)}
+      className={`grid-item${heldClass(slot)}`}
+      style={{
+        left: GRID_X + (index % COLUMNS) * CELL,
+        top: GRID_Y + Math.floor(index / COLUMNS) * CELL,
+        width: (config?.X ?? 1) * CELL,
+        height: (config?.Y ?? 1) * CELL,
+      }}
+      aria-label={itemName(item)}
+      {...itemTooltipProps(item)}
+      onClick={() => Store.onItemSlotClick(slot)}
+      onContextMenu={e => onUse(e, item, slot)}
     >
-      {children}
-      {!!config && isVisible && (
-        <div className="tooltip-content" style={{ left: 0, top: 0 }}>
-          <div className="tooltip-content-name">{config.ItemName}</div>
-        </div>
+      <ItemIcon {...item} />
+      {(item.durability ?? 0) > 1 && item.group === 14 && (
+        <span className="stack">{item.durability}</span>
       )}
     </div>
   );
-};
-
-const InventoryItem = ({ item }: { item: Item | null }) => {
-  const config = item ? ItemsDatabase.getItem(item.group, item.num) : null;
-  const w = config?.X ?? 1;
-  const h = config?.Y ?? 1;
-
-  return (
-    <div className={`inventory-item w-${w} h-${h}${!item ? '' : ' used'}`}>
-      <div className="bg">
-        <ItemTooltip item={item}>
-          {!!item && <ItemIcon {...item} />}
-        </ItemTooltip>
-      </div>
-    </div>
-  );
-};
+});
 
 const HOT_KEYS = ['KeyI', 'KeyV'];
+
+const closeInventory = () => {
+  Store.cancelHeldItem();
+  // the chaos machine can't be closed with items inside
+  if (!Store.closeNpc()) return;
+  Store.inventoryEnabled = false;
+  Store.cancelTrade();
+};
 
 export const Inventory = observer(() => {
   const playerData = Store.playerData;
 
   useEventBus('keyPressed', key => {
-    if (HOT_KEYS.includes(key)) {
-      Store.inventoryEnabled = !Store.inventoryEnabled;
-    }
+    if (!HOT_KEYS.includes(key)) return;
+    if (Store.inventoryEnabled) closeInventory();
+    else Store.inventoryEnabled = true;
   });
 
-  if (!Store.inventoryEnabled) {
-    return null;
-  }
+  if (!Store.inventoryEnabled) return null;
+
+  const gridItems = playerData.inventoryItems
+    .map((item, i) => ({ item, slot: FIRST_INVENTORY_SLOT + i }))
+    .filter(({ item }) => !!item);
 
   return (
-    <div className="inventory">
-      <span className="title">Inventory</span>
-      <span className="status">[Set options][Socket options]</span>
-      <div className="equipment">
-        <EquipmentItem className="pet" item={playerData.petSlot} />
-        <EquipmentItem className="leftHand" item={playerData.leftHandSlot} />
-        <EquipmentItem className="rightHand" item={playerData.rightHandSlot} />
-        <EquipmentItem className="helmet" item={playerData.helmetSlot} />
-        <EquipmentItem className="armor" item={playerData.armorSlot} />
-        <EquipmentItem className="gloves" item={playerData.glovesSlot} />
-        <EquipmentItem className="boots" item={playerData.bootsSlot} />
-        <EquipmentItem className="pants" item={playerData.pantsSlot} />
-        <EquipmentItem className="leftRing" item={playerData.ring1Slot} />
-        <EquipmentItem className="rightRing" item={playerData.ring2Slot} />
-        <EquipmentItem className="amulet" item={playerData.pendantSlot} />
-        <EquipmentItem className="wings" item={playerData.wingsSlot} />
-      </div>
-      <div className="inventory-items">
-        {playerData.inventoryItems.map((item, index) => (
-          <InventoryItem key={index} item={item} />
+    <MuWindow title="Inventory" className="inventory" onClose={closeInventory}>
+      {EQUIPMENT.map(([slot, image, x, y, w, h]) => (
+        <EquipmentSlot
+          key={slot}
+          slot={slot}
+          image={image}
+          x={x}
+          y={y}
+          w={w}
+          h={h}
+        />
+      ))}
+
+      {/* empty cells: targets to put the held item */}
+      <div
+        className="grid"
+        style={{
+          left: GRID_X,
+          top: GRID_Y,
+          width: COLUMNS * CELL,
+          height: 8 * CELL,
+        }}
+      >
+        {playerData.inventoryItems.map((_, i) => (
+          <div
+            key={i}
+            className="grid-cell"
+            onClick={() => Store.onItemSlotClick(FIRST_INVENTORY_SLOT + i)}
+          />
         ))}
       </div>
-      <div className="zen">Zen: {playerData.money}</div>
-    </div>
+
+      {gridItems.map(({ item, slot }) => (
+        <GridItem key={slot} item={item!} slot={slot} />
+      ))}
+
+      <div className="money">{playerData.money.toLocaleString('en-US')}</div>
+    </MuWindow>
   );
 });

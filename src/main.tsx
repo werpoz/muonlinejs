@@ -12,6 +12,7 @@ import { createWorld } from './ecs/createWorld';
 import { ENUM_WORLD } from './common';
 import { EventBus } from './libs/eventBus';
 import { SoundsManager } from './libs/soundsManager';
+import { preloadSkillEffects } from './effects/skillEffects';
 
 if (APP_STAGE === 'dev' || QA_ENABLED) {
   import('@babylonjs/core/Legacy/legacy');
@@ -33,7 +34,9 @@ try {
 
 //some tricks for scrolling
 window.addEventListener('keydown', ev => {
-  if (['ArrowDown', 'ArrowUp', ' '].includes(ev.key)) {
+  const target = ev.target as HTMLElement | null;
+  const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+  if (!typing && ['ArrowDown', 'ArrowUp', ' ', 'F3', 'Tab'].includes(ev.key)) {
     ev.preventDefault();
   }
 });
@@ -91,12 +94,15 @@ else if (document.webkitHidden !== undefined) {
 const scene = new TestScene(engine);
 
 SoundsManager.initializeSounds(scene);
+preloadSkillEffects();
 
 const { world, updateSystems } = createWorld(scene);
 Store.world = world;
 
 (window as any).__scene = scene;
 (window as any).__world = world;
+(window as any).__store = Store;
+(window as any).__eventBus = EventBus;
 
 let lastTime = performance.now();
 engine.runRenderLoop(() => {

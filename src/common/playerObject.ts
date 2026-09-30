@@ -10,6 +10,7 @@ import { Entity, World } from '../ecs/world';
 import { PlayerAction } from './objects/enum';
 import { loadGLTF } from './modelLoader';
 import { Store } from '../store';
+import type { MountKind } from './mounts';
 
 export class PlayerObject extends ModelObject {
   playerClass: PlayerClass = PlayerClass.DarkKnight;
@@ -23,6 +24,13 @@ export class PlayerObject extends ModelObject {
   readonly Weapon1: ModelObject;
   readonly Weapon2: ModelObject;
   readonly Wings: ModelObject;
+  // Uniria, Dinorant, Dark Horse or Fenrir under the player
+  readonly Mount: ModelObject;
+  // Guardian Angel, Satan or Dark Raven flying next to the player
+  readonly FlyingPet: ModelObject;
+  mountKind: MountKind | null = null;
+  // models loaded in the sockets above (to load them only when they change)
+  private readonly loadedModels = new Map<ModelObject, string>();
 
   IsInteractable = false;
 
@@ -45,6 +53,8 @@ export class PlayerObject extends ModelObject {
     this.Weapon1 = new ModelObject(scene, this._node);
     this.Weapon2 = new ModelObject(scene, this._node);
     this.Wings = new ModelObject(scene, this._node);
+    this.Mount = new ModelObject(scene, this._node);
+    this.FlyingPet = new ModelObject(scene, this._node);
 
     this.HelmMask.NodeNamePrefix = 'HelmMask_';
     this.Helm.NodeNamePrefix = 'Helm_';
@@ -55,6 +65,8 @@ export class PlayerObject extends ModelObject {
     this.Weapon1.NodeNamePrefix = 'Weapon1_';
     this.Weapon2.NodeNamePrefix = 'Weapon2_';
     this.Wings.NodeNamePrefix = 'Wings_';
+    this.Mount.NodeNamePrefix = 'Mount_';
+    this.FlyingPet.NodeNamePrefix = 'FlyingPet_';
 
     const objs = [
       this.HelmMask,
@@ -66,6 +78,8 @@ export class PlayerObject extends ModelObject {
       this.Weapon1,
       this.Weapon2,
       this.Wings,
+      this.Mount,
+      this.FlyingPet,
     ];
 
     objs.forEach(obj => {
@@ -76,6 +90,13 @@ export class PlayerObject extends ModelObject {
     this.Wings.LinkParent = false;
     this.Wings.ParentBoneLink = 47;
     this.Wings.SkipBoundingBox = true;
+    this.Mount.LinkParent = false;
+    this.Mount.SkipBoundingBox = true;
+    this.Mount.AnimationSpeed = 5;
+    this.FlyingPet.LinkParent = false;
+    this.FlyingPet.SkipBoundingBox = true;
+    // next to the right shoulder, a bit behind
+    this.FlyingPet.updateLocation({ x: -0.7, y: 1.9, z: -0.4 }, 1, { x: 0, y: 0, z: 0 });
     this.Weapon1.SkipBoundingBox = true;
     this.Weapon2.SkipBoundingBox = true;
     this.HelmMask.SkipBoundingBox = true;
@@ -125,6 +146,45 @@ export class PlayerObject extends ModelObject {
     //   wingMat.transparencyMode = 2;
     //   wingMat.backFaceCulling = false;
     // }
+  }
+
+  // Loads a model in a socket (wings, mount, pet), or removes it (null); its
+  // first action (the wings flapping, the pet flying) plays in a loop.
+  private async setSocketModel(socket: ModelObject, path: string | null) {
+    if ((this.loadedModels.get(socket) ?? null) === path) return;
+    if (path === null) {
+      this.loadedModels.delete(socket);
+      socket.Unload();
+      return;
+    }
+    this.loadedModels.set(socket, path);
+    const gltf = await loadGLTF(path, Store.world!);
+    // another model was asked while this one was loading
+    if (this.loadedModels.get(socket) !== path) {
+      gltf.mesh.dispose();
+      return;
+    }
+    socket.load(gltf);
+    socket.CurrentAction = -1;
+    socket.playAction(0, true);
+    socket.getMeshes(true).forEach(mesh => {
+      mesh.isPickable = false;
+      if (mesh.material) mesh.material.backFaceCulling = false;
+    });
+  }
+
+  setWingsModel(path: string | null) {
+    return this.setSocketModel(this.Wings, path);
+  }
+
+  async setMountModel(kind: MountKind | null, path: string | null) {
+    this.mountKind = kind;
+    await this.setSocketModel(this.Mount, path);
+  }
+
+  async setFlyingPetModel(path: string | null, scale = 1) {
+    await this.setSocketModel(this.FlyingPet, path);
+    this.FlyingPet.updateLocation({ x: -0.7, y: 1.9, z: -0.4 }, scale, { x: 0, y: 0, z: 0 });
   }
 
   async setDefaultHelm() {

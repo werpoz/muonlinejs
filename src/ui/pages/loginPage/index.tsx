@@ -20,6 +20,7 @@ export const LoginPage = observer(() => {
        Store.saveLoginData();
         await Store.disconnectFromConnectServer();
         Store.uiState = UIState.Characters;
+        break;
       }
 
       case LoginResponseLoginResultEnum.InvalidPassword:

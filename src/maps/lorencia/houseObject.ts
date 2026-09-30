@@ -11,15 +11,9 @@ export class HouseObject extends ModelObject {
     const idx = this.Type - MODEL_HOUSE01 + 1;
 
     if (idx === 3) {
-      const m = this.getMesh(4);
-      if (m) {
-        m.material = getMaterial(world.scene, true, 2, BlendState.ALPHA_ADD);
-      }
+      this.setMeshMaterial(4, getMaterial(world.scene, true, 2, BlendState.ALPHA_ADD));
     } else if (idx === 4) {
-      const m = this.getMesh(8);
-      if (m) {
-        m.material = getMaterial(world.scene, true, 2, BlendState.ALPHA_ADD);
-      }
+      this.setMeshMaterial(8, getMaterial(world.scene, true, 2, BlendState.ALPHA_ADD));
     }
   }
 }

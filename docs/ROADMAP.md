@@ -1,0 +1,69 @@
+# Roadmap
+
+- [x] Cifrado SimpleModulus / Xor32 / Xor3
+- [x] Proxy WS ⇄ TCP
+- [x] Carga de terreno, modelos y objetos
+- [x] Movimiento y pathfinding
+- [x] Inventario básico (serialización compatible con OpenMU)
+- [x] Lista de servidores, login y selección de personaje (probado con OpenMU Season 6)
+- [ ] Creación / borrado de personaje (sin probar)
+- [x] `tsc` sin errores y obligatorio en CI
+- [ ] Cargar modelos por ID (`getModel` no tiene fábricas registradas)
+- [x] Muerte de monstruos (animación una vez y el cuerpo se desvanece)
+- [x] Diálogo de NPC: mensajes (Leo, misiones), bendición del Elf Soldier y aviso de las ventanas que faltan (Devil Square, Blood Castle, Gens...)
+- [x] Nombres de los NPC de temporadas posteriores (salían como "NPC")
+- [x] Party (`/party [nombre]`): invitar, aceptar/rechazar, marco con los gráficos originales (líder, vida), expulsar y salir
+- [x] Monstruos de Lorencia desde el servidor (Bull Fighter, Hound, Budge Dragon, Spider, Elite Bull Fighter, Lich, Giant, Skeleton)
+- [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
+- [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo
+- [x] Habilidades de área: `AreaSkill` + el cliente declara los golpes con `AreaSkillHit` (probado con Flame)
+- [x] Efectos de habilidades con los modelos originales de `Skill/` (Poison, Meteorite, Lightning, Fire Ball, Ice, Twister, Evil Spirit, Hellfire, Power Wave, Aqua Beam, Cometfall, Inferno, Soul Barrier, golpes del DK, Triple Shot, curación y buffs…) y flechas del arco
+- [x] Barra inferior con los gráficos originales (Season 6): pociones, globos de vida/maná, SD/AG, habilidades 1-5 con sus iconos, botones y experiencia
+- [x] Ventanas de inventario, personaje y tienda con los gráficos originales
+- [x] Recoger objetos del suelo (clic o Espacio)
+- [x] Recoger dinero
+- [x] Chat: enviar y recibir mensajes y comandos (`/item`, …)
+- [x] Mover y equipar/desequipar objetos (clic para coger, clic para soltar)
+- [x] Tirar objetos al suelo (objeto cogido + clic en el mundo; Escape cancela)
+- [x] Etiquetas de nombre sobre personajes, NPCs y objetos
+- [x] Pociones: Q vida, W maná, E antídoto, R escudo; clic derecho en el inventario
+- [x] Repartir puntos de nivel (panel C)
+- [x] Muerte y reaparición en el pueblo
+- [x] Daño/defensa/velocidad en el panel C (fórmulas de OpenMU; sin buffs ni opciones excelentes)
+- [ ] Modelos para monstruos de otros mapas
+- [x] Tiendas de NPC: hablar (clic), comprar (clic en la tienda), vender (coger objeto + clic en la tienda)
+- [x] Almacén (Baz): 120 huecos, mover objetos y zen
+- [x] Comercio entre jugadores (`/trade [nombre]`)
+- [x] Tooltips de objetos: daño/defensa por nivel, durabilidad, requisitos (en rojo si no se cumplen), clases, habilidad, suerte, opción adicional y opciones excelentes
+- [x] Joyas de Bless / Soul / Life: coger la joya y hacer clic en un objeto del inventario
+- [x] Máquina del Caos (Chaos Goblin): poner objetos, combinar (el servidor deduce la receta) y resultado
+- [x] Susurros (`/w nombre texto`, `/r texto`) y lista de amigos (F): añadir, aceptar, estado en línea, susurrar y borrar
+- [ ] Cartas del messenger (enviar, leer y borrar)
+- [x] Guild: crear en el Guild Master (nombre y emblema), unirse (`/guild nombre`), miembros (G), expulsar, salir/disolver, chat (`@texto`) y nombre de la guild sobre los jugadores
+- [ ] Guerras de guild y alianzas
+- [x] Tienda personal (S: precios, abrir/cerrar, letrero sobre el jugador, comprar)
+- [x] PvP: Ctrl + clic ataca a otro jugador, animación de ataque de los demás con su arma, color del nombre según el estado de PK (`HeroStateChanged`)
+- [x] Duelos: `/duel nombre`, aceptar, arena (World65/Object65), cuenta atrás, marcador, vida y escudo, salir; Gatekeeper Titus para mirar los duelos
+- [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
+- [x] Ventana de opciones (botón Menu): volumen de música y efectos, lista de teclas
+- [x] Sonido y música: música por mapa en bucle, golpes, arma/arco/ballesta, monstruos (64, reposo/ataque/daño/muerte), habilidades (54), daño y muerte del jugador, subir de nivel, objetos, pociones, joyas, Máquina del Caos, susurros e interfaz
+- [x] Misiones clásicas y cambio de clase (Sevina, Marlon, Priest Devin): diálogo con requisitos y progreso, aceptar, entregar y recompensas
+- [ ] Entrada a los cuarteles y al refugio de Balgass (misiones de 3.ª clase 5 y 6)
+- [x] Iconos de buffs y debuffs del jugador (iconos originales newui_statusicon)
+- [x] Aura de los buffs sobre los jugadores (bendición del Elf Soldier, Greater Damage/Defense, Soul Barrier...), también en los demás jugadores
+- [x] Lahap: empaquetar joyas x10/x20/x30 y desempaquetar
+- [x] Devil Square y Blood Castle: entrada (Charon / Mensajero del Arcángel) con niveles, tickets y horario, marcador con tiempo y monstruos, fases de Blood Castle, puentes y puertas (`ChangeTerrainAttributes`), puntuación
+- [x] Mapa de Blood Castle 1 (World12/Object12 del cliente nuevo: BMD v15 con LEA, terreno con ModulusCryptor) y el Arcángel
+- [x] Mapas de Blood Castle 2-8 y Devil Square 5-7: usan World12 / World10 como el cliente original (OpenMU tiene el mismo terreno)
+- [x] Modelos de monstruos de Devil Square 3-7 y Blood Castle 5-7 (Gigantis, Berserk, Persona, Dreadfear, Dark Elf, Balram y Soram trainee, Death Angel, Death y Lord Centurion, Necron, Schriker, Illusion of Kundun, Bloody Soldier, Aegis, Elite Orc, Cursed King, Metal Balrog, Skeleton Archer) y de los monstruos de las misiones de Balgass (409-412)
+- [x] Chaos Castle: entrada con clic derecho en la Armor of Guardsman (niveles, cuota y horario), mapa World19/Object19 para los 7 niveles, guerreros con aspecto de jugador (caballeros y elfas con equipo), marcador con tiempo y objetos restantes, derrumbe del suelo por etapas y puntuación
+- [x] Alas (1.ª, 2.ª, 3.ª, capas y pequeñas) con su animación, y vuelo del jugador con alas fuera de la zona segura
+- [x] Monturas: Uniria, Dinorant, Dark Horse y Fenrir (rojo, negro, azul y dorado) con las animaciones de montar y de la montura
+- [x] Mascotas que vuelan junto al jugador: Guardian Angel, Satan y Dark Raven
+- [x] Cambios de equipo de los demás jugadores (`AppearanceChanged`)
+- [ ] Dark Raven y Dark Horse: comandos y ataques de la mascota del Dark Lord
+- [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
+- [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
+- [x] Haces de luz de Noria (se veían como placas negras enormes)
+- [ ] Modelos que faltan en `game-assets` (trampas de Blood Castle, algunos NPC)
+- [ ] Tests de paquetes y cifrado en CI

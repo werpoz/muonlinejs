@@ -1,3 +1,4 @@
+import { worldFolderNumber } from './worldFolder';
 import { Entity, World } from '../ecs/world';
 import { Color4 } from '../libs/babylon/exports';
 import { getMaterial, loadGLTF } from './modelLoader';
@@ -14,7 +15,7 @@ export class MapTileObject extends ModelObject {
 
     // BlendState = BlendState.AlphaBlend;
 
-    const dir = `Object${this.WorldIndex + 1}/`;
+    const dir = `Object${worldFolderNumber(this.WorldIndex)}/`;
     let modelPath = `${dir}Object${(this.Type + 1)
       .toString()
       .padStart(2, '0')}.glb`;
@@ -28,11 +29,26 @@ export class MapTileObject extends ModelObject {
       modelPath = 'Object11/cloud.glb';
     }
 
-    this.load(await loadGLTF(modelPath, world));
+    // the objects that get another material below have their own copy
+    const special =
+      modelPath === 'Object3/Object20.glb' ||
+      modelPath === 'Object4/Object38.glb' ||
+      modelPath === 'Object8/Object39.glb' ||
+      modelPath === 'Object8/Object23.glb' ||
+      modelPath === 'Object8/Object24.glb' ||
+      this.WorldIndex === ENUM_WORLD.WD_10ICARUS;
+    this.allowInstancing = !special;
+    this.load(await this.loadModel(modelPath));
 
     if (modelPath === 'Object3/Object20.glb') {
       const m = this.getMesh(0)!;
       m.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);
+    }
+    // noria light beams: black texture background, additive like the other lights
+    else if (modelPath === 'Object4/Object38.glb') {
+      this.getMeshes(true).forEach(mesh => {
+        mesh.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);
+      });
     } else if (modelPath === 'Object8/Object39.glb') {
       const m = this.getMesh(0)!;
       m.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);

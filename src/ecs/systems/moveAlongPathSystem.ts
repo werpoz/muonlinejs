@@ -93,7 +93,13 @@ export const MoveAlongPathSystem: ISystemFactory = world => {
               Scalar.Lerp(h3, h4, 0.5),
               0.5
             );
-            transform.pos.y = Scalar.Lerp(transform.pos.y, h, 15 * deltaTime);
+            // clamp the factor: with a slow frame (dt > 1/15 s) the lerp would
+            // overshoot and the error grows every frame (player sinks away)
+            transform.pos.y = Scalar.Lerp(
+              transform.pos.y,
+              h,
+              Math.min(1, 15 * deltaTime)
+            );
 
             if (attributeSystem) {
               const flag = world.getTerrainFlag(

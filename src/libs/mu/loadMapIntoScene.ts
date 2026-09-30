@@ -14,6 +14,7 @@ import { IVector3Like } from '../babylon/exports';
 import { EventBus } from '../eventBus';
 import { DISABLE_OBJECTS_LOADING } from '../../consts';
 import { PoseBoxObject } from '../../maps/lorencia/poseBoxObject';
+import { clearStaticInstances } from '../../common/staticInstances';
 import { SoundsManager } from '../soundsManager';
 
 async function loadWorld(world: World) {
@@ -130,6 +131,9 @@ function unloadMap(world: World, oldMap: ENUM_WORLD) {
     }
   }
 
+  // the shared meshes of the static objects of the old map
+  clearStaticInstances();
+
   if (world.terrain) {
     world.terrain.mesh.material?.dispose(true, true);
     world.terrain.mesh.dispose(false, true);
@@ -150,16 +154,20 @@ export async function loadMapIntoScene(
     const {
       objects,
       terrain,
+      minimap,
       RequestTerrainHeight,
       IsWalkable,
       RequestTerrainFlag,
+      SetTerrainFlag,
       GetTerrainTile,
     } = await getTerrainData(world, map);
 
     world.getTerrainHeight = RequestTerrainHeight;
     world.isWalkable = IsWalkable;
     world.getTerrainFlag = RequestTerrainFlag;
+    world.setTerrainFlag = SetTerrainFlag;
     world.getTerrainTile = GetTerrainTile;
+    world.minimap = minimap;
 
     if (map === ENUM_WORLD.WD_10ICARUS) {
       terrain.isVisible = false;

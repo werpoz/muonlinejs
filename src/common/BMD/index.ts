@@ -1,3 +1,4 @@
+import { leaDecryptEcb } from './lea';
 import { Quaternion, Vector3 } from '../../libs/babylon/exports';
 import { MathUtils } from '../mathUtils';
 import { decryptMapFile } from '../terrain/mapFileEncryption';
@@ -154,9 +155,13 @@ function DecryptBufferIfNeeded(buffer: Uint8Array, version: number) {
     return newBuffer;
   }
 
-  throw new Error(
-    `Unsupported version: ${version}. Only version 12 is supported.`
-  );
+  // version 15 (newer clients): LEA-256 of `size` bytes
+  const encSize = dv.getInt32(4, true);
+  const dec = leaDecryptEcb(buffer.slice(8, 8 + encSize));
+  const newBuffer = new Uint8Array(4 + dec.byteLength);
+  ArrayCopy(buffer, 0, newBuffer, 0, 4); // Copy the first 4 bytes (type + version)
+  ArrayCopy(dec, 0, newBuffer, 4, dec.byteLength);
+  return newBuffer;
 
   // Array.Copy(dec, 0, buffer, 4, size);
 }

@@ -1,45 +1,61 @@
 import { useEventBus } from '../../../../../hooks/useEventBus';
 import { Store } from '../../../../../store';
+import { MuWindow } from '../../../../components/muWindow';
+import { CharacterClassNumber } from '../../../../../common/types';
+import { computeCharacterStats } from '../../../../../common/characterStats';
 import './style.less';
+import { classDisplayName } from '../../../../../common/legacyQuests';
 import { observer } from 'mobx-react-lite';
 
-const Stat = ({
-  label,
-  value,
-  onClick,
-}: {
-  label: string;
-  value: number;
-  onClick: () => void;
-}) => {
-  return (
-    <div className="stat">
-      <span className="label">{label}</span>
-      <span className="value">{value}</span>
-      <button className="add-point" onClick={onClick}>
-        +
-      </button>
-    </div>
-  );
-};
+enum StatType {
+  Strength = 0,
+  Agility = 1,
+  Vitality = 2,
+  Energy = 3,
+}
 
-const AttributeValue = ({ text }: { text: string }) => {
-  return <span className="attribute-value">{text}</span>;
-};
+const className = classDisplayName;
+
+// stat box of the original window (170x21 text box with the level-up button)
+const Stat = observer(
+  ({
+    y,
+    label,
+    value,
+    stat,
+    details,
+  }: {
+    y: number;
+    label: string;
+    value: number;
+    stat: StatType;
+    details?: string[];
+  }) => (
+    <>
+      <div className="stat" style={{ top: y }}>
+        <span className="label">{label}</span>
+        <span className="value">{value}</span>
+        {Store.playerData.points > 0 && (
+          <button
+            className="add-point"
+            title="Add a point"
+            onClick={() => Store.increaseStat(stat)}
+          />
+        )}
+      </div>
+      {details?.map((text, i) => (
+        <span key={i} className="detail" style={{ top: y + 25 + i * 12 }}>
+          {text}
+        </span>
+      ))}
+    </>
+  )
+);
 
 const HOT_KEY = `KeyC`;
 
 export const CharacterInfo = observer(() => {
-  const playerData = Store.playerData;
-
-  const dmg = `Dmg(rate): 6~14(48)`;
-  const attackRate = `Attack rate: 96`;
-  const defense = `Defense(rate): 51(6+0)`;
-  const attackSpeed = `Attack speed: 29`;
-  const defenceRate = `Defense rate: 14`;
-  const hp = `HP: ${playerData.currentHP} / ${playerData.maxHP}`;
-  const mp = `Mana: ${playerData.currentMP} / ${playerData.maxMP}`;
-  const skillDamage = `Skill Damage: 201%`;
+  const d = Store.playerData;
 
   useEventBus('keyPressed', key => {
     if (key === HOT_KEY) {
@@ -47,37 +63,81 @@ export const CharacterInfo = observer(() => {
     }
   });
 
-  if (!Store.characterInfoEnabled) {
-    return null;
-  }
+  if (!Store.characterInfoEnabled) return null;
+
+  const player = Store.world?.playerEntity;
+  const stats = computeCharacterStats(
+    player?.charAppearance?.charClass,
+    { level: d.level, str: d.str, agi: d.agi, vit: d.sta, ene: d.eng },
+    d.items
+  );
+  const wizardry = stats.wizardryDamage
+    ? [
+        `Wizardry Dmg: ${stats.wizardryDamage[0]} ~ ${stats.wizardryDamage[1]}` +
+          (stats.wizardryRise ? ` (+${stats.wizardryRise}%)` : ''),
+      ]
+    : [];
 
   return (
-    <div className="character-info">
-      <span className="nickname">Test</span>
-      <span className="status">(Dark Knight)</span>
-      <div className="level-points">
-        <span className="level">Level: {playerData.level}</span>
-        {playerData.points > 0 && (
-          <span className="points">Points: {playerData.points}</span>
-        )}
-      </div>
-      <span className="exp">
-        Exp:{playerData.exp}/{playerData.expToNextLvl}
+    <MuWindow
+      title={player?.objectNameInWorld ?? ''}
+      subtitle={className(player?.charAppearance?.charClass)}
+      className="character-info"
+      onClose={() => {
+        Store.characterInfoEnabled = false;
+      }}
+    >
+      <span className="line" style={{ top: 52 }}>
+        Level: {d.level}
       </span>
-      <div className="stats">
-        <Stat label="STR" value={playerData.str} onClick={() => {}} />
-        <AttributeValue text={dmg} />
-        <AttributeValue text={attackRate} />
-        <Stat label="AGI" value={playerData.agi} onClick={() => {}} />
-        <AttributeValue text={defense} />
-        <AttributeValue text={attackSpeed} />
-        <AttributeValue text={defenceRate} />
-        <Stat label="STA" value={playerData.sta} onClick={() => {}} />
-        <AttributeValue text={hp} />
-        <Stat label="ENG" value={playerData.eng} onClick={() => {}} />
-        <AttributeValue text={mp} />
-        <AttributeValue text={skillDamage} />
-      </div>
-    </div>
+      {d.points > 0 && (
+        <span className="line points" style={{ top: 52 }}>
+          Points: {d.points}
+        </span>
+      )}
+      <span className="line" style={{ top: 66 }}>
+        Exp: {d.exp} / {d.expToNextLvl}
+      </span>
+
+      <Stat
+        y={86}
+        label="Strength"
+        value={d.str}
+        stat={StatType.Strength}
+        details={[
+          `Attack Dmg: ${stats.damage[0]} ~ ${stats.damage[1]}`,
+          `Attack Rate: ${stats.attackRate}`,
+        ]}
+      />
+      <Stat
+        y={156}
+        label="Agility"
+        value={d.agi}
+        stat={StatType.Agility}
+        details={[
+          `Defense: ${stats.defense} (Rate ${stats.defenseRate})`,
+          `Attack Speed: ${stats.attackSpeed} / Magic ${stats.magicSpeed}`,
+          `SD: ${d.currentSD} / ${d.maxSD}`,
+        ]}
+      />
+      <Stat
+        y={238}
+        label="Vitality"
+        value={d.sta}
+        stat={StatType.Vitality}
+        details={[`HP: ${d.currentHP} / ${d.maxHP}`]}
+      />
+      <Stat
+        y={284}
+        label="Energy"
+        value={d.eng}
+        stat={StatType.Energy}
+        details={[
+          `Mana: ${d.currentMP} / ${d.maxMP}`,
+          `AG: ${d.currentAG} / ${d.maxAG}`,
+          ...wizardry,
+        ]}
+      />
+    </MuWindow>
   );
 });
