@@ -4,6 +4,9 @@ import { ModelObject } from './modelObject';
 import { MonsterObject } from './monsterObject';
 import { PlayerObject } from './playerObject';
 import npcModels from './npcModels.json';
+import { modelTypeOf } from './monsterModelAliases';
+
+export { modelTypeOf };
 
 type NpcModel = {
   name: string;
@@ -18,8 +21,32 @@ type NpcModel = {
 const models = npcModels as Record<string, NpcModel>;
 const cache = new Map<number, typeof ModelObject>();
 
+const monster = (name: string, model: string, scale = 1): NpcModel => ({
+  name,
+  model: `Monster/${model}.glb`,
+  scale,
+  kind: 'monster',
+});
+
+// Monsters missing in npcModels.json, with a model chosen by the textures of
+// the models ("cundun", "buser", "king"...); their stronger copies use
+// the same model (monsterModelAliases.ts).
+const EXTRA_MODELS: Record<number, NpcModel> = {
+  // Blood Castle 5 monsters without a model
+  145: monster('Death Centurion', 'monster68'),
+  148: monster('Lord Centurion', 'monster68', 1.1),
+  161: monster('Illusion of Kundun', 'monster65'),
+  // Devil Square 3-4
+  65: monster('Elite Orc', 'Monster48', 1.1),
+  66: monster('Cursed King', 'Monster49', 1.1),
+  67: monster('Metal Balrog', 'Monster28', 1.6),
+  // Devil Square 5-7
+  435: monster('Berserk', 'Monster107', 1.1),
+};
+
 export function getNpcModelInfo(type: number): NpcModel | undefined {
-  return models[type];
+  const base = modelTypeOf(type);
+  return EXTRA_MODELS[base] ?? models[base];
 }
 
 // Model class for a monster/NPC type without a hand written class, built
@@ -30,7 +57,7 @@ export function getGenericModelFactory(
   const cached = cache.get(type);
   if (cached) return cached;
 
-  const info = models[type];
+  const info = getNpcModelInfo(type);
   // player based NPCs need their equipment set up by a PlayerObject
   if (!info || info.model.startsWith('Player/')) return undefined;
 

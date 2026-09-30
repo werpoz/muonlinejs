@@ -4,6 +4,7 @@ import skillSounds from '../common/skillSounds.json';
 import type { Entity } from '../ecs/world';
 import { LocalStorage } from './localStorage';
 import { Sounds, SoundsManager } from './soundsManager';
+import { modelTypeOf } from '../common/monsterModelAliases';
 import { Store } from '../store';
 
 // Sound effects of the game: attenuated by the distance to the player, like
@@ -46,7 +47,7 @@ type MonsterEvent = 'idle' | 'attack' | 'death' | 'damage';
 
 export function playMonsterSound(monster: Entity, event: MonsterEvent) {
   const sounds = (monsterSounds as Record<string, Partial<Record<MonsterEvent, string[]>>>)[
-    String(monster.npcType)
+    String(modelTypeOf(monster.npcType ?? -1))
   ];
   const list = sounds?.[event];
   if (!list?.length) return;
@@ -55,7 +56,7 @@ export function playMonsterSound(monster: Entity, event: MonsterEvent) {
 
 export function hasMonsterSound(monster: Entity, event: MonsterEvent) {
   const sounds = (monsterSounds as Record<string, Partial<Record<MonsterEvent, string[]>>>)[
-    String(monster.npcType)
+    String(modelTypeOf(monster.npcType ?? -1))
   ];
   return !!sounds?.[event]?.length;
 }

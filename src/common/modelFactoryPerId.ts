@@ -4,7 +4,7 @@ import { BudgeDragon } from './monsters/budgeDragon';
 import { Giant } from './monsters/giant';
 import { Hound } from './monsters/hound';
 import { Lich } from './monsters/lich';
-import { SkeletonWarrior } from './monsters/skeletonWarrior';
+import { SkeletonArcher, SkeletonWarrior } from './monsters/skeletonWarrior';
 import { Spider } from './monsters/spider';
 import { Baz } from './npcs/baz';
 import { BerdyshGuard } from './npcs/berdyshGuard';
@@ -42,5 +42,6 @@ export const ModelFactoryPerId: Record<number, typeof ModelObject> = {
   [6]: Lich,
   [7]: Giant,
   [14]: SkeletonWarrior,
+  [15]: SkeletonArcher,
   [236]: GoldenArcher,
 };

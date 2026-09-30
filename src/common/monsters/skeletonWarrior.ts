@@ -10,3 +10,10 @@ export class SkeletonWarrior extends MonsterObject {
     this.load(bmd);
   }
 }
+
+// [NpcInfo(15, "Skeleton Archer")]
+export class SkeletonArcher extends MonsterObject {
+  async init(world: World) {
+    this.load(await loadGLTF('Skill/Skeleton02.glb', world));
+  }
+}

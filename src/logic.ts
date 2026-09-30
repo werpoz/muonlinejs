@@ -38,6 +38,7 @@ import { MonsterObject } from './common/monsterObject';
 import {
   getGenericModelFactory,
   getNpcModelInfo,
+  modelTypeOf,
 } from './common/npcModelFactory';
 import { MonstersDatabase } from './common/monstersDatabase';
 import {
@@ -415,7 +416,7 @@ EventBus.on('AddNpcsToScope', packet => {
       return;
     }
     const definedModelFactory =
-      ModelFactoryPerId[npc.TypeNumber] ??
+      ModelFactoryPerId[modelTypeOf(npc.TypeNumber)] ??
       getGenericModelFactory(npc.TypeNumber);
     if (!definedModelFactory) {
       console.warn(
