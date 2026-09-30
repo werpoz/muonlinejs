@@ -49,6 +49,11 @@ import {
   NpcBuffRequestPacket,
   LegacyQuestStateSetRequestPacket,
   LahapJewelMixRequestPacket,
+  DuelStartRequestPacket,
+  DuelStartResponsePacket,
+  DuelStopRequestPacket,
+  DuelChannelJoinRequestPacket,
+  DuelChannelQuitRequestPacket,
   DevilSquareEnterRequestPacket,
   BloodCastleEnterRequestPacket,
   MiniGameOpeningStateRequestPacket,
@@ -449,6 +454,25 @@ export type MiniGameScore = {
   rows: { name: string; score: number; experience: number; money: number }[];
 };
 
+// a duel we play or watch (DuelInit)
+export type Duel = {
+  room: number;
+  players: {
+    id: number;
+    name: string;
+    score: number;
+    // percentages; null while unknown (OpenMU sends them only to spectators)
+    hp: number | null;
+    sd: number | null;
+  }[];
+  // watching the duel of other players
+  spectator: boolean;
+  spectators: string[];
+};
+
+// the duel rooms of the Duel Arena (DuelStatus, Gatekeeper Titus)
+export type DuelRoom = { players: [string, string]; running: boolean; open: boolean };
+
 export const SHOP_FIRST_SLOT = 204;
 export const SHOP_SIZE = 32;
 
@@ -567,6 +591,14 @@ export const Store = new (class _Store {
   // Lahap's window (pack and unpack jewels) is open
   lahapOpen = false;
 
+  // duel request of another player: id and name
+  duelRequestFrom: { id: number; name: string } | null = null;
+  duel: Duel | null = null;
+  // winner / loser of the last duel (DuelFinished)
+  duelResult: { winner: string; loser: string } | null = null;
+  // Gatekeeper Titus: rooms to watch
+  duelRooms: DuelRoom[] | null = null;
+
   // entrance of Devil Square (Charon) / Blood Castle (Messenger of Archangel)
   miniGameEntry: MiniGameKind | null = null;
   // MiniGameOpeningState: minutes until the entrance opens (0: open)
@@ -668,6 +700,10 @@ export const Store = new (class _Store {
       npcDialog: observable,
       activeEffects: observable,
       lahapOpen: observable,
+      duelRequestFrom: observable,
+      duel: observable,
+      duelResult: observable,
+      duelRooms: observable,
       miniGameEntry: observable,
       miniGameOpening: observable,
       miniGame: observable,
@@ -979,6 +1015,7 @@ export const Store = new (class _Store {
   //   /w name text   whisper       /r text        reply to the last whisper
   //   /trade [name]  trade         /party [name]  party invitation
   //   /friend name   add a friend  /guild [name]  ask to join a guild
+  //   /duel [name]   challenge to a duel
   //   @text / ~text  guild / party chat (sent as it is, OpenMU handles
   //                  the prefix)
   submitChat(message: string): void {
@@ -992,6 +1029,7 @@ export const Store = new (class _Store {
     const party = command('party');
     const friend = command('friend');
     const guild = command('guild');
+    const duel = command('duel');
 
     if (whisper) this.sendWhisper(whisper[1], whisper[2]);
     else if (reply !== null) {
@@ -1001,6 +1039,7 @@ export const Store = new (class _Store {
     else if (party !== null) this.inviteToParty(party || undefined);
     else if (friend) this.addFriend(friend);
     else if (guild !== null) this.requestJoinGuild(guild || undefined);
+    else if (duel !== null) this.requestDuel(duel || undefined);
     else if (message) this.sendChatMessage(message);
   }
 
@@ -1330,6 +1369,65 @@ export const Store = new (class _Store {
     this.addNotification(`Trade requested to ${target.objectNameInWorld}`);
   }
 
+  // ---- duels
+
+  // challenge a player in view (see findPlayerNear) to a duel
+  requestDuel(name?: string): void {
+    const target = this.findPlayerNear(name);
+    if (!target) return;
+    if (this.duel && !this.duel.spectator) {
+      this.addNotification('You are already in a duel', 'error');
+      return;
+    }
+    const packet = DuelStartRequestPacket.createPacket();
+    packet.PlayerId = target.netId!;
+    packet.setPlayerName(target.objectNameInWorld ?? '');
+    this.sendToGS(packet.buffer);
+    this.addNotification(`Duel requested to ${target.objectNameInWorld}`);
+  }
+
+  answerDuelRequest(accept: boolean): void {
+    const from = this.duelRequestFrom;
+    if (!from) return;
+    runInAction(() => {
+      this.duelRequestFrom = null;
+    });
+    const packet = DuelStartResponsePacket.createPacket();
+    packet.Response = accept;
+    packet.PlayerId = from.id;
+    packet.setPlayerName(from.name);
+    this.sendToGS(packet.buffer);
+  }
+
+  // gives up the duel we play, or stops watching one
+  leaveDuel(): void {
+    if (this.duel?.spectator) {
+      this.sendToGS(DuelChannelQuitRequestPacket.createPacket().buffer);
+      return;
+    }
+    this.sendToGS(DuelStopRequestPacket.createPacket().buffer);
+  }
+
+  watchDuel(room: number): void {
+    const packet = DuelChannelJoinRequestPacket.createPacket();
+    packet.ChannelId = room;
+    this.sendToGS(packet.buffer);
+  }
+
+  closeDuelRooms(): void {
+    runInAction(() => {
+      this.duelRooms = null;
+    });
+    if (this.talkingToNpc !== null) this.sendCloseNpcRequest();
+  }
+
+  // the opponent in the duel we play (attacked without Ctrl)
+  get duelOpponentId(): number | null {
+    const duel = this.duel;
+    if (!duel || duel.spectator) return null;
+    return duel.players.find(p => p.id !== this.playerId)?.id ?? null;
+  }
+
   // Party invitation to another player in view (see findPlayerNear)
   inviteToParty(name?: string): void {
     const target = this.findPlayerNear(name);
@@ -1617,6 +1715,11 @@ export const Store = new (class _Store {
       return true;
     }
 
+    if (this.duelRooms) {
+      this.closeDuelRooms();
+      return true;
+    }
+
     if (this.miniGameEntry) {
       runInAction(() => {
         this.miniGameEntry = null;
@@ -1816,29 +1919,19 @@ export const Store = new (class _Store {
   }
 
   sendWalkPath(x: number, y: number, dirs: number[]): void {
-    const packet = WalkRequestPacket.createPacket(6 + dirs.length);
+    if (dirs.length === 0) return;
+    // byte 5: the rotation at the end (high nibble) and the step count (low
+    // nibble); from byte 6 the steps, two per byte (the first one high)
+    const newDirs = new Array<number>(Math.ceil(dirs.length / 2)).fill(0);
+    dirs.forEach((dir, i) => {
+      newDirs[i >> 1] |= (dir & 0x0f) << (i % 2 === 0 ? 4 : 0);
+    });
+
+    const packet = WalkRequestPacket.createPacket(6 + newDirs.length);
     packet.SourceX = x;
     packet.SourceY = y;
     packet.StepCount = dirs.length;
-
-    function SetStepData(steps: number[], stepsSize: number) {
-      if (stepsSize === 0) return;
-
-      const result = new Array<number>(stepsSize);
-
-      result[0] = ((steps[0] << 4) | stepsSize) & 0xff;
-      for (let i = 0; i < stepsSize - 1; i += 2) {
-        const index = 1 + i / 2;
-        const firstStep = steps[i];
-        const secondStep = steps.length > i + 1 ? steps[i + 1] : 0;
-        result[index] = ((firstStep << 4) | secondStep) & 0xff;
-      }
-
-      return result;
-    }
-
-    const newDirs = SetStepData(dirs, dirs.length);
-    if (!newDirs) return;
+    packet.TargetRotation = dirs[dirs.length - 1];
 
     packet.setDirections(newDirs, newDirs.length);
 

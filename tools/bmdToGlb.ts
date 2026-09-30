@@ -1,3 +1,4 @@
+import { existsSync, readdirSync } from 'node:fs';
 import { Document, Node, NodeIO, type Skin } from '@gltf-transform/core';
 import { BMD, BMDReader, BMDTextureBone } from '../src/common/BMD';
 import { Glob } from 'bun';
@@ -44,6 +45,14 @@ async function convertImageToWebP(image: Uint8Array): Promise<Uint8Array> {
 }
 
 const SCALE_MULTIPLIER = 0.01;
+
+// the models name their textures with any case (".JPG", "Chovol...")
+function findFileIgnoringCase(dir: string, name: string) {
+  if (existsSync(dir + name)) return dir + name;
+  const lower = name.toLowerCase();
+  const found = existsSync(dir) && readdirSync(dir).find(f => f.toLowerCase() === lower);
+  return dir + (found || name);
+}
 
 const glob = new Glob(`**/*{${BMD_EXT.toUpperCase()},${BMD_EXT}}`);
 
@@ -389,8 +398,8 @@ async function convertBMDToGLTF(bmd: BMD, outputFilename: string) {
       .setType('VEC4')
       .setBuffer(buffer);
 
-    const isTransparent = bmdMesh.TexturePath.endsWith('.tga');
-    const texPath = DATA_FOLDER + bmd.Dir + bmdMesh.TexturePath;
+    const isTransparent = bmdMesh.TexturePath.toLowerCase().endsWith('.tga');
+    const texPath = findFileIgnoringCase(DATA_FOLDER + bmd.Dir, bmdMesh.TexturePath);
     // const texFilePath = bmd.Dir + bmdMesh.TexturePath.split('.')[0] + '.webp';
     // const outputTexFilePath = OUTPUT_FOLDER + texFilePath;
 

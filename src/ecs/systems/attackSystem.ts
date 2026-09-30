@@ -18,14 +18,16 @@ const ITEM_GROUP_BOWS = 4;
 const FIRST_CROSSBOW_NUM = 8;
 
 // Monsters; other players only with `players` (Ctrl pressed when clicking,
-// like the original client: a click on a player must not attack by mistake).
+// like the original client: a click on a player must not attack by mistake),
+// except the opponent of our duel.
 export function isAttackable(
   e: Entity | null | undefined,
   players = false
 ): e is Entity {
   return (
     !!e &&
-    (!!e.monster || (players && !!e.charAppearance && !e.localPlayer)) &&
+    (!!e.monster ||
+      ((players || e.netId === Store.duelOpponentId) && !!e.charAppearance && !e.localPlayer)) &&
     !e.dead &&
     !e.objOutOfScope &&
     e.netId != null &&

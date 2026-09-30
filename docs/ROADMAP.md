@@ -43,7 +43,7 @@
 - [ ] Guerras de guild y alianzas
 - [x] Tienda personal (S: precios, abrir/cerrar, letrero sobre el jugador, comprar)
 - [x] PvP: Ctrl + clic ataca a otro jugador, animación de ataque de los demás con su arma, color del nombre según el estado de PK (`HeroStateChanged`)
-- [ ] Duelos
+- [x] Duelos: `/duel nombre`, aceptar, arena (World65/Object65), cuenta atrás, marcador, vida y escudo, salir; Gatekeeper Titus para mirar los duelos
 - [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
 - [x] Ventana de opciones (botón Menu): volumen de música y efectos, lista de teclas
 - [x] Sonido y música: música por mapa en bucle, golpes, arma/arco/ballesta, monstruos (64, reposo/ataque/daño/muerte), habilidades (54), daño y muerte del jugador, subir de nivel, objetos, pociones, joyas, Máquina del Caos, susurros e interfaz

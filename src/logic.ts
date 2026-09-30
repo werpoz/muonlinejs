@@ -57,6 +57,18 @@ import {
   TradeRequestPacket,
   PlayerShopSetItemPriceResponsePacket,
   OpenNpcDialogPacket,
+  DuelStartResultPacket,
+  DuelStartResultDuelStartResultTypeEnum,
+  DuelStartRequestPacket,
+  DuelEndPacket,
+  DuelScorePacket,
+  DuelHealthUpdatePacket,
+  DuelStatusPacket,
+  DuelInitPacket,
+  DuelSpectatorAddedPacket,
+  DuelSpectatorRemovedPacket,
+  DuelSpectatorListPacket,
+  DuelFinishedPacket,
   DevilSquareEnterResultPacket,
   BloodCastleEnterResultPacket,
   MiniGameOpeningStatePacket,
@@ -1295,7 +1307,6 @@ const UNSUPPORTED_WINDOWS: Partial<Record<NpcWindowResponseNpcWindowEnum, string
   [NpcWindowResponseNpcWindowEnum.SeedResearcher]: 'Socket crafting',
   [NpcWindowResponseNpcWindowEnum.StatReInitializer]: 'Resetting stats',
   [NpcWindowResponseNpcWindowEnum.DelgadoLuckyCoinRegistration]: 'Registering lucky coins',
-  [NpcWindowResponseNpcWindowEnum.DoorkeeperTitusDuelWatch]: 'Watching duels',
   [NpcWindowResponseNpcWindowEnum.LugardDoppelgangerEntry]: 'Entering Doppelganger',
   [NpcWindowResponseNpcWindowEnum.JerintGaionEvententry]: 'Entering the Imperial Guardian',
   [NpcWindowResponseNpcWindowEnum.JuliaWarpMarketServer]: 'Warping to the market server',
@@ -1331,6 +1342,14 @@ EventBus.on('NpcWindowResponse', packet => {
       Store.miniGameEntry = miniGame;
       Store.miniGameOpening = null;
       Store.inventoryEnabled = true;
+    });
+    return;
+  }
+
+  // Gatekeeper Titus: the duel rooms to watch (DuelStatus every 5 seconds)
+  if (p.Window === NpcWindowResponseNpcWindowEnum.DoorkeeperTitusDuelWatch) {
+    runInAction(() => {
+      Store.duelRooms = [];
     });
     return;
   }
@@ -2441,4 +2460,144 @@ EventBus.on('ChangeTerrainAttributes', packet => {
     world.setTerrainFlag(a.StartX, a.StartY, a.EndX, a.EndY, p.Attribute, !p.RemoveAttribute);
   }
   EventBus.emit('terrainChanged');
+});
+
+// ---- duels
+
+const DuelResult = DuelStartResultDuelStartResultTypeEnum;
+const DUEL_ERRORS: Partial<Record<number, string>> = {
+  [DuelResult.FailedByTooLowLevel]: 'Both players need level 30 to duel',
+  [DuelResult.FailedByError]: 'The duel could not start',
+  [DuelResult.Refused]: 'The duel was refused',
+  [DuelResult.FailedByNoFreeRoom]: 'All the duel rooms are in use',
+  [DuelResult.FailedByNotEnoughMoney]: 'Both players need 30,000 zen to duel',
+};
+
+// another player challenges us
+EventBus.on('DuelStartRequest', packet => {
+  const p = new DuelStartRequestPacket(packet);
+  const id = p.buffer.getUint16(4, true) & 0x7fff;
+  console.log(`DuelStartRequest: ${id} ${p.RequesterName}`);
+  runInAction(() => {
+    Store.duelRequestFrom = { id, name: p.RequesterName };
+  });
+});
+
+EventBus.on('DuelStartResult', packet => {
+  const p = new DuelStartResultPacket(packet);
+  console.log(`DuelStartResult: ${DuelResult[p.Result] ?? p.Result} ${p.OpponentName}`);
+  if (p.Result !== DuelResult.Success) {
+    Store.addNotification(DUEL_ERRORS[p.Result] ?? 'The duel could not start', 'error');
+    return;
+  }
+  Store.addNotification(`The duel against ${p.OpponentName} begins!`);
+});
+
+// the duel starts (also for the spectators)
+EventBus.on('DuelInit', packet => {
+  const p = new DuelInitPacket(packet);
+  const buffer = p.buffer;
+  const id1 = buffer.getUint16(26, false) & 0x7fff;
+  const id2 = buffer.getUint16(28, false) & 0x7fff;
+  console.log(`DuelInit: room ${p.RoomIndex} ${p.Player1Name} (${id1}) vs ${p.Player2Name} (${id2}), result ${p.Result}`);
+  if (p.Result !== 0) return;
+  const spectator = id1 !== Store.playerId && id2 !== Store.playerId;
+  runInAction(() => {
+    Store.duelResult = null;
+    Store.duelRooms = null;
+    Store.duel = {
+      room: p.RoomIndex,
+      spectator,
+      spectators: [],
+      players: [
+        { id: id1, name: p.Player1Name, score: 0, hp: null, sd: null },
+        { id: id2, name: p.Player2Name, score: 0, hp: null, sd: null },
+      ],
+    };
+  });
+});
+
+const duelPlayer = (id: number) => Store.duel?.players.find(pl => pl.id === (id & 0x7fff));
+
+EventBus.on('DuelScore', packet => {
+  const p = new DuelScorePacket(packet);
+  console.log(`DuelScore: ${p.Player1Id & 0x7fff}=${p.Player1Score} ${p.Player2Id & 0x7fff}=${p.Player2Score}`);
+  runInAction(() => {
+    const a = duelPlayer(p.Player1Id);
+    const b = duelPlayer(p.Player2Id);
+    if (a) a.score = p.Player1Score;
+    if (b) b.score = p.Player2Score;
+  });
+});
+
+EventBus.on('DuelHealthUpdate', packet => {
+  const p = new DuelHealthUpdatePacket(packet);
+  console.log(
+    `DuelHealthUpdate: ${p.Player1Id & 0x7fff}=${p.Player1HealthPercentage}/${p.Player1ShieldPercentage} ${p.Player2Id & 0x7fff}=${p.Player2HealthPercentage}/${p.Player2ShieldPercentage}`
+  );
+  runInAction(() => {
+    const a = duelPlayer(p.Player1Id);
+    const b = duelPlayer(p.Player2Id);
+    if (a) {
+      a.hp = p.Player1HealthPercentage;
+      a.sd = p.Player1ShieldPercentage;
+    }
+    if (b) {
+      b.hp = p.Player2HealthPercentage;
+      b.sd = p.Player2ShieldPercentage;
+    }
+  });
+});
+
+EventBus.on('DuelFinished', packet => {
+  const p = new DuelFinishedPacket(packet);
+  console.log(`DuelFinished: ${p.Winner} won against ${p.Loser}`);
+  runInAction(() => {
+    Store.duelResult = { winner: p.Winner, loser: p.Loser };
+  });
+  Store.addNotification(`${p.Winner} won the duel against ${p.Loser}!`);
+});
+
+// the duel is over for us (also when leaving it)
+EventBus.on('DuelEnd', packet => {
+  const p = new DuelEndPacket(packet);
+  console.log(`DuelEnd: ${p.Result} ${p.OpponentName}`);
+  runInAction(() => {
+    Store.duel = null;
+  });
+});
+
+EventBus.on('DuelSpectatorAdded', packet => {
+  const p = new DuelSpectatorAddedPacket(packet);
+  runInAction(() => {
+    if (Store.duel && !Store.duel.spectators.includes(p.Name)) Store.duel.spectators.push(p.Name);
+  });
+});
+
+EventBus.on('DuelSpectatorRemoved', packet => {
+  const p = new DuelSpectatorRemovedPacket(packet);
+  runInAction(() => {
+    if (Store.duel) Store.duel.spectators = Store.duel.spectators.filter(n => n !== p.Name);
+  });
+});
+
+EventBus.on('DuelSpectatorList', packet => {
+  const p = new DuelSpectatorListPacket(packet);
+  runInAction(() => {
+    if (Store.duel) Store.duel.spectators = p.getSpectators(p.Count).map(s => s.Name);
+  });
+});
+
+// rooms of the Duel Arena, while Titus' window is open
+EventBus.on('DuelStatus', packet => {
+  const p = new DuelStatusPacket(packet);
+  if (Store.duelRooms === null) return;
+  const rooms = p.getRooms(4).map(r => ({
+    players: [r.Player1Name, r.Player2Name] as [string, string],
+    running: !!r.DuelRunning,
+    open: !!r.DuelOpen,
+  }));
+  runInAction(() => {
+    Store.duelRooms = rooms;
+  });
 });

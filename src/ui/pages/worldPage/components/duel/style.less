@@ -1,0 +1,174 @@
+.duel-hud {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  padding: 4px 10px 6px;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid #6a5a3a;
+  pointer-events: auto;
+  z-index: 4;
+
+  .title {
+    color: #ff6060;
+    font-weight: bold;
+
+    .watching {
+      color: #999;
+      font-weight: normal;
+    }
+  }
+
+  .players {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0 2px;
+  }
+
+  .player {
+    width: 110px;
+
+    .name {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    &.me .name {
+      color: #ffd24a;
+    }
+  }
+
+  .score {
+    position: absolute;
+    left: 50%;
+    top: 2px;
+    transform: translateX(-50%);
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffd24a;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar {
+    height: 5px;
+    margin-top: 2px;
+    background: #222;
+    border: 1px solid #444;
+
+    .fill {
+      height: 100%;
+      transition: width 0.2s;
+    }
+
+    &.hp .fill {
+      background: #d02020;
+    }
+
+    &.sd .fill {
+      background: #e0c030;
+    }
+  }
+
+  .bar.unknown {
+    opacity: 0.35;
+  }
+
+  .player.right .bar {
+    transform: scaleX(-1);
+  }
+
+  .goal,
+  .spectators {
+    color: #999;
+  }
+
+  .result {
+    margin: 3px 0;
+    color: #6f6;
+    font-weight: bold;
+  }
+
+  .text-button {
+    margin-top: 4px;
+    padding: 2px 10px;
+    font-size: 10px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #ffd24a;
+    }
+  }
+}
+
+.mu-window-slot.duel-rooms .mu-window {
+  .rooms {
+    left: 12px;
+    top: 50px;
+    width: 166px;
+  }
+
+  .empty {
+    color: #999;
+    text-align: center;
+  }
+
+  .room {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    padding: 3px;
+    color: #999;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid #444;
+
+    &.running {
+      color: #fff;
+    }
+
+    .room-name {
+      width: 36px;
+      color: #ffd24a;
+    }
+
+    .room-players {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .note {
+    left: 12px;
+    top: 200px;
+    width: 166px;
+    color: #999;
+    white-space: normal;
+  }
+
+  .small-button {
+    height: 14px;
+    padding: 0 3px;
+    font-size: 8px;
+    color: #f0e0b0;
+    background: #2a2a2a;
+    border: 1px solid #777;
+    cursor: pointer;
+
+    &:disabled {
+      color: #666;
+      cursor: default;
+    }
+  }
+}

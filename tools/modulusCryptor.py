@@ -88,7 +88,59 @@ class ThreeWay:
         a0, a1, a2 = theta(a0, a1, a2); a0, a1, a2 = mu(a0, a1, a2)
         return struct.pack('<3I', a0 & M, a1 & M, a2 & M)
 
-CIPHERS = {1: ThreeWay, 4: RC6}
+class TEA:
+    # BouncyCastle TeaEngine: 32 rounds, big-endian words
+    block = 8
+    DELTA = 0x9E3779B9
+    def __init__(self, key):
+        self.k = struct.unpack('>4I', key[:16])
+    def decrypt_block(self, b):
+        v0, v1 = struct.unpack('>2I', b)
+        a, bb, c, d = self.k
+        s = (self.DELTA * 32) & M
+        for _ in range(32):
+            v1 = (v1 - ((((v0 << 4) + c) & M) ^ ((v0 + s) & M) ^ (((v0 >> 5) + d) & M))) & M
+            v0 = (v0 - ((((v1 << 4) + a) & M) ^ ((v1 + s) & M) ^ (((v1 >> 5) + bb) & M))) & M
+            s = (s - self.DELTA) & M
+        return struct.pack('>2I', v0, v1)
+
+GOST_SBOX = [
+    4, 10, 9, 2, 13, 8, 0, 14, 6, 11, 1, 12, 7, 15, 5, 3,
+    14, 11, 4, 12, 6, 13, 15, 10, 2, 3, 8, 1, 0, 7, 5, 9,
+    5, 8, 1, 13, 10, 3, 4, 2, 14, 15, 12, 7, 6, 0, 9, 11,
+    7, 13, 10, 1, 0, 8, 9, 15, 14, 4, 6, 12, 11, 2, 5, 3,
+    6, 12, 7, 1, 5, 15, 13, 8, 4, 10, 9, 14, 0, 3, 11, 2,
+    4, 11, 10, 0, 7, 2, 1, 13, 3, 6, 8, 5, 9, 12, 15, 14,
+    13, 11, 4, 1, 3, 15, 5, 9, 0, 10, 14, 7, 6, 8, 2, 12,
+    1, 15, 13, 0, 5, 7, 10, 4, 9, 2, 3, 14, 6, 11, 8, 12,
+]
+
+class GOST:
+    # BouncyCastle Gost28147Engine (little-endian words) with the S-box of the client
+    block = 8
+    def __init__(self, key):
+        self.k = struct.unpack('<8I', key[:32])
+    @staticmethod
+    def step(n1, key):
+        cm = (key + n1) & M
+        om = 0
+        for i in range(8):
+            om |= GOST_SBOX[16 * i + ((cm >> (4 * i)) & 0xF)] << (4 * i)
+        return rol(om, 11)
+    def decrypt_block(self, b):
+        n1, n2 = struct.unpack('<2I', b)
+        k = self.k
+        for j in range(8):
+            n1, n2 = n2 ^ self.step(n1, k[j]), n1
+        for r in range(3):
+            for j in range(7, -1, -1):
+                if r == 2 and j == 0:
+                    break
+                n1, n2 = n2 ^ self.step(n1, k[j]), n1
+        n2 = n2 ^ self.step(n1, k[0])
+        return struct.pack('<2I', n1 & M, n2 & M)
+
+CIPHERS = {0: TEA, 1: ThreeWay, 4: RC6, 7: GOST}
 
 def block_decrypt(cipher, data):
     bs = cipher.block
