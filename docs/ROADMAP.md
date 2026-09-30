@@ -16,7 +16,7 @@
 - [x] Ataque básico (`HitRequest`), números de daño, muerte, experiencia y subida de nivel
 - [x] Habilidades con objetivo: aprender con pergaminos/orbes (clic derecho en el inventario), elegir en el panel y lanzar con clic derecho sobre el monstruo
 - [x] Habilidades de área: `AreaSkill` + el cliente declara los golpes con `AreaSkillHit` (probado con Flame)
-- [ ] Efectos visuales de las demás habilidades de área (solo Flame tiene efecto)
+- [x] Efectos de habilidades con los modelos originales de `Skill/` (Poison, Meteorite, Lightning, Fire Ball, Ice, Twister, Evil Spirit, Hellfire, Power Wave, Aqua Beam, Cometfall, Inferno, Soul Barrier, golpes del DK, Triple Shot, curación y buffs…) y flechas del arco
 - [x] Barra inferior con los gráficos originales (Season 6): pociones, globos de vida/maná, SD/AG, habilidades 1-5 con sus iconos, botones y experiencia
 - [x] Ventanas de inventario, personaje y tienda con los gráficos originales
 - [x] Recoger objetos del suelo (clic o Espacio)
@@ -41,7 +41,8 @@
 - [x] Guild: crear en el Guild Master (nombre y emblema), unirse (`/guild nombre`), miembros (G), expulsar, salir/disolver, chat (`@texto`) y nombre de la guild sobre los jugadores
 - [ ] Guerras de guild y alianzas
 - [ ] Tienda personal (vender sentado con letrero)
-- [ ] PvP: animaciones de ataque de otros jugadores y atacarlos
+- [x] PvP: Ctrl + clic ataca a otro jugador, animación de ataque de los demás con su arma, color del nombre según el estado de PK (`HeroStateChanged`)
+- [ ] Duelos
 - [x] Minimapa (Tab): generado del terreno (texturas, luz, zonas bloqueadas), girado como la cámara, con NPC, portales, party y jugador
 - [x] Ventana de opciones (botón Menu): volumen de música y efectos, lista de teclas
 - [x] Sonido y música: música por mapa en bucle, golpes, arma/arco/ballesta, monstruos (64, reposo/ataque/daño/muerte), habilidades (54), daño y muerte del jugador, subir de nivel, objetos, pociones, joyas, Máquina del Caos, susurros e interfaz

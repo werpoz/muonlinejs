@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { Store } from '../../../store';
 import { useEffect, useMemo } from 'react';
 import { WorldLabel } from '../worldLabel';
+import { heroStateClass } from '../../../common/heroState';
 import { useRenderId } from '../../../hooks';
 
 export const WorldObjects = observer(() => {
@@ -35,6 +36,11 @@ export const WorldObjects = observer(() => {
               text={entity.objectNameInWorld}
               subText={
                 entity.charAppearance ? Store.guildNameOf(entity.netId) : undefined
+              }
+              className={
+                entity.charAppearance && entity.netId != null
+                  ? heroStateClass(Store.heroStates.get(entity.netId))
+                  : undefined
               }
             />
           );

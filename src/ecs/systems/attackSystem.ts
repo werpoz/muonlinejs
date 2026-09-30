@@ -4,7 +4,8 @@ import { Store } from '../../store';
 import type { Entity, ISystemFactory, World } from '../world';
 import { getLookingDirection } from './networkSystem';
 import { getSkillInfo } from '../../common/skills';
-import { playSwingSound } from '../../libs/gameSounds';
+import { playSwingSound, rangedWeapon } from '../../libs/gameSounds';
+import { playArrow } from '../../effects/skillEffects';
 
 const MELEE_RANGE = 2; // tiles
 const BOW_RANGE = 6;
@@ -16,10 +17,15 @@ const ITEM_GROUP_SPEARS = 3;
 const ITEM_GROUP_BOWS = 4;
 const FIRST_CROSSBOW_NUM = 8;
 
-export function isAttackable(e: Entity | null | undefined): e is Entity {
+// Monsters; other players only with `players` (Ctrl pressed when clicking,
+// like the original client: a click on a player must not attack by mistake).
+export function isAttackable(
+  e: Entity | null | undefined,
+  players = false
+): e is Entity {
   return (
     !!e &&
-    !!e.monster &&
+    (!!e.monster || (players && !!e.charAppearance && !e.localPlayer)) &&
     !e.dead &&
     !e.objOutOfScope &&
     e.netId != null &&
@@ -35,7 +41,7 @@ function getAttackRange(player: Entity) {
   return getWeapon(player)?.group === ITEM_GROUP_BOWS ? BOW_RANGE : MELEE_RANGE;
 }
 
-function getAttackAction(player: Entity): PlayerAction {
+export function getAttackAction(player: Entity): PlayerAction {
   const weapon = getWeapon(player);
   if (!weapon) return PlayerAction.PLAYER_ATTACK_FIST;
 
@@ -151,11 +157,14 @@ export const AttackSystem: ISystemFactory = world => {
 
       const pressed = world.pointerPressed && !world.pointerConsumed;
       const hovered = world.currentPointerTarget;
+      const keys = world.keyboardInput.pressedKeys;
+      const forceAttack = keys.has('ControlLeft') || keys.has('ControlRight');
 
       if (pressed && !wasPressed) {
-        // a new click selects the monster under the cursor, or cancels;
-        // left button hits, right button uses the selected skill
-        world.attackTarget = isAttackable(hovered) ? hovered : null;
+        // a new click selects the monster under the cursor (or a player
+        // with Ctrl), or cancels; left button hits, right button uses the
+        // selected skill
+        world.attackTarget = isAttackable(hovered, forceAttack) ? hovered : null;
         skill = null;
         if (world.pointerButton === 2) {
           const selected = skillForRightClick();
@@ -173,14 +182,15 @@ export const AttackSystem: ISystemFactory = world => {
       } else if (!pressed && wasPressed && hitsSinceClick > 0) {
         // released after hitting: a click is a single hit
         stop();
-      } else if (pressed && isAttackable(hovered)) {
+      } else if (pressed && isAttackable(hovered, forceAttack)) {
         world.attackTarget = hovered;
       }
       wasPressed = pressed;
 
       const target = world.attackTarget;
       if (!target) return;
-      if (!isAttackable(target)) {
+      // a player chosen with Ctrl stays the target
+      if (!isAttackable(target, true)) {
         stop();
         return;
       }
@@ -248,6 +258,7 @@ export const AttackSystem: ISystemFactory = world => {
           getLookingDirection(playerTile, targetTile)
         );
         playSwingSound(player);
+        if (rangedWeapon()) playArrow(world, player, target);
       }
 
       // single click = single hit, holding the button keeps attacking

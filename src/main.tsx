@@ -12,6 +12,7 @@ import { createWorld } from './ecs/createWorld';
 import { ENUM_WORLD } from './common';
 import { EventBus } from './libs/eventBus';
 import { SoundsManager } from './libs/soundsManager';
+import { preloadSkillEffects } from './effects/skillEffects';
 
 if (APP_STAGE === 'dev' || QA_ENABLED) {
   import('@babylonjs/core/Legacy/legacy');
@@ -93,6 +94,7 @@ else if (document.webkitHidden !== undefined) {
 const scene = new TestScene(engine);
 
 SoundsManager.initializeSounds(scene);
+preloadSkillEffects();
 
 const { world, updateSystems } = createWorld(scene);
 Store.world = world;

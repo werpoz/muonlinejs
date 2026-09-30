@@ -40,6 +40,8 @@ el cliente en Chromium (Playwright), pasando por `bun run proxy`.
 | Guild | ✅ | Guild Master (Devias, nivel 100) → `ShowGuildMasterDialog` → `GuildMasterAnswer` → `GuildCreateRequest` (nombre + emblema) → `GuildCreationResult`, `AssignCharacterToGuild`, `GuildInformation`. Con dos clientes: `/guild test0Dk` → `GuildJoinRequest` → aceptar → `GuildJoinResponse: Accepted`, `GuildList` con los dos; `[Testers]` sobre ambos; `@hola guild` llega a los dos; expulsar y disolver → `GuildKickResponse` |
 | Minimapa | ✅ | Tab en Noria y Lorencia: mapa generado del terreno, NPC, portales y jugador |
 | Sonido | ✅ | Lorencia (190,130), 25 s atacando: `Music/main_theme`, `eSwingWeapon1/2`, `eMeleeHit1-4`, `mBudge1`/`mBudgeAttack1`/`mBudgeDie`, `pMaleScream`, `pWalk(Grass)`, `pDrink` (Q), `iButtonClick`; el volumen de música de Opciones se aplica (0,2) y se guarda |
+| Efectos de habilidades | ✅ | 18 habilidades lanzadas en Lorencia con captura a mitad de animación: todas visibles |
+| PvP | ✅ | Dos clientes en Lorencia (175,125): A ataca a B → "Self defense is initiated…", `ObjectHit` en B y animación de ataque de A (acción 120); B muere al golpe 23 → `HeroStateChanged: 4` (aviso de PK) y B ve el nombre de A en naranja |
 | Subir de nivel | ✅ | `CharacterLevelUpdate` (nivel 2; 440 exp para el 3, igual que OpenMU) |
 
 Detalles observados:
@@ -70,6 +72,8 @@ Detalles observados:
   `AddCharactersToScope` y el cliente lo duplicaba. Ahora reutiliza la entidad.
 - En Devias, (213,47) no es una casilla válida: el servidor recoloca al
   personaje. Para probar el Guild Master usa (208,47).
+- Para dejar a un personaje sin estado de PK tras probar el PvP:
+  `update data."Character" set "State"=0, "PlayerKillCount"=0, "StateRemainingSeconds"=0 where "Name"='test0Dk';`
 - Arreglado: en `LoginPage` faltaba `break` tras `Okay`, así que un login
   correcto también ponía un mensaje de error.
 

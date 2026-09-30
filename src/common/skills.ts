@@ -43,9 +43,6 @@ export const getSkillInfo = (skill: number): SkillInfo => {
   return SKILLS[skill] ?? { name: `Skill ${skill}`, targeted: true, range: 6 };
 };
 
-// skills that throw a ball towards the target
-export const PROJECTILE_SKILLS = new Set([4, 17]);
-
 // Item (scroll / orb) that teaches each skill, its icon is used for the skill
 // (from the OpenMU configuration).
 export const SKILL_ICONS: Record<number, { group: number; num: number }> = {

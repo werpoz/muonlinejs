@@ -14,9 +14,9 @@ import {
 } from './libs/gameSounds';
 import { InventoryConstants } from './common/inventoryConstants';
 import { ItemStorageKind } from './common/itemStorageKind';
-import { PROJECTILE_SKILLS, getSkillInfo } from './common/skills';
-import { playEnergyBall } from './effects/energyBall';
-import { playFlame } from './effects/flame';
+import { getSkillInfo } from './common/skills';
+import { playSkillEffect } from './effects/skillEffects';
+import { getAttackAction } from './ecs/systems/attackSystem';
 import { ModelFactoryPerId } from './common/modelFactoryPerId';
 import { ModelObject } from './common/modelObject';
 import { MonsterObject } from './common/monsterObject';
@@ -46,6 +46,7 @@ import {
   NpcItemSellResultPacket,
   VaultMoneyUpdatePacket,
   TradeRequestPacket,
+  HeroStateChangedPacket,
   GuildListPacket,
   GuildJoinRequestPacket,
   GuildJoinResponsePacket,
@@ -112,6 +113,7 @@ import { createAttributeSystem } from './libs/attributeSystem';
 import { Vector3 } from './libs/babylon/exports';
 import { EventBus } from './libs/eventBus';
 import { Store, TRADE_SIZE, UIState, unpackEmblem } from './store';
+import { HERO_STATE_PK_WARNING } from './common/heroState';
 
 const ONE_SHOT_ANIMATION_TIME = 0.6;
 const NO_TERRAIN_HEIGHT = -9999;
@@ -414,6 +416,7 @@ EventBus.on('AddCharactersToScope', packet => {
     const existing = world.playerEntity;
     if (existing && Store.playerId === maskedId) {
       existing.worldIndex = worldIndex;
+      setHeroState(maskedId, char.HeroState);
       existing.transform.pos.x = char.CurrentPositionX;
       existing.transform.pos.z = char.CurrentPositionY;
       existing.transform.pos.y = world.getTerrainHeight(
@@ -437,6 +440,7 @@ EventBus.on('AddCharactersToScope', packet => {
     playerEntity.transform.rot.y = convertDirectionToAngle(char.Rotation);
 
     playerEntity.objectNameInWorld = char.Name;
+    setHeroState(maskedId, char.HeroState);
 
     if (Store.playerId === maskedId) {
       world.addComponent(playerEntity, 'localPlayer', true);
@@ -575,11 +579,18 @@ EventBus.on('ObjectAnimation', packet => {
       playMonsterSound(obj, 'attack');
     }
   } else if (obj.playerAnimation) {
-    const action = ServerToClientActionMap[clientActionToPlay];
+    // attacks of other players: the animation of their weapon
+    const isAttack =
+      clientActionToPlay === ServerPlayerActionType.Attack1 ||
+      clientActionToPlay === ServerPlayerActionType.Attack2;
+    const action = isAttack
+      ? getAttackAction(obj)
+      : ServerToClientActionMap[clientActionToPlay];
     if (action !== undefined) {
       obj.playerAnimation.action = action;
       obj.playerAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
     }
+    if (isAttack && !obj.localPlayer) playSound('Sound/eSwingWeapon1', { at: { x: obj.transform.pos.x, y: obj.transform.pos.z } });
   }
 
   obj.transform.rot.y = convertDirectionToAngle(p.Direction);
@@ -1180,13 +1191,7 @@ EventBus.on('SkillAnimation', packet => {
     }
   }
 
-  if (caster && target && PROJECTILE_SKILLS.has(p.SkillId)) {
-    const from = new Vector3().copyFrom(caster.transform.pos as Vector3);
-    const to = new Vector3().copyFrom(target.transform.pos as Vector3);
-    from.addInPlaceFromFloats(0.5, 1.25, 0.5);
-    to.addInPlaceFromFloats(0.5, 1, 0.5);
-    playEnergyBall(world.scene, from, to);
-  }
+  playSkillEffect(world, p.SkillId, caster, target);
 });
 
 // NPC shops
@@ -1309,8 +1314,6 @@ EventBus.on('NpcItemSellResult', packet => {
   }
 });
 
-const FLAME_SKILL = 5;
-const FLAME_EFFECT_TIME_MS = 1500;
 
 EventBus.on('AreaSkillAnimation', packet => {
   const p = new AreaSkillAnimationPacket(packet);
@@ -1330,15 +1333,10 @@ EventBus.on('AreaSkillAnimation', packet => {
     caster.playerAnimation.oneShotTime = ONE_SHOT_ANIMATION_TIME;
   }
 
-  if (p.SkillId === FLAME_SKILL) {
-    const pos = new Vector3(
-      p.PointX + 0.5,
-      world.getTerrainHeight(p.PointX, p.PointY),
-      p.PointY + 0.5
-    );
-    const flame = playFlame(world.scene, pos);
-    setTimeout(() => flame.stop(), FLAME_EFFECT_TIME_MS);
-  }
+  playSkillEffect(world, p.SkillId, caster, undefined, {
+    x: p.PointX,
+    y: p.PointY,
+  });
 });
 
 EventBus.on('VaultMoneyUpdate', packet => {
@@ -1798,4 +1796,22 @@ EventBus.on('GuildInformation', packet => {
   runInAction(() => {
     Store.guildInfos.set(p.GuildId, { name: p.GuildName, emblem });
   });
+});
+
+function setHeroState(playerId: number, state: number) {
+  runInAction(() => {
+    Store.heroStates.set(playerId, state);
+  });
+}
+
+// PK state of a player changed (killed another player, or the time passed)
+EventBus.on('HeroStateChanged', packet => {
+  const p = new HeroStateChangedPacket(packet);
+  const id = p.PlayerId & 0x7fff;
+  const player = Store.world?.netObjsQuery.entities.find(e => e.netId === id);
+  console.log(`HeroStateChanged: ${id} -> ${p.NewState}`);
+  setHeroState(id, p.NewState);
+  if (player?.localPlayer && p.NewState >= HERO_STATE_PK_WARNING) {
+    Store.addNotification('You are a player killer now', 'error');
+  }
 });

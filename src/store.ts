@@ -499,6 +499,8 @@ export const Store = new (class _Store {
   // emblems (GuildInformation)
   playerGuilds = new Map<number, { guildId: number; role: GuildMemberRoleEnum }>();
   guildInfos = new Map<number, { name: string; emblem: number[] }>();
+  // PK state of the players in view (see common/heroState)
+  heroStates = new Map<number, number>();
 
   // our party (the first member is the leader), null without party
   party: PartyMember[] | null = null;
@@ -575,6 +577,7 @@ export const Store = new (class _Store {
       guildJoinRequestFrom: observable,
       playerGuilds: observable,
       guildInfos: observable,
+      heroStates: observable,
       friendsEnabled: observable,
       friendRequestFrom: observable,
       chatDraft: observable,

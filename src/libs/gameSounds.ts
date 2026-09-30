@@ -108,12 +108,15 @@ const AMMUNITION = [7, 15];
 // crossbows are numbers 8-14 and 16 of the bows group, the rest are bows
 const isCrossbow = (num: number) => (num >= 8 && num <= 14) || num === 16;
 
+// the bow or crossbow of the local player, if any
+export function rangedWeapon() {
+  const weapons = [Store.playerData.rightHandSlot, Store.playerData.leftHandSlot];
+  return weapons.find(w => w?.group === BOWS_GROUP && !AMMUNITION.includes(w.num));
+}
+
 // swing of the local player's weapon (or its bow / crossbow)
 export function playSwingSound(player: Entity) {
-  const weapons = [Store.playerData.rightHandSlot, Store.playerData.leftHandSlot];
-  const ranged = weapons.find(
-    w => w?.group === BOWS_GROUP && !AMMUNITION.includes(w.num)
-  );
+  const ranged = rangedWeapon();
   const key: Sounds = ranged
     ? isCrossbow(ranged.num)
       ? 'Sound/eCrossbow'
