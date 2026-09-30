@@ -12,12 +12,15 @@ import {
   Skeleton,
   AnimationGroup,
   CreateBox,
+  type InstancedMesh,
+  type Material,
 } from '../libs/babylon/exports';
 import type { IVector3Like, Plane } from '../libs/babylon/exports';
 // import { createMeshesForBMD } from './BMD/createMeshes';
 import type { Entity, World } from '../ecs/world';
 import { ENUM_WORLD } from './types';
 import { loadGLTF } from './modelLoader';
+import { loadGLTFInstance } from './staticInstances';
 import { Store } from '../store';
 
 const BoundingUpdateInterval = 5;
@@ -35,6 +38,10 @@ const minTmp = new Vector3(Number.MAX_VALUE);
 const maxTmp = new Vector3(Number.MIN_VALUE);
 
 const cullCenterTmp = new Vector3();
+
+// the mesh drawn for a mesh of a model: the shared one of an instance
+const sharedMeshOf = (mesh: AbstractMesh) =>
+  mesh.getClassName() === 'InstancedMesh' ? (mesh as InstancedMesh).sourceMesh : mesh;
 
 // seconds between two measures of the skinned bounds of a model
 const BOUNDS_MAX_AGE = 0.5;
@@ -361,7 +368,8 @@ export class ModelObject {
   dispose(): void {
     this._node.dispose();
     if (this.gltf) {
-      this.gltf.mesh.dispose(false, true);
+      // the instances share their meshes and materials
+      this.gltf.mesh.dispose(false, !this.gltf.mesh.metadata?.instanceRoot);
       this.gltf.skeleton?.dispose();
       this.gltf.animationGroups.forEach(group => {
         group.dispose();
@@ -378,8 +386,35 @@ export class ModelObject {
     this.Children.length = 0;
   }
 
+  // map objects that change the material or the alpha of their meshes
+  // per object can't share them: they set this to false
+  protected allowInstancing = true;
+
+  // The material of a mesh of the model: on the shared mesh when the model
+  // is an instance (the same for all the objects of that model).
+  protected setMeshMaterial(index: number, material: Material) {
+    const mesh = this.getMesh(index);
+    if (!mesh) return;
+    const target = sharedMeshOf(mesh);
+    target.material = material;
+  }
+
+  // the alpha of a mesh (shared by all the instances of the model)
+  protected setMeshAlpha(index: number, alpha: number) {
+    const mesh = this.getMesh(index);
+    if (!mesh) return;
+    const target = sharedMeshOf(mesh);
+    target.visibility = alpha;
+  }
+
   protected async loadSpecificModel(modelName: string) {
-    this.load(await loadGLTF(`${this.objectDir}${modelName}`, Store.world!));
+    this.load(await this.loadModel(`${this.objectDir}${modelName}`));
+  }
+
+  // an instance of the shared meshes of a static model, or its own copy
+  protected async loadModel(path: string) {
+    const world = Store.world!;
+    return (this.allowInstancing && (await loadGLTFInstance(path, world))) || loadGLTF(path, world);
   }
 
   protected async loadSpecificModelWithDynamicID(

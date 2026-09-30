@@ -29,7 +29,16 @@ export class MapTileObject extends ModelObject {
       modelPath = 'Object11/cloud.glb';
     }
 
-    this.load(await loadGLTF(modelPath, world));
+    // the objects that get another material below have their own copy
+    const special =
+      modelPath === 'Object3/Object20.glb' ||
+      modelPath === 'Object4/Object38.glb' ||
+      modelPath === 'Object8/Object39.glb' ||
+      modelPath === 'Object8/Object23.glb' ||
+      modelPath === 'Object8/Object24.glb' ||
+      this.WorldIndex === ENUM_WORLD.WD_10ICARUS;
+    this.allowInstancing = !special;
+    this.load(await this.loadModel(modelPath));
 
     if (modelPath === 'Object3/Object20.glb') {
       const m = this.getMesh(0)!;

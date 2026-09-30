@@ -4,6 +4,9 @@ import { BlendState } from '../../common/objects/enum';
 import type { World } from '../../ecs/world';
 
 export class WaterSpoutObject extends ModelObject {
+  // it changes the material or the alpha of its meshes
+  protected allowInstancing = false;
+
   async init(world: World) {
     // LightEnabled = true;
 

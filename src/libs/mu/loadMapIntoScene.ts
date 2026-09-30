@@ -14,6 +14,7 @@ import { IVector3Like } from '../babylon/exports';
 import { EventBus } from '../eventBus';
 import { DISABLE_OBJECTS_LOADING } from '../../consts';
 import { PoseBoxObject } from '../../maps/lorencia/poseBoxObject';
+import { clearStaticInstances } from '../../common/staticInstances';
 import { SoundsManager } from '../soundsManager';
 
 async function loadWorld(world: World) {
@@ -129,6 +130,9 @@ function unloadMap(world: World, oldMap: ENUM_WORLD) {
       e.modelObject?.dispose();
     }
   }
+
+  // the shared meshes of the static objects of the old map
+  clearStaticInstances();
 
   if (world.terrain) {
     world.terrain.mesh.material?.dispose(true, true);

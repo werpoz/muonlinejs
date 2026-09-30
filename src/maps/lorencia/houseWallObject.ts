@@ -27,10 +27,7 @@ export class HouseWallObject extends ModelObject {
       this._flickerDur = Rand.nextFloat(0.1, 0.2); // 0.10–0.20s
       this._flickerElapsed = 0;
 
-      const m = this.getMesh(4);
-      if (m) {
-        m.material = getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD);
-      }
+      this.setMeshMaterial(4, getMaterial(world.scene, false, 2, BlendState.ALPHA_ADD));
     }
   }
 
@@ -62,12 +59,10 @@ export class HouseWallObject extends ModelObject {
   DrawMesh(mesh: number): void {
     super.DrawMesh(mesh);
 
-    // Apply flicker effect to the material
+    // Apply flicker effect to the material (the same for all the walls of
+    // this model: they share the mesh)
     if (this._flickerEnabled && mesh === 4) {
-      const m = this.getMesh(mesh);
-      if (m) {
-        m.visibility = this._flickerAlpha;
-      }
+      this.setMeshAlpha(mesh, this._flickerAlpha);
     }
   }
 }
