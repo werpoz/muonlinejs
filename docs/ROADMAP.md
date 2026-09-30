@@ -57,7 +57,11 @@
 - [x] Mapas de Blood Castle 2-8 y Devil Square 5-7: usan World12 / World10 como el cliente original (OpenMU tiene el mismo terreno)
 - [x] Modelos de monstruos de Devil Square 3-7 y Blood Castle 5-7 (Gigantis, Berserk, Persona, Dreadfear, Dark Elf, Balram y Soram trainee, Death Angel, Death y Lord Centurion, Necron, Schriker, Illusion of Kundun, Bloody Soldier, Aegis, Elite Orc, Cursed King, Metal Balrog, Skeleton Archer) y de los monstruos de las misiones de Balgass (409-412)
 - [x] Chaos Castle: entrada con clic derecho en la Armor of Guardsman (niveles, cuota y horario), mapa World19/Object19 para los 7 niveles, guerreros con aspecto de jugador (caballeros y elfas con equipo), marcador con tiempo y objetos restantes, derrumbe del suelo por etapas y puntuación
-- [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)
+- [x] Alas (1.ª, 2.ª, 3.ª, capas y pequeñas) con su animación, y vuelo del jugador con alas fuera de la zona segura
+- [x] Monturas: Uniria, Dinorant, Dark Horse y Fenrir (rojo, negro, azul y dorado) con las animaciones de montar y de la montura
+- [x] Mascotas que vuelan junto al jugador: Guardian Angel, Satan y Dark Raven
+- [x] Cambios de equipo de los demás jugadores (`AppearanceChanged`)
+- [ ] Dark Raven y Dark Horse: comandos y ataques de la mascota del Dark Lord
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
 - [x] Modelos de 219 monstruos/NPCs (`src/common/npcModels.json`)
 - [x] Haces de luz de Noria (se veían como placas negras enormes)

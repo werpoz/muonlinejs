@@ -5,6 +5,8 @@ import type { Entity, ISystemFactory, World } from '../world';
 import { getLookingDirection } from './networkSystem';
 import { getSkillInfo } from '../../common/skills';
 import { playSwingSound, rangedWeapon } from '../../libs/gameSounds';
+import type { PlayerObject } from '../../common/playerObject';
+import { ridingAttackAction } from '../../common/mounts';
 import { playArrow } from '../../effects/skillEffects';
 
 const MELEE_RANGE = 2; // tiles
@@ -44,6 +46,8 @@ function getAttackRange(player: Entity) {
 }
 
 export function getAttackAction(player: Entity): PlayerAction {
+  const mount = (player.modelObject as PlayerObject | undefined)?.mountKind;
+  if (mount) return ridingAttackAction(mount);
   const weapon = getWeapon(player);
   if (!weapon) return PlayerAction.PLAYER_ATTACK_FIST;
 

@@ -6,7 +6,48 @@ type Item = {
   num: number;
   group: number;
   lvl: number;
+  excellentOptions?: number;
 };
+
+// wings by their tier (byte 5, bits 2-3) and type (byte 9, bits 0-2)
+const WINGS_BY_TIER: (Item | null)[][] = [
+  [],
+  [null, wing(0), wing(1), wing(2), wing(41)],
+  [null, wing(3), wing(4), wing(5), wing(6), { group: 13, num: 30, lvl: 0 }, wing(42), wing(49)],
+  [null, wing(36), wing(37), wing(38), wing(39), wing(40), wing(43), wing(50)],
+];
+// the small wings (byte 17, bits 5-7)
+const SMALL_WINGS = [null, wing(130), wing(131), wing(132), wing(133), wing(134), wing(135)];
+
+function wing(num: number): Item {
+  return { group: 12, num, lvl: 0 };
+}
+
+// wings of the appearance (see AppearanceSerializer.AddWing of OpenMU)
+function readWings(app: DataView): Item | null {
+  const tier = (app.getUint8(5) >> 2) & 3;
+  if (!tier) return null;
+  const small = app.byteLength > 17 ? app.getUint8(17) >> 5 : 0;
+  if (tier === 3 && small) return SMALL_WINGS[small] ?? null;
+  return WINGS_BY_TIER[tier][app.getUint8(9) & 7] ?? null;
+}
+
+// pet or mount of the appearance (see AppearanceSerializer.AddPet)
+function readPet(app: DataView): Item | null {
+  const pet = app.getUint8(5) & 3;
+  // Guardian Angel, Satan, Horn of Uniria
+  if (pet !== 3) return { group: 13, num: pet, lvl: 0 };
+  if (app.getUint8(12) & 0x04) {
+    const b16 = app.byteLength > 16 ? app.getUint8(16) : 0;
+    const b17 = app.byteLength > 17 ? app.getUint8(17) : 0;
+    // the option decides the color of Fenrir (FENRIR_* of mounts.ts)
+    const excellentOptions = (b16 & 0x01 ? 0x01 : 0) | (b16 & 0x02 ? 0x02 : 0) | (b17 & 0x01 ? 0x04 : 0);
+    return { group: 13, num: 37, lvl: 0, excellentOptions };
+  }
+  if (app.getUint8(10) & 0x01) return { group: 13, num: 3, lvl: 0 };
+  if (app.getUint8(12) & 0x01) return { group: 13, num: 4, lvl: 0 };
+  return null;
+}
 
 export function deserializeAppearance(app: DataView) {
   const cls = ClassFromAppearance(GetByteValue(app.getUint8(0), 5, 3));
@@ -129,6 +170,8 @@ export function deserializeAppearance(app: DataView) {
     pants,
     gloves,
     boots,
+    wings: readWings(app),
+    pet: readPet(app),
   } as const;
 }
 

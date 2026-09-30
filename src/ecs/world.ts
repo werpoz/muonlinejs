@@ -100,6 +100,8 @@ export type Entity = Partial<{
     leftHand: Item | null;
     rightHand: Item | null;
     wings: Item | null;
+    // pet or mount (the helper slot)
+    pet?: Item | null;
     charClass: CharacterClassNumber;
     changed: boolean;
   };

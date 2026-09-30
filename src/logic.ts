@@ -50,6 +50,7 @@ import { HelloPacket } from './common/packets/ConnectServerPackets';
 import {
   AddCharactersToScopePacket,
   AddNpcsToScopePacket,
+  AppearanceChangedPacket,
   CharacterInformationPacket,
   CharacterInventoryPacket,
   ChatMessagePacket,
@@ -544,6 +545,8 @@ EventBus.on('AddCharactersToScope', packet => {
     cApp.pants = appearance.pants;
     cApp.gloves = appearance.gloves;
     cApp.boots = appearance.boots;
+    cApp.wings = appearance.wings;
+    cApp.pet = appearance.pet;
 
     Object.values(cApp).forEach(item => {
       if (typeof item !== 'object' || item === null) return;
@@ -554,6 +557,73 @@ EventBus.on('AddCharactersToScope', packet => {
 
     cApp.changed = true;
   });
+});
+
+// the equipment of another player changed: the item of a slot (all 0xFF
+// when it was taken off); byte 1 has the slot (high 4 bits) and the glow
+// level instead of the options
+const APPEARANCE_SLOTS = [
+  'leftHand',
+  'rightHand',
+  'helm',
+  'armor',
+  'pants',
+  'gloves',
+  'boots',
+  'wings',
+  'pet',
+] as const;
+const GLOW_TO_LEVEL = [0, 3, 5, 7, 9, 11, 13, 15];
+
+// AppearanceChangedExtended (Season 6 Episode 3 clients, 14 bytes): the
+// id (little endian) at 4, then slot, group (0xFF: taken off), number
+// (little endian), level and excellent/Fenrir flags
+function onAppearanceChangedExtended(packet: DataView) {
+  const id = packet.getUint16(4, true) & 0x7fff;
+  const slot = APPEARANCE_SLOTS[packet.getUint8(6)];
+  const group = packet.getUint8(7);
+  const item: Item | null =
+    group === 0xff
+      ? null
+      : {
+          group,
+          num: packet.getUint16(8, true),
+          lvl: packet.getUint8(10),
+          excellentOptions: packet.getUint8(11),
+          isExcellent: group !== 12 && group !== 13 && packet.getUint8(11) !== 0,
+        };
+  console.log(`AppearanceChanged: ${id} ${slot} ${item ? `${item.group}/${item.num}` : 'removed'}`);
+  const entity = Store.world?.netObjsQuery.entities.find(e => e.netId === id && !e.objOutOfScope);
+  if (!slot || !entity?.charAppearance || entity.localPlayer) return;
+  entity.charAppearance[slot] = item;
+  entity.charAppearance.changed = true;
+}
+
+EventBus.on('AppearanceChanged', packet => {
+  if (packet.byteLength === 14) {
+    onAppearanceChangedExtended(packet);
+    return;
+  }
+  const p = new AppearanceChangedPacket(packet);
+  const id = p.ChangedPlayerId & 0x7fff;
+  const data = new Uint8Array(packet.buffer, packet.byteOffset + 5, packet.byteLength - 5);
+  if (data.length < ItemSerializer.NeededSpace) return;
+  const slot = APPEARANCE_SLOTS[data[1] >> 4];
+  const removed = data[0] === 0xff && data[2] === 0xff && data[5] === 0xff;
+  console.log(`AppearanceChanged: ${id} ${slot} ${removed ? 'removed' : ''}`);
+  const entity = Store.world?.netObjsQuery.entities.find(e => e.netId === id && !e.objOutOfScope);
+  if (!slot || !entity?.charAppearance || entity.localPlayer) return;
+
+  let item: Item | null = null;
+  if (!removed) {
+    const glow = data[1] & 0x0f;
+    const copy = data.slice(0, ItemSerializer.NeededSpace);
+    copy[1] = 0;
+    const read = ItemSerializer.DeserializeItem(copy);
+    item = { ...read, lvl: GLOW_TO_LEVEL[glow] ?? 0 };
+  }
+  entity.charAppearance[slot] = item;
+  entity.charAppearance.changed = true;
 });
 
 EventBus.on('MapObjectOutOfScope', packet => {

@@ -2,6 +2,7 @@ import { ItemsDatabase } from '../../common/itemsDatabase';
 import type { ModelObject } from '../../common/modelObject';
 import type { PlayerObject } from '../../common/playerObject';
 import type { ISystemFactory, Item } from '../world';
+import { flyingPetOf, isWings, mountModel, mountOf, wingsModel } from '../../common/mounts';
 
 function loadPart(
   part: Item | null,
@@ -60,7 +61,17 @@ export const AppearanceSystem: ISystemFactory = world => {
           playerObject.Weapon2
         ) || playerObject.Weapon2.Unload();
 
+        // wings, and a mount or a pet in the helper slot
+        const wings = isWings(charAppearance.wings) ? charAppearance.wings : null;
+        playerObject.setWingsModel(wings ? wingsModel(wings) : null);
+        const mount = mountOf(charAppearance.pet);
+        playerObject.setMountModel(mount, mount ? mountModel(mount, charAppearance.pet!) : null);
+        const pet = flyingPetOf(charAppearance.pet);
+        playerObject.setFlyingPetModel(pet?.model ?? null, pet?.scale);
+
         if (attributeSystem) {
+          // flying (the fly actions) with wings, but not on a mount
+          attributeSystem.setValue('isFlying', wings && !mount ? 1 : 0);
           if (charAppearance.leftHand) {
             const group = charAppearance.leftHand.group;
             const isSpear = group === 3;

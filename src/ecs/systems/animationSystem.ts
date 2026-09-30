@@ -3,6 +3,7 @@ import { MonsterActionType, PlayerAction } from '../../common/objects/enum';
 import type { MUAttributeSystem } from '../../libs/attributeSystem';
 import type { ISystemFactory } from '../world';
 import type { PlayerObject } from '../../common/playerObject';
+import { MOUNT_ACTION_IDLE, MOUNT_ACTION_RUN, ridingAction } from '../../common/mounts';
 
 // a dead monster: the death animation plays once, then the body fades out
 // and is removed (OutOfScopeSystem waits for it)
@@ -127,11 +128,17 @@ export const AnimationSystem: ISystemFactory = world => {
   return {
     update: dt => {
       // calculate current anim
-      for (const {
-        playerAnimation,
-        movement,
-        attributeSystem,
-      } of playersQuery) {
+      for (const entity of playersQuery) {
+        const { playerAnimation, movement, attributeSystem } = entity;
+        const playerObject = entity.modelObject as PlayerObject;
+        const mount = playerObject.mountKind;
+        const isMoving = movement.velocity.x !== 0 || movement.velocity.y !== 0;
+
+        // the mount runs or stands with the player
+        if (mount && playerObject.Mount?.Ready) {
+          playerObject.Mount.playAction(isMoving ? MOUNT_ACTION_RUN : MOUNT_ACTION_IDLE, true);
+        }
+
         if (playerAnimation.action === PlayerAction.PLAYER_DIE1) continue;
 
         if (playerAnimation.oneShotTime) {
@@ -141,10 +148,10 @@ export const AnimationSystem: ISystemFactory = world => {
           );
           continue;
         }
-        playerAnimation.action = calculateAnimation(
-          attributeSystem,
-          movement.velocity
-        );
+        const armed = !!(entity.charAppearance?.leftHand || entity.charAppearance?.rightHand);
+        playerAnimation.action = mount
+          ? ridingAction(mount, isMoving, armed)
+          : calculateAnimation(attributeSystem, movement.velocity);
       }
 
       // update anim
