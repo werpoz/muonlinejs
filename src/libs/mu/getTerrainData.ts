@@ -1,3 +1,4 @@
+import { worldFolderNumber } from '../../common/worldFolder';
 import {
   CreatePlane,
   RawTexture,
@@ -35,7 +36,7 @@ function GetTerrainIndex(x: number, y: number) {
 
 export async function getTerrainData(world: World, map: ENUM_WORLD) {
   const scene = world.scene;
-  const worldNum = map + 1;
+  const worldNum = worldFolderNumber(map);
   const worldFolder = `World${worldNum}/`;
 
   const terrainAttributeBytes = await downloadDataBytesBuffer(

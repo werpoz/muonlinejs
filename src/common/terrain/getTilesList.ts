@@ -123,6 +123,9 @@ export function getTilesList(map: ENUM_WORLD) {
     case ENUM_WORLD.WD_11BLOODCASTLE1 + 4:
     case ENUM_WORLD.WD_11BLOODCASTLE1 + 5:
     case ENUM_WORLD.WD_11BLOODCASTLE_END:
+    // Blood Castle 8 and Devil Square 5-7 (World12 / World10)
+    case 52 as ENUM_WORLD:
+    case 32 as ENUM_WORLD:
       return [
         'TileGrass01',
         'TileGrass02',

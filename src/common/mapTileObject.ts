@@ -1,3 +1,4 @@
+import { worldFolderNumber } from './worldFolder';
 import { Entity, World } from '../ecs/world';
 import { Color4 } from '../libs/babylon/exports';
 import { getMaterial, loadGLTF } from './modelLoader';
@@ -14,7 +15,7 @@ export class MapTileObject extends ModelObject {
 
     // BlendState = BlendState.AlphaBlend;
 
-    const dir = `Object${this.WorldIndex + 1}/`;
+    const dir = `Object${worldFolderNumber(this.WorldIndex)}/`;
     let modelPath = `${dir}Object${(this.Type + 1)
       .toString()
       .padStart(2, '0')}.glb`;

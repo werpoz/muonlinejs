@@ -1,3 +1,4 @@
+import { worldFolderNumber } from './worldFolder';
 import {
   Matrix,
   Quaternion,
@@ -71,7 +72,7 @@ export class ModelObject {
   NodeNamePrefix = '';
 
   get objectDir() {
-    return `Object${this.WorldIndex + 1}/`;
+    return `Object${worldFolderNumber(this.WorldIndex)}/`;
   }
 
   constructor(

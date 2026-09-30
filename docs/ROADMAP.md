@@ -54,7 +54,8 @@
 - [x] Lahap: empaquetar joyas x10/x20/x30 y desempaquetar
 - [x] Devil Square y Blood Castle: entrada (Charon / Mensajero del Arcángel) con niveles, tickets y horario, marcador con tiempo y monstruos, fases de Blood Castle, puentes y puertas (`ChangeTerrainAttributes`), puntuación
 - [x] Mapa de Blood Castle 1 (World12/Object12 del cliente nuevo: BMD v15 con LEA, terreno con ModulusCryptor) y el Arcángel
-- [ ] Mapas de Blood Castle 2-8 (World13-18, World53) con `tools/modulusCryptor.py`
+- [x] Mapas de Blood Castle 2-8 y Devil Square 5-7: usan World12 / World10 como el cliente original (OpenMU tiene el mismo terreno)
+- [ ] Modelos de monstruos de Devil Square 5-7 (Gigantis, Berserk, Persona, Dreadfear, Dark Elf, Balram y Soram trainee, Death Angel 4, Illusion of Kundun 4)
 - [ ] Chaos Castle
 - [ ] Mascotas y monturas (Dinorant, Dark Horse, Dark Raven)
 - [x] Cambiar de mapa: lista de mapas (M) con `WarpCommandRequest` y portales con `EnterGateRequest`
